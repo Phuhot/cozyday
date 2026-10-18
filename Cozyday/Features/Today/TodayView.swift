@@ -348,7 +348,7 @@ struct TodayHeader: View {
                     Button {
                         withAnimation(Motion.bouncy) { tip += 1 }
                     } label: {
-                        Text(isToday ? PetDialogue.line(for: store.petDialogueContext(today: dayClock.today), tap: tip)
+                        Text(isToday ? PetDialogue.line(for: store.petDialogueContext(today: dayClock.today), tap: tip, species: store.petAppearance.species)
                                      : "Mình xem giúp bạn ngày này nhé!")
                             .font(Typography.callout.weight(.semibold))
                             .foregroundStyle(Palette.bubbleInk)

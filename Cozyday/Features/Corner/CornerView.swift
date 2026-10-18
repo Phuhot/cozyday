@@ -122,7 +122,7 @@ struct CornerView: View {
                 petName: store.profile.displayPetName,
                 bounceTrigger: ui.celebrateCounter,
                 haptics: store.profile.hapticsEnabled,
-                speech: { tap in PetDialogue.line(for: store.petDialogueContext(today: dayClock.today), tap: tap) },
+                speech: { tap in PetDialogue.line(for: store.petDialogueContext(today: dayClock.today), tap: tap, species: store.petAppearance.species) },
                 onTapSlot: { slot in shopTarget = ShopTarget(room: room, slot: slot) }
             )
         } else {

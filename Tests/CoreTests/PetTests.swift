@@ -203,19 +203,6 @@ final class PetTests: XCTestCase {
         XCTAssertTrue(PetDialogue.reactionLines(.dropped, petName: "Bông").contains("Chỗ này cũng xinh nè!"))
         XCTAssertTrue(PetDialogue.reactionLines(.petted, petName: "B", species: .frog).contains { $0.contains("Ộp") })
     }
-
-    func testZZDumpSamples() throws {
-        var out = ""
-        let start = day("2026-01-01")
-        for i in stride(from: 0, to: 366, by: 7) {
-            let d = start.adding(days: i, calendar: cal())
-            let s = Adventure.story(for: d, petName: "Bông", species: PetSpecies.allCases[i % 11])
-            out += "\(d) [\(PetSpecies.allCases[i % 11])] \(s.title)\n  \(s.text)\n"
-        }
-        let t = Set((0..<60).map { Adventure.story(for: day("2026-10-18").adding(days: $0, calendar: cal()), petName: "B").title }).count
-        out += "titles60=\(t)\n"
-        try out.write(toFile: "/work/cozyday/samples.txt", atomically: true, encoding: .utf8)
-    }
 }
 
 final class BreathingTests: XCTestCase {

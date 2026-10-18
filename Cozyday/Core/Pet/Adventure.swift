@@ -312,7 +312,7 @@ enum Adventure {
         "một chiếc chìa khóa nhỏ xíu", "một tấm ảnh chụp mây", "một chiếc huy hiệu hình mặt trời",
         "một chiếc lông chim sẻ", "một hạt cườm màu tím", "một quả chuông nhỏ kêu leng keng",
         "một mảnh thủy tinh biển màu xanh ngọc", "một chiếc móc khóa hình quả dâu",
-        "một mẩu bút chì ngắn", "một chiếc lá non xanh mướt", "một hộp diêm rỗng có vẽ hoa",
+        "một mẩu bút chì ngắn", "một chiếc lá non xanh mướt", "một chiếc hộp thiếc nhỏ có vẽ hoa",
         "một chiếc nhẫn cỏ tự kết"
     ]
     /// Câu kết — câu trọn vẹn, không cần chủ ngữ.

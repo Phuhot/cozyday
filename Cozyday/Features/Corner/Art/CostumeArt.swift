@@ -450,24 +450,27 @@ enum CostumeArt {
             }
             soft(ctx, [pt(46.5, 61.8), pt(53.5, 61.8), pt(52.3, 67), pt(47.7, 67)], rgb(0x4A60AA), 1)
         case "neck.ruff":
-            // Hai tầng bèo nhún: tầng dưới rộng hơn, mép dưới lượn sóng.
-            let white = rgb(0xFFFFFF), shade = rgb(0xDCD4E6), edge = rgb(0xC9BFDA)
-            for (row, (y0, x0, n, r)) in [(CGFloat(65.5), CGFloat(23), 8, CGFloat(4.1)), (CGFloat(62.5), CGFloat(28), 6, CGFloat(4))].enumerated() {
-                let span = (50 - x0) * 2
-                let step = span / CGFloat(n - 1)
-                for i in 0..<n {
-                    let x = x0 + CGFloat(i) * step
-                    let y = y0 + (row == 0 ? 2.2 : 1.4) * (1 - pow((x - 50) / (span / 2), 2))
-                    ctx.circle(x, y + 0.9, r + 0.3, edge)
-                }
-                for i in 0..<n {
-                    let x = x0 + CGFloat(i) * step
-                    let y = y0 + (row == 0 ? 2.2 : 1.4) * (1 - pow((x - 50) / (span / 2), 2))
-                    ctx.circle(x, y, r, row == 0 ? shade : white)
+            // Cổ áo bèo kiểu chú hề: các cánh bèo trắng xòe quanh cổ.
+            let white = rgb(0xFFFFFF), edge = rgb(0xD3C8E2), crease = rgb(0xE6DFEE)
+            let angles: [Double] = [28, 43, 58, 74, 90, 106, 122, 137, 152]
+            for layer in 0..<2 {
+                for (i, deg) in angles.enumerated() {
+                    let rad = deg * Double.pi / 180
+                    let x = 50 + 22 * CGFloat(cos(rad)), y = 59 + 6.5 * CGFloat(sin(rad))
+                    let rot = (deg - 90) * 0.9
+                    let tone = i % 2 == 0 ? white : rgb(0xFBF8FD)
+                    ctx.rotated(rot, around: pt(x, y)) { c in
+                        if layer == 0 {
+                            c.ellipse(x - 4.4, y - 2.8, 8.8, 10.4, edge)
+                        } else {
+                            c.ellipse(x - 3.8, y - 2.6, 7.6, 9.4, tone)
+                            c.strokePath(crease, width: 0.8) { p in
+                                p.move(to: pt(x, y + 0.5)); p.addLine(to: pt(x, y + 5))
+                            }
+                        }
+                    }
                 }
             }
-            ctx.rect(30, 60.6, 40, 3.2, white, radius: 1.6)
-            ctx.ellipse(31, 61.2, 6, 1.6, Color.white.opacity(0.9))
         case "neck.pearls":
             let rim = rgb(0xD8CCC2), pearl = rgb(0xFFF9F3), shade = rgb(0xEFE4DA)
             for i in 0..<11 {
@@ -719,10 +722,10 @@ enum CostumeArt {
         case "back.umbrella":
             if front {
                 ctx.strokePath(rgb(0x8A5A3C), width: 1.8) { p in
-                    p.move(to: pt(60, 85)); p.addLine(to: pt(79.5, 19))
+                    p.move(to: pt(60, 85)); p.addLine(to: pt(76, 18))
                 }
                 ctx.strokePath(rgb(0xC94F5C), width: 2.6) { p in
-                    p.move(to: pt(60.3, 84)); p.addLine(to: pt(61.8, 79))
+                    p.move(to: pt(60.2, 84.2)); p.addLine(to: pt(61.4, 79.2))
                 }
                 pawGrip(ctx, a, 58.5, 80.5)
             } else {
@@ -834,7 +837,7 @@ enum CostumeArt {
     }
 
     private static func parasol(_ ctx: GraphicsContext) {
-        let hub = pt(79.5, 19)
+        let hub = pt(76, 18)
         ctx.rotated(17, around: hub) { c in
             let canopy = rgb(0xEC8E9D), panel = rgb(0xF6B7C2), rib = rgb(0xC96676)
             let left: CGFloat = hub.x - 25, right: CGFloat = hub.x + 25, rim = hub.y + 6

@@ -393,6 +393,13 @@ struct PetPainter {
                 c.ellipse(68, 27, 11, 10, fur.base)
                 c.ellipse(70.5, 29.5, 6, 5.5, fur.shade)
             }
+            // Chỏm lông nhỏ trên đỉnh đầu, lắc theo nhịp "đuôi".
+            ctx.strokePath(fur.shade, width: 1.4) { p in
+                let sway = pose.tail * 1.5
+                for (x, lean) in [(46.5, -1.5), (50.0, 0.0), (53.5, 1.5)] as [(CGFloat, CGFloat)] {
+                    p.move(to: CGPoint(x: x, y: 29.5)); p.addLine(to: CGPoint(x: x + lean + sway, y: 24.5))
+                }
+            }
         case .panda:
             let dark = pandaDark
             ctx.rotated(twitch, around: CGPoint(x: 27, y: 36)) { c in
@@ -565,10 +572,10 @@ struct PetPainter {
     private var capybaraMuzzle: Path {
         var p = Path()
         p.move(to: CGPoint(x: 50, y: 46.5))
-        p.addCurve(to: CGPoint(x: 61.5, y: 58), control1: CGPoint(x: 57.5, y: 46.5), control2: CGPoint(x: 61.5, y: 50.5))
-        p.addCurve(to: CGPoint(x: 50, y: 64.5), control1: CGPoint(x: 61.5, y: 63), control2: CGPoint(x: 56.5, y: 64.5))
-        p.addCurve(to: CGPoint(x: 38.5, y: 58), control1: CGPoint(x: 43.5, y: 64.5), control2: CGPoint(x: 38.5, y: 63))
-        p.addCurve(to: CGPoint(x: 50, y: 46.5), control1: CGPoint(x: 38.5, y: 50.5), control2: CGPoint(x: 42.5, y: 46.5))
+        p.addCurve(to: CGPoint(x: 62.5, y: 58.5), control1: CGPoint(x: 57.5, y: 46.5), control2: CGPoint(x: 62.5, y: 51))
+        p.addCurve(to: CGPoint(x: 50, y: 65.5), control1: CGPoint(x: 62.5, y: 64), control2: CGPoint(x: 57, y: 65.5))
+        p.addCurve(to: CGPoint(x: 37.5, y: 58.5), control1: CGPoint(x: 43, y: 65.5), control2: CGPoint(x: 37.5, y: 64))
+        p.addCurve(to: CGPoint(x: 50, y: 46.5), control1: CGPoint(x: 37.5, y: 51), control2: CGPoint(x: 42.5, y: 46.5))
         p.closeSubpath()
         return p
     }
