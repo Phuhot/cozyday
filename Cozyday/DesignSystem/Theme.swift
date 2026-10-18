@@ -41,8 +41,9 @@ enum Palette {
     static let danger = Color.dynamic(light: 0xC2565A, dark: 0xF08C8F)
     static let nowLine = Color.dynamic(light: 0xD9667A, dark: 0xF290A2)
 
-    /// Màu chữ đặt trên nền lavender đậm.
-    static let onAccent = Color.white
+    /// Màu chữ đặt trên nền màu nhấn (lavender, sage, đỏ…). Ở dark mode các màu nhấn sáng hơn,
+    /// nên chữ chuyển sang tối để đủ tương phản (chữ trắng trên lavender sáng chỉ ~2:1).
+    static let onAccent = Color.dynamic(light: 0xFFFFFF, dark: 0x221D2C)
 
     // Màu dùng cho hình vẽ mèo/phòng (ít đổi theo dark mode để giữ nhận diện)
     static let catCream = Color.dynamic(light: 0xFCF1DE, dark: 0xF4E6CF)
