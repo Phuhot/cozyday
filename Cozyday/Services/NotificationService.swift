@@ -31,6 +31,8 @@ final class NotificationService {
     /// Chỉ gọi khi người dùng chủ động bật một nhắc nhở. Từ chối vẫn dùng app bình thường.
     @discardableResult
     func requestPermissionIfNeeded() async -> Bool {
+        // Khi CI chụp ảnh giao diện: không hiện hộp thoại xin quyền của iOS.
+        if PreviewMode.current != nil { return false }
         await refreshPermission()
         if permission == .authorized { return true }
         guard permission == .notDetermined else { return false }

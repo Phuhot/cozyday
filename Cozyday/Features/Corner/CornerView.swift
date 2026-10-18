@@ -43,7 +43,6 @@ struct CornerView: View {
             .cozyBackground()
             .navigationTitle("Góc nhỏ")
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) { CoinBadge(coins: store.wallet.coins) }
                 ToolbarItem(placement: .topBarTrailing) { SettingsButton() }
             }
             .sheet(isPresented: $showShop) {
@@ -86,6 +85,7 @@ struct CornerView: View {
                     Text("Cấp \(wallet.level)")
                         .font(Typography.headline)
                         .foregroundStyle(Palette.lavender)
+                    CoinBadge(coins: wallet.coins)
                 }
                 ProgressView(value: wallet.levelProgress)
                     .tint(Palette.lavender)
@@ -115,11 +115,15 @@ struct ShopView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: Spacing.l) {
-                    Picker("Vị trí", selection: $slot) {
-                        ForEach(RoomSlot.allCases) { Text($0.label).tag($0) }
+                    HStack {
+                        Picker("Vị trí", selection: $slot) {
+                            ForEach(RoomSlot.allCases) { Text($0.label).tag($0) }
+                        }
+                        .pickerStyle(.menu)
+                        .tint(Palette.lavender)
+                        Spacer()
+                        CoinBadge(coins: store.wallet.coins)
                     }
-                    .pickerStyle(.menu)
-                    .tint(Palette.lavender)
 
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: Spacing.m)], spacing: Spacing.m) {
                         ForEach(Catalog.items(in: slot)) { item in
@@ -140,7 +144,6 @@ struct ShopView: View {
             .navigationTitle("Cửa hàng")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) { CoinBadge(coins: store.wallet.coins) }
                 ToolbarItem(placement: .confirmationAction) { Button("Xong") { dismiss() } }
             }
             .sheet(item: $preview) { item in

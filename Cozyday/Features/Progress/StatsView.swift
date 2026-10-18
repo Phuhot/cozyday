@@ -25,11 +25,14 @@ struct StatsView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: Spacing.l) {
-                    Picker("Khoảng thời gian", selection: $range) {
-                        Text("7 ngày").tag(7)
-                        Text("30 ngày").tag(30)
+                    HStack(spacing: Spacing.m) {
+                        Picker("Khoảng thời gian", selection: $range) {
+                            Text("7 ngày").tag(7)
+                            Text("30 ngày").tag(30)
+                        }
+                        .pickerStyle(.segmented)
+                        CoinBadge(coins: store.wallet.coins)
                     }
-                    .pickerStyle(.segmented)
 
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: Spacing.m) {
                         StatTile(value: "\(summary.completedTasks)", label: "việc đã xong", symbol: "checkmark.circle", tint: Palette.sage)
@@ -86,7 +89,6 @@ struct StatsView: View {
             .cozyBackground()
             .navigationTitle("Tiến bộ")
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) { CoinBadge(coins: store.wallet.coins) }
                 ToolbarItem(placement: .topBarTrailing) { SettingsButton() }
             }
         }

@@ -26,11 +26,17 @@ struct SettingsView: View {
         NavigationStack {
             Form {
                 Section("Hồ sơ") {
-                    TextField("Tên của bạn", text: $userName)
-                        .textContentType(.givenName)
-                        .onSubmit(saveNames)
-                    TextField("Tên mèo", text: $petName)
-                        .onSubmit(saveNames)
+                    LabeledContent("Tên của bạn") {
+                        TextField("Không bắt buộc", text: $userName)
+                            .textContentType(.givenName)
+                            .multilineTextAlignment(.trailing)
+                            .onSubmit(saveNames)
+                    }
+                    LabeledContent("Tên mèo") {
+                        TextField(ProfileRecord.defaultPetName, text: $petName)
+                            .multilineTextAlignment(.trailing)
+                            .onSubmit(saveNames)
+                    }
                 }
 
                 Section {

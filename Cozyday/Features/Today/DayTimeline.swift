@@ -23,10 +23,12 @@ struct DayTimeline: View {
         let starts = tasks.compactMap(\.startMinute)
         let ends = tasks.compactMap(\.endMinute)
         let nowMinute = store.calendar.minuteOfDay(store.now)
-        var lo = min(activeStart, starts.min() ?? activeStart)
+        // Không vẽ các giờ trống trước việc đầu tiên: mở app buổi chiều vẫn thấy ngay việc sắp tới.
+        // Hôm nay: bắt đầu tối đa 1 giờ trước "bây giờ" (hoặc sớm hơn nếu có việc sớm hơn).
+        var lo = starts.min() ?? (isToday ? nowMinute - 60 : activeStart)
         var hi = max(activeEnd, ends.max() ?? activeEnd)
         if isToday {
-            lo = min(lo, nowMinute)
+            lo = max(0, min(lo, nowMinute - 60))
             hi = max(hi, nowMinute + 1)
         }
         lo = (lo / 60) * 60

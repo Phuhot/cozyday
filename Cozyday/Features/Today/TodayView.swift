@@ -67,6 +67,21 @@ struct TodayView: View {
                             showDatePicker = true
                         }
 
+                        if isToday, openInboxCount > 0 {
+                            Button {
+                                sheet = .inbox
+                            } label: {
+                                HStack {
+                                    Label("Hộp chờ: \(openInboxCount) việc chưa xếp lịch", systemImage: "tray")
+                                    Spacer(minLength: 0)
+                                    Image(systemName: "chevron.right")
+                                        .font(Typography.caption.weight(.semibold))
+                                        .accessibilityHidden(true)
+                                }
+                            }
+                            .buttonStyle(SoftButtonStyle(tint: Palette.lavender))
+                        }
+
                         if let plan, !plan.isEmpty {
                             Button {
                                 sheet = .replan(plan, day)
@@ -145,9 +160,11 @@ struct TodayView: View {
                     Button {
                         sheet = .inbox
                     } label: {
-                        Label("Hộp chờ (\(store.inbox.filter { $0.status == .open }.count))", systemImage: "tray")
-                            .labelStyle(.titleAndIcon)
+                        // Trên iOS 26 thanh công cụ chỉ hiện biểu tượng; số việc nằm ở dòng "Hộp chờ" trong nội dung.
+                        Image(systemName: "tray")
+                            .frame(minWidth: HitTarget.min, minHeight: HitTarget.min)
                     }
+                    .accessibilityLabel("Hộp chờ, \(openInboxCount) việc")
                 }
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     Button {
@@ -190,6 +207,8 @@ struct TodayView: View {
             .task { await openPreviewSheet() }
         }
     }
+
+    private var openInboxCount: Int { store.inbox.filter { $0.status == .open }.count }
 
     private var addButton: some View {
         Button {
