@@ -207,7 +207,7 @@ enum CostumeArt {
         let g = rgb(0x8CCB7E), gd = rgb(0x6FB063)
         var hood = ctx
         hood.clip(to: Path(CGRect(x: 0, y: 0, width: 100, height: 35)))
-        hood.ellipse(23, 19, 54, 42, g)
+        hood.ellipse(22, 16, 56, 46, g)
         ctx.rect(22.5, 31.5, 55, 5, gd, radius: 2.5)
         for x in [CGFloat(37), 63] {
             ctx.circle(x, 20, 7.5, g)

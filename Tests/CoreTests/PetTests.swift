@@ -106,6 +106,116 @@ final class PetTests: XCTestCase {
         night.focusRunning = true
         XCTAssertTrue(PetDialogue.lines(for: night).allSatisfy { !$0.isEmpty })
     }
+
+    // MARK: Câu chuyện phiêu lưu — nội dung mở rộng
+
+    private func sentenceCount(_ text: String) -> Int {
+        text.split(whereSeparator: { ".!?".contains($0) })
+            .filter { $0.contains(where: { $0.isLetter }) }
+            .count
+    }
+
+    func testAdventureStoryDeterministicPerDayAndSpecies() {
+        let d = day("2026-03-07")
+        for s in PetSpecies.allCases {
+            XCTAssertEqual(Adventure.story(for: d, petName: "Mây", species: s),
+                           Adventure.story(for: d, petName: "Mây", species: s))
+        }
+        XCTAssertEqual(Adventure.story(for: d, petName: "Mây"), Adventure.story(for: d, petName: "Mây", species: .cat),
+                       "mặc định là mèo")
+        XCTAssertEqual(Adventure.story(for: d, petName: "").text.hasPrefix(ProfileRecord.defaultPetName + " "), true)
+    }
+
+    func testAdventureStoriesValidForEverySpeciesAcrossManyDays() {
+        let start = day("2026-01-01")
+        for s in PetSpecies.allCases {
+            for i in 0..<400 {
+                let d = start.adding(days: i, calendar: cal())
+                let st = Adventure.story(for: d, petName: "Mochi", species: s)
+                XCTAssertFalse(st.title.isEmpty)
+                XCTAssertLessThanOrEqual(st.title.count, 42, "tiêu đề ngắn: \(st.title)")
+                XCTAssertFalse(st.keepsake.isEmpty)
+                XCTAssertTrue(st.keepsake.hasPrefix("một ") || st.keepsake.hasPrefix("vài "), st.keepsake)
+                XCTAssertTrue(st.text.hasPrefix("Mochi "), st.text)
+                XCTAssertTrue(st.text.contains(st.keepsake), "kỷ vật phải xuất hiện trong truyện: \(st.text)")
+                XCTAssertFalse(st.text.contains("  "))
+                XCTAssertFalse(st.text.contains("{n}"))
+                XCTAssertTrue((3...5).contains(sentenceCount(st.text)), "3–5 câu: \(st.text)")
+            }
+        }
+    }
+
+    func testAdventureHasVarietyAndSpeciesAndSeasonFlavor() {
+        let start = day("2026-10-18")
+        let days = (0..<60).map { start.adding(days: $0, calendar: cal()) }
+        let titles = Set(days.map { Adventure.story(for: $0, petName: "B").title })
+        XCTAssertGreaterThanOrEqual(titles.count, 40, "60 ngày nên có nhiều tiêu đề khác nhau")
+        let year = (0..<366).map { day("2026-01-01").adding(days: $0, calendar: cal()) }
+        let capy = year.map { Adventure.story(for: $0, petName: "B", species: .capybara).text }
+        XCTAssertTrue(capy.contains { $0.contains("suối nước nóng") })
+        let duck = year.map { Adventure.story(for: $0, petName: "B", species: .duck).text }
+        XCTAssertTrue(duck.contains { $0.contains("quạc") })
+        XCTAssertTrue(year.contains { Adventure.story(for: $0, petName: "B", species: .cat)
+            != Adventure.story(for: $0, petName: "B", species: .panda) })
+        XCTAssertEqual(Adventure.Season.of(month: 3), .spring)
+        XCTAssertEqual(Adventure.Season.of(month: 6), .summer)
+        XCTAssertEqual(Adventure.Season.of(month: 9), .autumn)
+        XCTAssertEqual(Adventure.Season.of(month: 12), .winter)
+        XCTAssertEqual(Adventure.Season.of(month: 1), .winter)
+        let autumn = year.filter { $0.month == 9 }.map { Adventure.story(for: $0, petName: "B").text }.joined()
+        let spring = year.filter { $0.month == 3 }.map { Adventure.story(for: $0, petName: "B").text }.joined()
+        XCTAssertNotEqual(autumn, spring)
+    }
+
+    func testDialogueSpeciesLinesKeepOldBehaviour() {
+        let ctx = PetDialogue.Context(minuteOfDay: 20 * 60, tasksDone: 0, tasksTotal: 0, wroteJournal: false,
+                                      focusRunning: false, adventureReady: false, streak: 0, userName: "")
+        XCTAssertEqual(PetDialogue.lines(for: ctx), PetDialogue.lines(for: ctx, species: .cat))
+        for s in PetSpecies.allCases {
+            let lines = PetDialogue.lines(for: ctx, species: s)
+            XCTAssertGreaterThanOrEqual(lines.count, 10)
+            XCTAssertTrue(lines.allSatisfy { !$0.trimmingCharacters(in: .whitespaces).isEmpty })
+            XCTAssertEqual(PetDialogue.line(for: ctx, tap: lines.count, species: s), lines[0])
+        }
+        XCTAssertTrue(PetDialogue.lines(for: ctx, species: .puppy).contains { $0.contains("Gâu") })
+    }
+
+    func testReactionsNonEmptyShortAndDeterministic() {
+        for r in PetReaction.allCases {
+            for s in PetSpecies.allCases {
+                let pool = PetDialogue.reactionLines(r, petName: "Bông", species: s)
+                XCTAssertGreaterThanOrEqual(pool.count, 12)
+                XCTAssertEqual(Set(pool).count, pool.count, "không trùng câu")
+                for seed in -3..<(pool.count + 3) {
+                    let line = PetDialogue.reaction(r, petName: "Bông", species: s, seed: seed)
+                    XCTAssertFalse(line.trimmingCharacters(in: .whitespaces).isEmpty)
+                    XCTAssertLessThanOrEqual(line.count, 40, line)
+                    XCTAssertEqual(line, PetDialogue.reaction(r, petName: "Bông", species: s, seed: seed))
+                }
+                XCTAssertNotEqual(PetDialogue.reaction(r, petName: "Bông", species: s, seed: 0),
+                                  PetDialogue.reaction(r, petName: "Bông", species: s, seed: 1))
+            }
+        }
+        XCTAssertFalse(PetDialogue.reaction(.petted, petName: "", seed: Int.min).isEmpty)
+        let catPetted = PetDialogue.reactionLines(.petted, petName: "Bông", species: .cat)
+        XCTAssertTrue(catPetted.contains("Gừ gừ… sướng quá!"))
+        XCTAssertTrue(PetDialogue.reactionLines(.pickedUp, petName: "Bông").contains("Ơ, bay lên rồi!"))
+        XCTAssertTrue(PetDialogue.reactionLines(.dropped, petName: "Bông").contains("Chỗ này cũng xinh nè!"))
+        XCTAssertTrue(PetDialogue.reactionLines(.petted, petName: "B", species: .frog).contains { $0.contains("Ộp") })
+    }
+
+    func testZZDumpSamples() throws {
+        var out = ""
+        let start = day("2026-01-01")
+        for i in stride(from: 0, to: 366, by: 7) {
+            let d = start.adding(days: i, calendar: cal())
+            let s = Adventure.story(for: d, petName: "Bông", species: PetSpecies.allCases[i % 11])
+            out += "\(d) [\(PetSpecies.allCases[i % 11])] \(s.title)\n  \(s.text)\n"
+        }
+        let t = Set((0..<60).map { Adventure.story(for: day("2026-10-18").adding(days: $0, calendar: cal()), petName: "B").title }).count
+        out += "titles60=\(t)\n"
+        try out.write(toFile: "/work/cozyday/samples.txt", atomically: true, encoding: .utf8)
+    }
 }
 
 final class BreathingTests: XCTestCase {

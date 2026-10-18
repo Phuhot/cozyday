@@ -379,6 +379,11 @@ struct PetPainter {
             let bob = pose.ear * -3 + pose.petted * 2
             ctx.circle(35.5, 39 + bob, 14, fur.base)
             ctx.circle(64.5, 39 + pose.petted * 2, 14, fur.base)
+            ctx.strokePath(Color.white.opacity(0.55), width: 1.6) { p in
+                p.addArc(center: CGPoint(x: 35.5, y: 39 + bob), radius: 10.5, startAngle: .degrees(205), endAngle: .degrees(245), clockwise: false)
+                p.move(to: CGPoint(x: 64.5 + 10.5 * cos(.pi * 205 / 180), y: 39 + pose.petted * 2 + 10.5 * sin(.pi * 205 / 180)))
+                p.addArc(center: CGPoint(x: 64.5, y: 39 + pose.petted * 2), radius: 10.5, startAngle: .degrees(205), endAngle: .degrees(245), clockwise: false)
+            }
         case .capybara:
             ctx.rotated(twitch + Double(pose.tail) * 6, around: CGPoint(x: 28, y: 36)) { c in
                 c.ellipse(21, 27, 11, 10, fur.base)
@@ -447,12 +452,10 @@ struct PetPainter {
         } else {
             switch faceMood {
             case .idle where !closed && appearance.species == .capybara:
-                // Mắt híp hiền lành: nửa dưới con ngươi + mí mắt.
+                // Mắt nhỏ tròn hiền lành.
                 for c in [left, right] {
-                    var lid = ctx
-                    lid.clip(to: Path(CGRect(x: c.x - 4 * f, y: c.y - 1 * f, width: 8 * f, height: 6 * f)))
-                    lid.ellipse(c.x - 2.6 * f, c.y - 3.2 * f, 5.2 * f, 6.4 * f, ink)
-                    ctx.circle(c.x - 0.8 * f, c.y + 0.6 * f, 0.75 * f, Color.white.opacity(0.85))
+                    ctx.ellipse(c.x - 2.1 * f, c.y - 2.2 * f, 4.2 * f, 4.6 * f, ink)
+                    ctx.circle(c.x - 0.6 * f, c.y - 0.9 * f, 0.75 * f, .white)
                 }
             case .idle where !closed:
                 for c in [left, right] {
@@ -529,16 +532,14 @@ struct PetPainter {
             }
         case .capybara:
             let nostril = rgb(0x4A3530)
-            ctx.strokePath(nostril.opacity(0.85), width: 1.3) { p in
-                p.move(to: CGPoint(x: 45.5, y: 53.5)); p.addQuadCurve(to: CGPoint(x: 47.5, y: 56), control: CGPoint(x: 47.5, y: 54))
-                p.move(to: CGPoint(x: 54.5, y: 53.5)); p.addQuadCurve(to: CGPoint(x: 52.5, y: 56), control: CGPoint(x: 52.5, y: 54))
-                p.move(to: CGPoint(x: 50, y: 56.5)); p.addLine(to: CGPoint(x: 50, y: 59))
-            }
+            ctx.rotated(-25, around: CGPoint(x: 46.5, y: 53.5)) { c in c.ellipse(45.4, 52.7, 2.2, 1.6, nostril) }
+            ctx.rotated(25, around: CGPoint(x: 53.5, y: 53.5)) { c in c.ellipse(52.4, 52.7, 2.2, 1.6, nostril) }
             if pose.lifted {
-                ctx.ellipse(48, 59.5, 4, 3.5, nostril)
+                ctx.ellipse(48, 57.5, 4, 3.8, nostril)
             } else {
-                ctx.strokePath(nostril.opacity(0.85), width: 1.2) { p in
-                    p.move(to: CGPoint(x: 46, y: 59.5)); p.addQuadCurve(to: CGPoint(x: 54, y: 59.5), control: CGPoint(x: 50, y: 62))
+                ctx.strokePath(nostril.opacity(0.85), width: 1.3) { p in
+                    p.move(to: CGPoint(x: 45.5, y: 57.5)); p.addQuadCurve(to: CGPoint(x: 50, y: 58), control: CGPoint(x: 47.5, y: 60.5))
+                    p.addQuadCurve(to: CGPoint(x: 54.5, y: 57.5), control: CGPoint(x: 52.5, y: 60.5))
                 }
             }
         default:
