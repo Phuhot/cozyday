@@ -4,8 +4,8 @@
 
 | Bộ test | Chạy ở đâu | Nội dung |
 |---|---|---|
-| `Tests/CoreTests` (38 test) | `swift test` trên Linux (workflow **Core logic tests**) và trong Xcode test target | Khóa ngày theo lịch địa phương, đổi giờ mùa hè, lịch lặp, không sinh trùng occurrence, sửa "lần này trở đi" không đổi quá khứ, xóa giữ lịch sử, timeline không đè chữ, replan (không đụng việc cố định/xong, không chồng lịch, báo việc không đủ chỗ), thưởng một lần, mua đồ (thiếu xu, mua 2 lần), timer (tạm dừng, mở lại sau nhiều giờ, kết thúc sớm), nhắc việc (cửa sổ 7 ngày, giới hạn 60), sao lưu (round-trip, bản mới hơn, file rác, file cụt, thiếu trường, ID trùng, tham chiếu sai, xu âm, qua nửa đêm), thống kê. |
-| `Tests/AppTests` | iOS Simulator (job **Unit test trên iOS Simulator**) | SwiftData thật (trong bộ nhớ): hồ sơ tạo một lần + không reset khi mở lại, hoàn thành 2 lần/mở lại không thưởng trùng, xóa việc giữ sổ cái, mua đồ không trừ 2 lần + bền sau mở lại, occurrence không trùng qua mở lại + đổi ngày, sửa tương lai không đổi quá khứ, thưởng focus một lần sau mở lại, sao lưu → khôi phục thay thế toàn bộ, sao lưu hỏng không đụng dữ liệu, từ chối việc qua nửa đêm. |
+| `Tests/CoreTests` (54 test) | `swift test` trên Linux (workflow **Core logic tests**) và trong Xcode test target | Khóa ngày theo lịch địa phương, đổi giờ mùa hè, lịch lặp, không sinh trùng occurrence, sửa "lần này trở đi" không đổi quá khứ, xóa giữ lịch sử, timeline không đè chữ, replan (không đụng việc cố định/xong, không chồng lịch, báo việc không đủ chỗ), thưởng một lần, mua đồ (thiếu xu, mua 2 lần), timer (tạm dừng, mở lại sau nhiều giờ, kết thúc sớm), nhắc việc (cửa sổ 7 ngày, giới hạn 60), sao lưu (round-trip, bản mới hơn, file rác, file cụt, thiếu trường, ID trùng, tham chiếu sai, xu âm, qua nửa đêm), thống kê. |
+| `Tests/AppTests` | iOS Simulator (job **Unit test trên iOS Simulator**) | SwiftData thật (trong bộ nhớ): hồ sơ tạo một lần + không reset khi mở lại, hoàn thành 2 lần/mở lại không thưởng trùng, xóa việc giữ sổ cái, mua đồ không trừ 2 lần + bền sau mở lại, occurrence không trùng qua mở lại + đổi ngày, sửa tương lai không đổi quá khứ, thưởng focus một lần sau mở lại, sao lưu → khôi phục thay thế toàn bộ, sao lưu hỏng không đụng dữ liệu, từ chối việc qua nửa đêm. Thêm (phiên 3): mở kho dữ liệu V1 thật bằng bản V2 (migration), tủ đồ (mặc định, khóa theo cấp, trang bị sau khi mở lại), chuyến đi + bài thở thưởng một lần. Tổng 68 test cùng CoreTests. |
 | Ảnh giao diện | iOS Simulator (cùng job, bước **Chụp ảnh giao diện**) | App bản Debug mở 11 màn với dữ liệu mẫu (sáng), 5 màn tối, 2 màn cỡ chữ Trợ năng; fail nếu màn nào crash. Ảnh: [`UI_PREVIEW_VI.md`](UI_PREVIEW_VI.md). |
 
 **Lưu ý:** test simulator **không** chứng minh IPA cài được trên iPhone thật. Việc đó chỉ được xác nhận bằng checklist phần 2 trên máy của bạn.
@@ -42,6 +42,25 @@ iPhone: ________ · iOS: ________ · Bản build (Cài đặt → Thông tin →
 - [ ] Tiến bộ: 7/30 ngày; biểu đồ; lịch sử xu khớp thao tác đã làm
 - [ ] Xuất sao lưu → Tệp; Khôi phục từ file đó → dữ liệu như cũ
 - [ ] Khôi phục một file không phải sao lưu (ví dụ file JSON khác) → bị từ chối, dữ liệu không đổi
+
+### Thú cưng & phiên bản mới
+- [ ] Cài đè bản mới lên bản cũ (cùng bundle ID, cùng Apple Account): việc, nhật ký, xu, đồ trong phòng còn nguyên
+- [ ] Góc nhỏ: thú cưng thở, chớp mắt, vẫy đuôi; thỉnh thoảng đi qua đi lại trong phòng
+- [ ] Chạm vào thú cưng: tim bay, rung nhẹ, hiện một câu nói
+- [ ] Tủ đồ: mặc thử (không mất xu), mua, dùng, tháo; món khóa theo cấp hiện "Cấp N"; chọn lại Mèo/Kem sữa được
+- [ ] Ngoại hình mới hiện đúng ở Hôm nay, Tập trung, Góc nhỏ
+- [ ] Chuyến đi: năng lượng tăng 25% mỗi việc xong/tập trung/nhật ký/bài thở; đủ 100% → nghe kể chuyện, nhận +3 xu một lần; Sổ ký ức có câu chuyện
+- [ ] Bài thở: vòng tròn phồng/xẹp theo nhịp, chữ đổi đúng; chạy hết giờ → +1 xu (một lần mỗi ngày); bấm Dừng → không thưởng
+- [ ] Giảm chuyển động: thú cưng đứng yên, bài thở không phồng/xẹp
+
+### Lập kế hoạch (mới)
+- [ ] Việc con: thêm/xóa/sắp xếp trong form; đánh dấu trong chi tiết; timeline hiện "1/3"
+- [ ] Việc lặp có việc con: mỗi ngày bắt đầu chưa làm; sửa "lần này trở đi" giữ các mục đã đánh dấu
+- [ ] Kéo tay nắm bên trái khối việc lên/xuống → đổi giờ, làm tròn 5 phút; việc lặp chỉ đổi lần đó
+- [ ] Cài đặt → Hiện sự kiện từ app Lịch → iOS hỏi quyền; sự kiện hiện trên timeline (viền nét đứt); "Sắp xếp lại" không xếp việc chồng lên sự kiện
+- [ ] Từ chối quyền Lịch → app vẫn dùng bình thường, Cài đặt hiện hướng dẫn bật lại
+- [ ] Nhật ký: câu gợi ý, "Câu khác", "Dùng câu này"
+- [ ] Tiến bộ: phân bố tâm trạng khớp số ngày đã viết
 
 ### Thông báo
 - [ ] Bật nhắc cho một việc lần đầu → iOS hỏi quyền

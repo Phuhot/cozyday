@@ -12,13 +12,14 @@ không quảng cáo, không mua hàng trong app.
 | Tab | Nội dung |
 |---|---|
 | **Hôm nay** | Đầu trang gọn (ngày, lời chào, mèo nhỏ, tiến độ) · thanh chọn ngày theo tuần + nút về hôm nay · nhóm việc chưa xếp giờ · timeline dọc với đường "bây giờ", việc trùng giờ chia cột không đè chữ · chế độ Danh sách (tự bật khi cỡ chữ rất lớn) · Hộp chờ · **Sắp xếp lại** việc trễ (xem trước, có Hủy) · nút + thêm việc · mở **Tập trung** |
-| **Góc nhỏ** | Mèo có 4 trạng thái (thư giãn, vui, tập trung, nghỉ) · phòng 5 vị trí cố định (tường, đèn, bàn, cây, ghế/thảm) · cấp độ XP · **cửa hàng 15 món** (3 miễn phí): xem trước, mua, đặt vào phòng, thay, bỏ |
-| **Nhật ký** | Mood 1–5 có nhãn chữ + một đoạn ghi chú · lịch tháng tô màu theo mood · xem/sửa ngày cũ |
-| **Tiến bộ** | Việc đã xong, phút tập trung, số ngày có hoạt động, chuỗi ngày · biểu đồ 7/30 ngày · lịch sử xu & vật phẩm. Chỉ dữ liệu thật. |
-| **Cài đặt** (nút bánh răng) | Tên, khung giờ trong ngày, rung, thông báo, **Xuất / Khôi phục sao lưu**, quy tắc phần thưởng, quyền riêng tư |
+| **Góc nhỏ** | Thú cưng **5 hình dạng** (mèo, thỏ, hamster, gấu nhỏ, cáo), **8 màu lông**, **trang phục** (mũ, kính, đồ ở cổ, áo — 34 món, một số mở khóa theo cấp) · **lớn dần** theo cấp (Nhóc con → Đang lớn → Trưởng thành) · **animation**: thở, chớp mắt, vẫy đuôi, giật tai, nhảy, đi lại trong phòng; chạm để vuốt ve (tim bay, rung nhẹ, nói một câu theo ngữ cảnh) · **Tủ đồ** mặc thử miễn phí trước khi mua · **Chuyến đi mỗi ngày**: đủ năng lượng thì đi chơi và về kể chuyện, lưu trong **Sổ ký ức** · phòng 5 vị trí + cửa hàng 15 món |
+| **Nhật ký** | Mood 1–5 có nhãn chữ + ghi chú · **câu gợi ý viết** · lịch tháng tô màu theo mood · **bài thở có hướng dẫn** (3 nhịp, 1–5 phút) |
+| **Tiến bộ** | Việc đã xong, phút tập trung, số ngày có hoạt động, chuỗi ngày · biểu đồ 7/30 ngày · **phân bố tâm trạng** · lịch sử xu & vật phẩm. Chỉ dữ liệu thật. |
+| **Cài đặt** (nút bánh răng) | Tên, khung giờ trong ngày, rung, thông báo, **hiện sự kiện từ app Lịch** (chỉ đọc), **Xuất / Khôi phục sao lưu**, quy tắc phần thưởng, quyền riêng tư |
 
-Việc: tạo / sửa / xóa / hoàn thành / bỏ hoàn thành / bỏ qua / chuyển ngày · nhóm, ưu tiên, ghi chú, giờ hoặc chỉ thời lượng,
-nhắc trước · lặp hằng ngày hoặc theo thứ, có ngày kết thúc · sửa/xóa việc lặp "chỉ lần này" hoặc "lần này và các lần sau".
+Việc: tạo / sửa / xóa / hoàn thành / bỏ hoàn thành / bỏ qua / chuyển ngày · nhóm, ưu tiên, ghi chú, **việc con (checklist)**,
+giờ hoặc chỉ thời lượng, nhắc trước · **kéo tay nắm trên timeline để đổi giờ** · lặp hằng ngày hoặc theo thứ, có ngày kết thúc ·
+sửa/xóa việc lặp "chỉ lần này" hoặc "lần này và các lần sau" · sự kiện từ app Lịch hiện cạnh việc và được "Sắp xếp lại" tránh.
 Tập trung: 25/5, 50/10 hoặc tùy chỉnh 5–120 phút, gắn việc, tạm dừng/tiếp tục/kết thúc sớm, đúng cả khi app bị đóng.
 
 Quy tắc dữ liệu, sao lưu, lịch lặp và phần thưởng: [`docs/DATA_AND_RULES_VI.md`](docs/DATA_AND_RULES_VI.md).
@@ -48,7 +49,7 @@ việc cài được xác nhận bằng checklist trên iPhone thật.
   thường tối đa khoảng 3 app sideload cùng lúc. Tự refresh qua Wi-Fi cần PC đang bật.
 - Thông báo là thông báo cục bộ; iOS có thể trì hoãn/ẩn theo Focus và cài đặt. Nhắc việc được lên lịch cho 7 ngày tới, làm mới khi mở app.
 - Không có iCloud/đồng bộ. Gỡ app = mất dữ liệu trên máy. Hãy **Xuất sao lưu** định kỳ (file JSON không mã hóa).
-- Bản 1.0 không có widget, Live Activities, Apple Watch, chặn app, AI.
+- Chưa có widget, Live Activities, Apple Watch, chặn app, AI, đồng bộ nhiều máy (xem `PROJECT_STATUS.md` — lý do và kế hoạch).
 
 ## Cấu trúc source
 

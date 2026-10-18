@@ -8,21 +8,26 @@
 - Bản kiểm chứng Mốc A dùng file riêng `PathCheck.store`; bản đầy đủ không đọc/ghi file này.
 - Mở store thất bại (ví dụ migration lỗi) → app hiện màn hình lỗi, **không xóa database** để "khởi tạo lại".
 
-### Các bảng (lược đồ phiên bản 1 — `CozySchemaV1`)
+### Các bảng (lược đồ hiện tại: phiên bản 2 — `CozySchemaV2`)
 
 | Bảng | Khóa / tham chiếu | Ghi chú |
 |---|---|---|
 | `ProfileModel` | một dòng duy nhất | Tên người dùng, tên mèo, mục tiêu, khung giờ hoạt động, rung, nhắc nhật ký, `dataVersion`. Tạo **đúng một lần** khi chưa có. |
-| `TaskTemplateModel` | `id` (UUID) | Mẫu việc lặp: nội dung + lịch lặp (`daily`/`weekly`, các thứ, ngày bắt đầu/kết thúc). |
-| `TaskOccurrenceModel` | `id` (UUID), `occurrenceKey` (duy nhất về logic), `templateID?` | Từng lần việc. `dayRaw = ""` = Hộp chờ. |
+| `TaskTemplateModel` | `id` (UUID) | Mẫu việc lặp: nội dung + lịch lặp (`daily`/`weekly`, các thứ, ngày bắt đầu/kết thúc) + việc con mẫu (V2). |
+| `TaskOccurrenceModel` | `id` (UUID), `occurrenceKey` (duy nhất về logic), `templateID?` | Từng lần việc. `dayRaw = ""` = Hộp chờ. `subtasksJSON` (V2): việc con của lần này. |
 | `LedgerEntryModel` | `id`, `key` (duy nhất về logic) | Sổ cái thưởng/chi. **Số dư xu và XP = tổng sổ cái**, không lưu số dư riêng. |
-| `OwnedItemModel` | `itemID` | Đồ đã sở hữu, kèm `transactionID` của dòng sổ cái mua. |
-| `EquippedSlotModel` | `slotRaw` | Món đang đặt ở mỗi vị trí phòng. |
+| `OwnedItemModel` | `itemID` | Đồ đã sở hữu (đồ phòng và đồ thú cưng), kèm `transactionID` của dòng sổ cái mua. |
+| `EquippedSlotModel` | `slotRaw` | Món đang dùng ở mỗi vị trí: 5 vị trí phòng + 6 lớp thú cưng (`species`, `fur`, `hat`, `glasses`, `neck`, `outfit`). |
 | `FocusSessionModel` | `id` | Phiên tập trung/nghỉ, lưu mốc thời gian (không lưu "giây còn lại"). |
 | `JournalEntryModel` | `id`, `dayRaw` (một mục/ngày) | Mood 1–5 + ghi chú. |
 
-Danh mục đồ (`Catalog`) nằm trong code với **ID cố định** (`desk.pine`, `lamp.candle`…) nên luôn idempotent: cập nhật app
-không reset xu hay đồ đạc. Đổi tên hiển thị được, nhưng **không bao giờ đổi ID**.
+Danh mục đồ (`Catalog`) nằm trong code với **ID cố định** (`desk.pine`, `species.fox`, `hat.crown`…) nên luôn idempotent:
+cập nhật app không reset xu hay đồ đạc. Đổi tên hiển thị được, nhưng **không bao giờ đổi ID**.
+
+- Hình dạng **Mèo** và lông **Kem sữa** là lựa chọn mặc định: luôn thuộc về bạn, đang dùng khi vị trí đó trống, không ghi vào kho.
+- Ngoại hình thú cưng **suy ra** từ các món đang dùng + cấp (giai đoạn lớn) — không lưu riêng.
+- Năng lượng chuyến đi **suy ra** từ sổ cái trong ngày; câu chuyện chọn cố định theo ngày — không lưu riêng.
+- Sự kiện từ app Lịch **không** được lưu vào Cozyday và **không** có trong bản sao lưu.
 
 ### Quan hệ và quy tắc xóa
 
@@ -36,7 +41,9 @@ Không dùng relationship của SwiftData; tham chiếu bằng ID để quy tắ
 
 ### Migration
 
-- Mỗi lần đổi lược đồ: thêm `CozySchemaV2` (không sửa V1 đã phát hành), thêm vào `CozyMigrationPlan.schemas` và một `MigrationStage`
+- **V1 → V2** (bản có việc con): migration nhẹ, chỉ thêm cột `subtasksJSON` (mặc định rỗng). Dữ liệu cũ giữ nguyên;
+  test `MigrationTests` tạo kho V1 thật trên đĩa rồi mở bằng bản mới, kiểm tra hồ sơ, việc, xu, đồ còn nguyên.
+- Mỗi lần đổi lược đồ: thêm phiên bản mới (không sửa phiên bản đã phát hành), thêm vào `CozyMigrationPlan.schemas` và một `MigrationStage`
   (lightweight nếu chỉ thêm trường có giá trị mặc định; custom nếu cần chuyển dữ liệu). Tăng `BackupDocument.currentSchemaVersion`
   nếu định dạng sao lưu đổi, và giữ khả năng đọc bản cũ.
 - Test bắt buộc trước khi phát hành: mở store V1 có dữ liệu bằng bản mới, xác nhận hồ sơ/xu/đồ không bị reset.
@@ -69,6 +76,8 @@ Các con số nằm trong `Cozyday/Core/Rewards/RewardConfig.swift`.
 | Hoàn thành một lần việc **lần đầu** | +10 XP, +5 xu | `task:<occurrenceID>` |
 | Phiên tập trung ≥ 10 phút **chạy hết giờ** | +2 XP và +1 xu mỗi 5 phút (tối đa 120 phút) | `focus:<sessionID>` |
 | Viết nhật ký (một lần mỗi ngày) | +5 XP, +2 xu | `journal:<yyyy-MM-dd>` |
+| Bài thở chạy hết giờ (một lần mỗi ngày) | +3 XP, +1 xu | `breathing:<yyyy-MM-dd>` |
+| Nghe thú cưng kể chuyến đi (đủ 100% năng lượng, một lần mỗi ngày) | +5 XP, +3 xu | `adventure:<yyyy-MM-dd>` |
 | Mua đồ | −giá (đồ miễn phí ghi 0 xu) | `purchase:<itemID>` |
 
 - Bỏ hoàn thành hoặc xóa việc **không thu hồi** thưởng đã nhận; hoàn thành lại cùng lần việc **không** nhận thêm.
@@ -76,6 +85,9 @@ Các con số nằm trong `Cozyday/Core/Rewards/RewardConfig.swift`.
 - Tạm dừng không tính vào phút tập trung. Kết thúc sớm: không thưởng, nhưng số phút đã chạy được ghi lại.
 - Mở lại app sau khi phiên đã hết giờ: phiên được chốt **một lần** với thời điểm kết thúc thật; không tự tạo thêm phiên nghỉ.
 - Mua đồ: kiểm tra đủ xu + chưa sở hữu → ghi dòng sổ cái và đồ sở hữu **trong cùng một lần save**. Bấm nhanh hai lần: lần thứ hai bị từ chối.
+- Năng lượng chuyến đi: mỗi việc xong lần đầu, phiên tập trung có thưởng, nhật ký, bài thở trong ngày = +25%. Không bao giờ bị trừ.
+- Một số hình dạng/trang phục cần đạt cấp nhất định mới mua được. Cấp không bao giờ giảm (mua đồ chỉ trừ xu, không trừ XP).
+- Việc con không có thưởng riêng.
 - XP chỉ để vui (cấp = XP/100 + 1). Mèo không ốm, không bỏ đi, không mất đồ khi bạn nghỉ. Chuỗi ngày không có hình phạt.
 
 ## 4. Sao lưu và khôi phục
@@ -92,7 +104,7 @@ Các con số nằm trong `Cozyday/Core/Rewards/RewardConfig.swift`.
   "appVersion": "0.1.0 (12)",
   "profile": { … },
   "templates": [ … ],
-  "occurrences": [ … ],
+  "occurrences": [ … ],          // có "subtasks" nếu việc có việc con (bản cũ không có khóa này vẫn đọc được)
   "ledger": [ … ],
   "ownedItems": [ … ],
   "equipped": [ … ],

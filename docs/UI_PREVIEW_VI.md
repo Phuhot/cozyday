@@ -4,7 +4,7 @@ App SwiftUI chỉ chạy trên iOS, nên **không mở được bằng trình du
 GitHub Actions mở app trên **iPhone ảo (iOS Simulator)** của máy macOS, chụp từng màn hình với **dữ liệu mẫu** rồi lưu
 ảnh vào thư mục [`docs/screenshots/`](screenshots/). Bạn xem các ảnh này ngay trên trang GitHub, kể cả bằng iPhone.
 
-- Dữ liệu mẫu (tên giả "An", 2 tuần việc/nhật ký/tập trung) chỉ nằm trong bộ nhớ của bản **Debug** cho simulator
+- Dữ liệu mẫu (tên giả "An", 2 tuần việc/nhật ký/tập trung/chuyến đi) chỉ nằm trong bộ nhớ của bản **Debug** cho simulator
   (`Cozyday/App/PreviewMode.swift`). Bản IPA **Release** cài lên iPhone không có chế độ này; bước kiểm tra IPA
   trong CI sẽ báo lỗi nếu nó lọt vào.
 - Ảnh là ảnh tĩnh của app thật, chạy trên simulator. Ảnh **không** chứng minh app cài được hay chạy đúng trên iPhone của bạn.
@@ -20,12 +20,23 @@ GitHub Actions mở app trên **iPhone ảo (iOS Simulator)** của máy macOS, 
 | ![Góc nhỏ](screenshots/07-corner.jpg) Góc nhỏ | ![Cửa hàng](screenshots/08-shop.jpg) Cửa hàng | ![Nhật ký](screenshots/09-journal.jpg) Nhật ký |
 | ![Tiến bộ](screenshots/10-progress.jpg) Tiến bộ | ![Cài đặt](screenshots/11-settings.jpg) Cài đặt | |
 
+## Thú cưng, tủ đồ, chuyến đi
+
+| | | |
+|---|---|---|
+| ![Các kiểu thú cưng](screenshots/15-pet-gallery.jpg) 5 hình dạng × màu lông × trang phục × giai đoạn lớn | ![Tủ đồ](screenshots/12-wardrobe.jpg) Tủ đồ — mặc thử trước khi mua | ![Chuyến đi](screenshots/13-adventure.jpg) Nghe kể chuyến đi |
+| ![Sổ ký ức](screenshots/14-memories.jpg) Sổ ký ức | ![Bài thở](screenshots/16-breathing.jpg) Bài thở | ![Chi tiết việc](screenshots/17-task-detail.jpg) Việc con trong chi tiết việc |
+| ![Viết nhật ký](screenshots/18-journal-editor.jpg) Gợi ý viết nhật ký | | |
+
+Ảnh tĩnh không thể hiện animation (thở, chớp mắt, vẫy đuôi, đi lại, tim bay khi chạm). Phần đó chỉ thấy khi chạy trên máy.
+
 ## Giao diện tối
 
 | | | |
 |---|---|---|
 | ![Hôm nay — tối](screenshots/dark-02-today.jpg) | ![Tập trung — tối](screenshots/dark-06-focus.jpg) | ![Góc nhỏ — tối](screenshots/dark-07-corner.jpg) |
-| ![Nhật ký — tối](screenshots/dark-09-journal.jpg) | ![Tiến bộ — tối](screenshots/dark-10-progress.jpg) | |
+| ![Nhật ký — tối](screenshots/dark-09-journal.jpg) | ![Tiến bộ — tối](screenshots/dark-10-progress.jpg) | ![Tủ đồ — tối](screenshots/dark-12-wardrobe.jpg) |
+| ![Thú cưng — tối](screenshots/dark-15-pet-gallery.jpg) | | |
 
 ## Cỡ chữ rất lớn (Trợ năng)
 
