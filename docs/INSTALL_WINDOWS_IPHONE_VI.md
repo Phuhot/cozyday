@@ -120,6 +120,9 @@ Bạn **không bắt buộc** phải có source trên máy để cài app — ch
 
 ---
 
+> **Muốn xem giao diện trước khi cài?** Mở [`UI_PREVIEW_VI.md`](UI_PREVIEW_VI.md) trên GitHub (xem được bằng điện thoại):
+> ảnh chụp từng màn của app trên iPhone ảo, với dữ liệu mẫu. Không cần tải gì.
+
 ## B. Cài IPA bằng Sideloadly
 
 > Chỉ tải Sideloadly tại trang chính thức **https://sideloadly.io/**. Đọc mục yêu cầu hệ thống và FAQ ở đó trước khi cài —
