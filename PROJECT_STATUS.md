@@ -1,6 +1,6 @@
 # PROJECT_STATUS — Cozyday
 
-Cập nhật: 2026-10-18 (phiên 3) · Nhánh: `claude/ios-project-section-12-4bpxn7` · Repo: `Phuhot/cozyday` (private)
+Cập nhật: 2026-10-18 (phiên 4) · Nhánh: `claude/ios-project-section-12-4bpxn7` · Repo: `Phuhot/cozyday` (private)
 
 ## Mốc hiện tại
 
@@ -10,6 +10,7 @@ Cập nhật: 2026-10-18 (phiên 3) · Nhánh: `claude/ios-project-section-12-4b
 | **B — lõi dùng được** | Code xong: onboarding, task/timeline, Hộp chờ, mèo gốc, thưởng một lần, lưu SwiftData, sao lưu/khôi phục. Build IPA + 49 unit test: **đạt** (run #5). Trên máy thật: **chưa xác minh**. |
 | **C — hoàn thiện 1.0** | Code xong: việc lặp, nhắc việc, focus timer, phòng/cửa hàng, nhật ký, thống kê, accessibility cơ bản. Build: **đạt**. Trên máy thật: **chưa xác minh**. |
 | **E — chiều sâu (sau phản hồi cài thử)** | Thú cưng: 5 hình dạng, 8 màu lông, 34 món trang phục, 3 giai đoạn lớn, animation, vuốt ve + lời thoại, tủ đồ mặc thử, chuyến đi mỗi ngày + Sổ ký ức. Lập kế hoạch: việc con, kéo đổi giờ, sự kiện app Lịch (chỉ đọc), gợi ý nhật ký, bài thở, thống kê tâm trạng. Build + test simulator: **đạt** (run #12). Trên máy thật: **chưa xác minh**. |
+| **F — phòng, bộ sưu tập, giao diện dễ thương (phiên 4)** | 5 không gian (phòng học, phòng ngủ, bếp, phòng tắm, vườn) mở theo cấp, 120+ đồ trang trí, tường & sàn/bầu trời đổi được · 11 loài, 11 màu lông, 80+ trang phục & phụ kiện (vị trí mới `back`) · Bộ sưu tập: 40 bộ phối sẵn, mua & mặc cả bộ · vuốt để nựng, giữ để nhấc & thả · 18 khuôn truyện theo loài/mùa, lời thoại theo loài · giao diện: thú cưng nói chuyện ở Hôm nay, popup thưởng có thú cưng, tuần của thú cưng, nút/thẻ mềm, nền họa tiết. Kiểm tra: CI_RESULT_F. Trên máy thật: **chưa xác minh**. |
 | **D — bàn giao** | Tài liệu cài đặt, xử lý sự cố, dữ liệu/quy tắc, checklist đã có. **Ảnh giao diện** chụp tự động trên iOS Simulator: [`docs/UI_PREVIEW_VI.md`](docs/UI_PREVIEW_VI.md). Còn chờ: kết quả cài thử trên iPhone. |
 
 ## Quyết định kỹ thuật
@@ -58,7 +59,8 @@ Cập nhật: 2026-10-18 (phiên 3) · Nhánh: `claude/ios-project-section-12-4b
 | Bản Release không chứa chế độ dữ liệu mẫu (`CozyPreview`) | **Đạt** — `verify_ipa.sh` kiểm tra mỗi lần build |
 | Thời lượng thực tế mỗi run | Build IPA ≈ 1,5 phút macOS; test simulator ≈ 5–11 phút (phần lớn là khởi động simulator); chụp ảnh ≈ 4–6 phút |
 | **Run #10–#12**: thú cưng mới + việc con/lịch/bài thở — build Release, kiểm tra IPA, unit test, chụp 27 ảnh | **Đạt** ở run #12 (commit `882099a`): **68/68 test** trên iOS Simulator, gồm test migration V1→V2 trên kho thật và test tủ đồ/chuyến đi. Run #10 lỗi biên dịch (`switch` thiếu case) → sửa ở run #11 |
-| `swift test` Core trên Linux (54 test) | **Đạt** |
+| `swift test` Core trên Linux (61 test) | **Đạt** (phiên 4) |
+| Hình vẽ phòng/thú cưng kiểm tra kiểu + vẽ thử ra PNG trên Linux (SwiftUI giả xuất SVG, chỉ để xem trước — không thay cho build thật) | **Đạt**: mọi món đồ, 6 loài mới, 40 bộ phối đều đã được vẽ ra và xem bằng mắt |
 | Cài IPA bằng Sideloadly lên iPhone thật (bản đầu) | Bạn báo **đã cài thử được** (phiên 3) — chưa có checklist chi tiết |
 | Mở độc lập khi tắt PC, offline, dữ liệu sau khi tắt/mở app | **Chưa xác minh** |
 | Giao diện (bố cục, dark mode, Dynamic Type) | **Đã xem qua ảnh simulator** iPhone 17 Pro / iOS 26.5. **Chưa xem** trên máy thật, trên iOS 17–18, màn nhỏ (SE/mini) |
@@ -89,7 +91,7 @@ Cập nhật: 2026-10-18 (phiên 3) · Nhánh: `claude/ios-project-section-12-4b
 2. Chưa biết bạn chọn **private hay public** cho repo; hiện private → phút macOS có hạn mức.
 3. Workflow nằm trên nhánh `claude/…`; cần **merge vào `main`** để có nút Run workflow (hoặc nhờ Claude mở Pull Request).
 4. Trang sideloadly.io không truy cập được từ môi trường của Claude → yêu cầu Windows/iTunes/auto-refresh trong tài liệu cần bạn đối chiếu trang chính thức.
-5. Chưa có kéo-thả để đổi giờ (đã có form "Đổi ngày/giờ" thay thế, dùng được với VoiceOver).
+5. Cử chỉ nhấc/nựng thú cưng nằm trong ScrollView của Góc nhỏ: cần thử trên máy thật xem có tranh chấp với cuộn trang không.
 6. Ảnh giao diện chỉ chụp trên iOS 26 (runner không có sẵn simulator iOS 17/18). Giao diện iOS 17–18 (không có Liquid Glass) chưa được xem.
 
 ## Bước tiếp theo
@@ -100,4 +102,4 @@ Cập nhật: 2026-10-18 (phiên 3) · Nhánh: `claude/ios-project-section-12-4b
 
 ## Backlog sau 1.0 (không làm trong bản này)
 
-Kéo-thả đổi giờ trên timeline · widget · Live Activities · đồng bộ iCloud · SideStore · thêm đồ/pet · xuất lịch (.ics) · mã hóa file sao lưu.
+Widget · Live Activities · đồng bộ iCloud · SideStore · lưu nhiều bộ phối của riêng bạn · xuất lịch (.ics) · mã hóa file sao lưu.

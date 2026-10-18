@@ -160,7 +160,7 @@ struct LookDetailSheet: View {
                 Text(look.name)
                     .font(Typography.title)
                     .foregroundStyle(Palette.ink)
-                FlowChips(items: look.itemIDs.compactMap(Catalog.item).filter { !$0.isDefault || $0.slot == .species }, owned: owned)
+                LookItemChips(items: look.itemIDs.compactMap(Catalog.item).filter { !$0.isDefault || $0.slot == .species }, owned: owned)
 
                 if missing.isEmpty {
                     Button("Mặc bộ này") { wear() }
@@ -204,7 +204,7 @@ struct LookDetailSheet: View {
 }
 
 /// Các món trong bộ, dạng chip; món chưa có hiện giá.
-private struct FlowChips: View {
+private struct LookItemChips: View {
     let items: [CatalogItem]
     let owned: Set<String>
 
