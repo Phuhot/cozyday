@@ -140,13 +140,15 @@ struct StatsView: View {
         case .focusCompleted: return "timer"
         case .journalWritten: return "book"
         case .purchase: return "bag"
+        case .adventure: return "map"
+        case .breathing: return "wind"
         }
     }
 
     private func subtitle(_ e: LedgerEntry) -> String {
         let when = DateText.dateTime(e.createdAt, calendar: store.calendar)
         switch e.kind {
-        case .taskCompleted, .focusCompleted: return "\(when) · \(e.memo)"
+        case .taskCompleted, .focusCompleted, .adventure: return "\(when) · \(e.memo)"
         default: return when
         }
     }
