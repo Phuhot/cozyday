@@ -31,4 +31,11 @@ run_logged() {
     fail "Lệnh thất bại với exit code $status"
   fi
   grep -E "\*\* (BUILD|ARCHIVE|TEST) SUCCEEDED|Executed [0-9]+ tests?" "$logfile" | tail -n 3 || true
+  # Tóm tắt cảnh báo trong source của dự án (không tính cảnh báo của hệ thống).
+  local warnings
+  warnings="$(grep -E "^$ROOT_DIR/(Cozyday|Tests)/.*: warning: " "$logfile" | sed "s|^$ROOT_DIR/||" | sort -u || true)"
+  if [[ -n "$warnings" ]]; then
+    echo "---- Cảnh báo biên dịch trong source ($(echo "$warnings" | wc -l | tr -d ' ')) ----"
+    echo "$warnings" | head -n 60
+  fi
 }

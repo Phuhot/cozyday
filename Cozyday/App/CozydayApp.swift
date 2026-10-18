@@ -23,6 +23,8 @@ struct CozydayApp: App {
                     .tint(Palette.lavender)
             case .failed(let message):
                 StorageErrorView(message: message)
+            case .testHost:
+                Text("Cozyday test host")
             }
         }
     }
@@ -39,8 +41,14 @@ enum AppBoot {
     case ready(AppEnvironment)
     case failed(String)
 
+    case testHost
+
     @MainActor
     static func start() -> AppBoot {
+        // Khi Xcode chạy unit test, app chỉ làm "vỏ" cho test: không mở database thật, không dựng UI.
+        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
+            return .testHost
+        }
         do {
             let container = try PersistenceController.makeContainer()
             let store = try AppStore(container: container)

@@ -74,17 +74,20 @@ struct DayTimeline: View {
                 }
 
                 if isToday {
-                    let now = store.calendar.minuteOfDay(store.now)
-                    if now >= r.start && now <= r.end {
-                        HStack(spacing: 0) {
-                            Circle().fill(Palette.nowLine).frame(width: 9, height: 9)
-                            Rectangle().fill(Palette.nowLine).frame(height: 2)
+                    // Chỉ đường "bây giờ" được vẽ lại mỗi phút.
+                    TimelineView(.everyMinute) { context in
+                        let now = store.calendar.minuteOfDay(context.date)
+                        if now >= r.start && now <= r.end {
+                            HStack(spacing: 0) {
+                                Circle().fill(Palette.nowLine).frame(width: 9, height: 9)
+                                Rectangle().fill(Palette.nowLine).frame(height: 2)
+                            }
+                            .offset(x: labelWidth - 4, y: CGFloat(now - r.start) * pointsPerMinute - 4.5)
+                            .accessibilityElement()
+                            .accessibilityLabel("Bây giờ là \(TimeOfDay.label(now))")
                         }
-                        .offset(x: labelWidth - 4, y: CGFloat(now - r.start) * pointsPerMinute - 4.5)
-                        .allowsHitTesting(false)
-                        .accessibilityElement()
-                        .accessibilityLabel("Bây giờ là \(TimeOfDay.label(now))")
                     }
+                    .allowsHitTesting(false)
                 }
             }
         }

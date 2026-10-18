@@ -40,7 +40,7 @@ jobs:
   device-ipa:
     name: Build IPA (iphoneos arm64, chưa ký)
     runs-on: macos-26
-    timeout-minutes: 45
+    timeout-minutes: 30
     steps:
       - name: Lấy source
         uses: actions/checkout@v7
@@ -92,7 +92,7 @@ jobs:
     name: Unit test trên iOS Simulator
     if: github.event_name == 'push' || inputs.run_tests
     runs-on: macos-26
-    timeout-minutes: 40
+    timeout-minutes: 25
     steps:
       - name: Lấy source
         uses: actions/checkout@v7

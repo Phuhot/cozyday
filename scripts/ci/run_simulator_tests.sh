@@ -30,13 +30,37 @@ print(best[2] + " / " + best[3], file=sys.stderr)
 
 RESULT="$BUILD_DIR/TestResults.xcresult"
 rm -rf "$RESULT"
-run_logged "$LOG_DIR/xcodebuild-test.log" \
-  xcodebuild test \
+
+# Build trước (log vào file), rồi chạy test và in tiến trình từng test ra log CI.
+run_logged "$LOG_DIR/xcodebuild-build-for-testing.log" \
+  xcodebuild build-for-testing \
+    -project "$PROJECT" \
+    -scheme "$SCHEME" \
+    -configuration Debug \
+    -destination "id=$SIM_ID" \
+    -derivedDataPath "$BUILD_DIR/DerivedData-sim" \
+    CODE_SIGNING_ALLOWED=NO \
+    COMPILER_INDEX_STORE_ENABLE=NO
+
+log "Chạy test trên simulator (mỗi test tối đa 120 giây)"
+set -o pipefail
+status=0
+xcodebuild test-without-building \
     -project "$PROJECT" \
     -scheme "$SCHEME" \
     -configuration Debug \
     -destination "id=$SIM_ID" \
     -derivedDataPath "$BUILD_DIR/DerivedData-sim" \
     -resultBundlePath "$RESULT" \
-    CODE_SIGNING_ALLOWED=NO \
-    COMPILER_INDEX_STORE_ENABLE=NO
+    -parallel-testing-enabled NO \
+    -test-timeouts-enabled YES \
+    -default-test-execution-time-allowance 60 \
+    -maximum-test-execution-time-allowance 120 \
+  2>&1 | tee "$LOG_DIR/xcodebuild-test.log" \
+       | (grep --line-buffered -E "Test (Case|Suite).*(passed|failed|started at)|error:|Executed [0-9]+|\*\* TEST|Testing started|Restarting after" || true) \
+  || status=$?
+if [[ $status -ne 0 ]]; then
+  echo "---- 80 dòng cuối log test ----"
+  tail -n 80 "$LOG_DIR/xcodebuild-test.log"
+  fail "Test thất bại (exit code $status)"
+fi
