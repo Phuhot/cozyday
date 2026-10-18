@@ -450,21 +450,24 @@ enum CostumeArt {
             }
             soft(ctx, [pt(46.5, 61.8), pt(53.5, 61.8), pt(52.3, 67), pt(47.7, 67)], rgb(0x4A60AA), 1)
         case "neck.ruff":
-            let white = rgb(0xFFFFFF), shade = rgb(0xDFD8E8)
-            for i in 0..<10 {
-                let x = 27 + CGFloat(i) * 5.1
-                let y = 61.5 + 2.2 * (1 - pow((x - 50) / 24, 2))
-                ctx.circle(x, y, 4.3, shade)
-            }
-            for i in 0..<9 {
-                let x = 29.5 + CGFloat(i) * 5.12
-                let y = 63.5 + 3.5 * (1 - pow((x - 50) / 22, 2))
-                ctx.circle(x, y + 0.6, 4.4, shade)
-                ctx.circle(x, y, 4.2, white)
-                ctx.strokePath(shade, width: 0.8) { p in
-                    p.move(to: pt(x, y - 2.2)); p.addLine(to: pt(x, y + 2.6))
+            // Hai tầng bèo nhún: tầng dưới rộng hơn, mép dưới lượn sóng.
+            let white = rgb(0xFFFFFF), shade = rgb(0xDCD4E6), edge = rgb(0xC9BFDA)
+            for (row, (y0, x0, n, r)) in [(CGFloat(65.5), CGFloat(23), 8, CGFloat(4.1)), (CGFloat(62.5), CGFloat(28), 6, CGFloat(4))].enumerated() {
+                let span = (50 - x0) * 2
+                let step = span / CGFloat(n - 1)
+                for i in 0..<n {
+                    let x = x0 + CGFloat(i) * step
+                    let y = y0 + (row == 0 ? 2.2 : 1.4) * (1 - pow((x - 50) / (span / 2), 2))
+                    ctx.circle(x, y + 0.9, r + 0.3, edge)
+                }
+                for i in 0..<n {
+                    let x = x0 + CGFloat(i) * step
+                    let y = y0 + (row == 0 ? 2.2 : 1.4) * (1 - pow((x - 50) / (span / 2), 2))
+                    ctx.circle(x, y, r, row == 0 ? shade : white)
                 }
             }
+            ctx.rect(30, 60.6, 40, 3.2, white, radius: 1.6)
+            ctx.ellipse(31, 61.2, 6, 1.6, Color.white.opacity(0.9))
         case "neck.pearls":
             let rim = rgb(0xD8CCC2), pearl = rgb(0xFFF9F3), shade = rgb(0xEFE4DA)
             for i in 0..<11 {
