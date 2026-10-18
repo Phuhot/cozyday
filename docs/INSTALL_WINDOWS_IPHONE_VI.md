@@ -58,7 +58,7 @@ Repo hiện là **private**. Khác biệt chính (kiểm tra lại tại trang b
 | Phút Actions | Có hạn mức miễn phí mỗi tháng (gói Free: 2.000 phút **quy đổi**); phút **macOS bị nhân hệ số** (thường ×10), nên thực tế chỉ khoảng 200 phút macOS/tháng | Runner chuẩn miễn phí cho repo public |
 | Rủi ro | Hết hạn mức thì workflow dừng (nếu chưa gắn thẻ thanh toán thì không bị trừ tiền) | Lộ toàn bộ source; **không bao giờ** được đưa dữ liệu cá nhân, file sao lưu, chứng chỉ vào repo |
 
-Một lần build IPA của Cozyday hiện mất khoảng **1–2 phút macOS** (chỉ build) hoặc thêm **~3 phút** nếu chạy test simulator.
+Một lần build IPA của Cozyday đo được khoảng **1,5 phút macOS** (chỉ build); nếu chọn chạy test simulator thì thêm khoảng **10 phút** (phần lớn là khởi động simulator) — chỉ chọn khi cần.
 Xem mức đã dùng: GitHub → ảnh đại diện → **Settings → Billing and licensing → Usage** (tên mục có thể khác).
 Không bật thanh toán chỉ để chạy workflow; chạy thủ công khi cần là đủ.
 

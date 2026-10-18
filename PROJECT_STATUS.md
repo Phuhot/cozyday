@@ -7,7 +7,7 @@ Cập nhật: 2026-10-18 · Nhánh: `claude/ios-project-section-12-4bpxn7` · Re
 | Mốc | Trạng thái |
 |---|---|
 | **A — kiểm chứng đường cài** | CI: **đã xác minh** (build Release iphoneos arm64 không ký, đóng gói, kiểm tra IPA, upload artifact — run #1). iPhone: **chưa xác minh** (chờ bạn cài thử). |
-| **B — lõi dùng được** | Code xong: onboarding, task/timeline, Hộp chờ, mèo gốc, thưởng một lần, lưu SwiftData, sao lưu/khôi phục. Build IPA: **đạt** (run #3). Trên máy thật: **chưa xác minh**. |
+| **B — lõi dùng được** | Code xong: onboarding, task/timeline, Hộp chờ, mèo gốc, thưởng một lần, lưu SwiftData, sao lưu/khôi phục. Build IPA + 49 unit test: **đạt** (run #5). Trên máy thật: **chưa xác minh**. |
 | **C — hoàn thiện 1.0** | Code xong: việc lặp, nhắc việc, focus timer, phòng/cửa hàng, nhật ký, thống kê, accessibility cơ bản. Build: **đạt**. Trên máy thật: **chưa xác minh**. |
 | **D — bàn giao** | Tài liệu cài đặt, xử lý sự cố, dữ liệu/quy tắc, checklist đã có. Còn chờ: kết quả cài thử trên iPhone, kiểm tra UI bằng mắt. |
 
@@ -48,8 +48,10 @@ Cập nhật: 2026-10-18 · Nhánh: `claude/ios-project-section-12-4bpxn7` · Re
 | Workflow *Core logic tests (Linux)* trên GitHub (run #1) | **Đạt** |
 | Workflow *iOS unsigned IPA* run #1 (Mốc A): build + verify + artifact + test simulator | **Đạt** — IPA 164 KB, `iphoneos/iPhoneOS/arm64`, MinimumOS 17.0 |
 | Run #2 (Mốc B/C lần đầu) | **Lỗi biên dịch** (`private(set)` + extension khác file) → đã sửa |
-| Run #3: build Release + kiểm tra cấu trúc IPA + upload | **Đạt** |
-| Run #3: unit test trên iOS Simulator (AppTests + CoreTests) | Xem bảng cập nhật bên dưới |
+| Run #3: build Release + kiểm tra cấu trúc IPA + upload | **Đạt** (job test bị Claude huỷ sớm vì tưởng treo — thực ra simulator khởi động chậm) |
+| **Run #5** (commit `a621802`): build Release + kiểm tra IPA + upload | **Đạt** — `Cozyday-unsigned-ipa-run5`, 840 KB, SHA-256 `19f669c86cd8518391b008c0b991664b6dbba46b85d4d42677a8b7efca5ff6d0`, `iphoneos/iPhoneOS/arm64`, MinimumOS 17.0, version 0.1.0 (5), 0 cảnh báo biên dịch trong source |
+| **Run #5**: unit test trên iOS Simulator (iOS 26.5) | **Đạt 49/49** (11 test SwiftData `AppTests` + 38 test logic) |
+| Thời lượng thực tế mỗi run | Build IPA ≈ 1,5 phút macOS; test simulator ≈ 9,5 phút (≈ 8 phút là khởi động simulator) |
 | Cài IPA bằng Sideloadly lên iPhone thật | **Chưa xác minh** |
 | Mở độc lập khi tắt PC, offline, dữ liệu sau khi tắt/mở app | **Chưa xác minh** |
 | Giao diện (bố cục, dark mode, Dynamic Type, VoiceOver) | **Chưa xác minh bằng mắt** — chưa chạy trên simulator có giao diện hay máy thật |
