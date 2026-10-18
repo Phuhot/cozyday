@@ -110,7 +110,7 @@ extension PreviewMode {
         let nowMinute = cal.minuteOfDay(store.now)
         let base = min(max(TimeOfDay.roundUp(nowMinute, step: 30), 10 * 60), 19 * 60)
         let plan: [(String, TaskCategory, Int?, Int, TaskStatus, TaskPriority)] = [
-            ("Đi bộ buổi sáng", .health, base - 180, 30, .done, .normal),
+            ("Đi bộ 30 phút", .health, base - 180, 30, .done, .normal),
             ("Ôn từ vựng tiếng Anh", .study, base - 120, 45, .done, .normal),
             ("Trả lời email của nhóm", .work, base - 60, 30, .open, .normal),
             ("Học Swift: bài 4 — danh sách và điều hướng", .study, base, 60, .open, .high),

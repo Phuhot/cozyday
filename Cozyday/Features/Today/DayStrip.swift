@@ -64,6 +64,10 @@ struct DayStrip: View {
                             Text("\(d.day)")
                                 .font(Typography.headline.monospacedDigit())
                         }
+                        // 7 ô chia đều bề ngang: ở cỡ chữ Trợ năng, thu nhỏ chữ thay vì bẻ "18" thành hai dòng.
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.4)
+                        .padding(.horizontal, 2)
                         .frame(maxWidth: .infinity, minHeight: 52)
                         .foregroundStyle(isSelected ? Palette.onAccent : (isToday ? Palette.lavender : Palette.ink))
                         .background(
