@@ -51,7 +51,7 @@ struct OnboardingView: View {
 
     private var namesStep: some View {
         VStack(alignment: .leading, spacing: Spacing.l) {
-            PetArt(mood: .happy)
+            PetView(appearance: PetAppearance(hat: "hat.sprout", stage: .little), mood: .happy, name: ProfileRecord.defaultPetName)
                 .frame(width: 150, height: 150)
                 .frame(maxWidth: .infinity)
             Text("Chào mừng tới Cozyday")

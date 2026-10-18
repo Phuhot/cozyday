@@ -116,25 +116,49 @@ struct ItemArt: View {
     }
 }
 
-/// Góc phòng với 5 vị trí cố định và chú mèo. Vị trí trống hiển thị khung gợi ý.
+/// Góc phòng với 5 vị trí cố định và thú cưng. Vị trí trống hiển thị khung gợi ý.
+/// Khi thư giãn, thú cưng đi qua đi lại trên sàn (tắt khi bật Giảm chuyển động).
 struct RoomView: View {
-    var equipped: [RoomSlot: String]
+    var equipped: [ItemSlot: String]
+    var appearance = PetAppearance()
     var petMood: PetMood
     var petName: String
     var bounceTrigger: Int
-    var onTapSlot: ((RoomSlot) -> Void)?
+    var haptics = true
+    var speech: ((Int) -> String)?
+    var onTapSlot: ((ItemSlot) -> Void)?
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var start = Date()
 
     private struct SlotFrame {
         let x: CGFloat, y: CGFloat, w: CGFloat, h: CGFloat
     }
 
-    private func frame(for slot: RoomSlot) -> SlotFrame {
+    private func frame(for slot: ItemSlot) -> SlotFrame {
         switch slot {
         case .wall: return SlotFrame(x: 0.08, y: 0.08, w: 0.30, h: 0.30)
         case .lamp: return SlotFrame(x: 0.80, y: 0.30, w: 0.18, h: 0.34)
         case .desk: return SlotFrame(x: 0.50, y: 0.40, w: 0.34, h: 0.34)
         case .plant: return SlotFrame(x: 0.02, y: 0.52, w: 0.20, h: 0.26)
-        case .seat: return SlotFrame(x: 0.18, y: 0.66, w: 0.40, h: 0.30)
+        default: return SlotFrame(x: 0.18, y: 0.66, w: 0.40, h: 0.30)
+        }
+    }
+
+    private var canWander: Bool { !reduceMotion && (petMood == .idle || petMood == .happy) }
+
+    /// Vị trí ngang (tỉ lệ bề rộng phòng), đang đi hay không, hướng mặt — theo chu kỳ 26 giây.
+    private func wander(at date: Date) -> (x: CGFloat, walking: Bool, left: Bool) {
+        let a: CGFloat = 0.20, b: CGFloat = 0.46
+        guard canWander else { return (a, false, false) }
+        let t = date.timeIntervalSince(start).truncatingRemainder(dividingBy: 26)
+        func ease(_ v: Double) -> CGFloat { CGFloat(v * v * (3 - 2 * v)) }
+        switch t {
+        case ..<9: return (a, false, false)
+        case ..<12: return (a + (b - a) * ease((t - 9) / 3), true, false)
+        case ..<21: return (b, false, t > 19)
+        case ..<24: return (b - (b - a) * ease((t - 21) / 3), true, true)
+        default: return (a, false, false)
         }
     }
 
@@ -154,16 +178,21 @@ struct RoomView: View {
                     .frame(width: w * 0.24, height: h * 0.26)
                     .offset(x: w * 0.46, y: h * 0.08)
 
-                ForEach(RoomSlot.allCases) { slot in
+                ForEach(ItemSlot.room) { slot in
                     let f = frame(for: slot)
                     slotView(slot)
                         .frame(width: w * f.w, height: h * f.h)
                         .offset(x: w * f.x, y: h * f.y)
                 }
 
-                PetView(mood: petMood, name: petName, bounceTrigger: bounceTrigger)
-                    .frame(width: w * 0.30, height: w * 0.30)
-                    .offset(x: w * 0.23, y: h * 0.86 - w * 0.30)
+                TimelineView(.animation(minimumInterval: 1.0 / 30, paused: !canWander)) { timeline in
+                    let spot = wander(at: timeline.date)
+                    PetView(appearance: appearance, mood: petMood, name: petName, bounceTrigger: bounceTrigger,
+                            walking: spot.walking, facingLeft: spot.left, interactive: speech != nil,
+                            haptics: haptics, speech: speech)
+                        .frame(width: w * 0.30, height: w * 0.30)
+                        .offset(x: w * spot.x, y: h * 0.86 - w * 0.30)
+                }
             }
         }
         .aspectRatio(1.25, contentMode: .fit)
@@ -171,13 +200,13 @@ struct RoomView: View {
         .overlay(RoundedRectangle(cornerRadius: Radius.l, style: .continuous).strokeBorder(Palette.line))
     }
 
-    private func slotLabel(_ slot: RoomSlot) -> String {
+    private func slotLabel(_ slot: ItemSlot) -> String {
         guard let id = equipped[slot], let item = Catalog.item(id) else { return slot.label + ": trống" }
         return slot.label + ": " + item.name
     }
 
     @ViewBuilder
-    private func slotView(_ slot: RoomSlot) -> some View {
+    private func slotView(_ slot: ItemSlot) -> some View {
         let content = Group {
             if let id = equipped[slot] {
                 ItemArt(itemID: id)

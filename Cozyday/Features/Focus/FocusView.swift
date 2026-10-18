@@ -49,7 +49,7 @@ struct FocusView: View {
     private var setup: some View {
         let todaysOpen = store.tasks(on: store.today).filter { $0.status == .open }
         return VStack(alignment: .leading, spacing: Spacing.l) {
-            PetArt(mood: .focus)
+            PetView(appearance: store.petAppearance, mood: .focus, name: store.profile.displayPetName)
                 .frame(width: 120, height: 120)
                 .frame(maxWidth: .infinity)
 
@@ -140,7 +140,7 @@ struct FocusView: View {
                 }
             }
 
-            PetArt(mood: session.kind == .focus ? .focus : .rest)
+            PetView(appearance: store.petAppearance, mood: session.kind == .focus ? .focus : .rest, name: store.profile.displayPetName)
                 .frame(width: 90, height: 90)
 
             HStack(spacing: Spacing.m) {
@@ -177,7 +177,8 @@ struct FocusView: View {
 
     private func finishedView(_ session: FocusSessionRecord) -> some View {
         VStack(spacing: Spacing.l) {
-            PetArt(mood: session.status == .completed ? .happy : .idle)
+            PetView(appearance: store.petAppearance, mood: session.status == .completed ? .happy : .idle,
+                    name: store.profile.displayPetName, bounceTrigger: session.status == .completed ? 1 : 0)
                 .frame(width: 130, height: 130)
             Text(session.status == .completed ? "Xong rồi!" : "Đã kết thúc sớm")
                 .font(Typography.title)

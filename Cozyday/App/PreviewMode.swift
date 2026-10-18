@@ -14,6 +14,10 @@ enum PreviewScreen: String, CaseIterable {
     case journal
     case progress
     case settings
+    case wardrobe
+    case adventure
+    case memories
+    case gallery
 }
 
 /// Chế độ xem trước chỉ có trong bản Debug: dữ liệu mẫu nằm trong bộ nhớ, không đụng tới kho dữ liệu thật.
@@ -45,11 +49,11 @@ extension PreviewMode {
         let store = try AppStore(container: PersistenceController.makeContainer(inMemory: true), clock: clock)
         let ui = UIState()
         if screen != .onboarding {
-            try seed(store, clock: clock, activeFocus: screen == .focus)
+            try seed(store, clock: clock, activeFocus: screen == .focus, adventureReady: screen == .adventure)
         }
         let router = AppRouter.shared
         switch screen {
-        case .corner, .shop: router.selectedTab = .corner
+        case .corner, .shop, .wardrobe, .adventure, .memories: router.selectedTab = .corner
         case .journal: router.selectedTab = .journal
         case .progress: router.selectedTab = .progress
         case .focus: router.showFocus = true
@@ -62,7 +66,7 @@ extension PreviewMode {
     /// Hai tuần dữ liệu mẫu: việc đã xong, phiên tập trung, nhật ký, đồ đã mua; hôm nay có việc xong,
     /// việc trễ giờ, hai việc trùng giờ, việc chưa xếp giờ và Hộp chờ. Tên người dùng là tên giả.
     @MainActor
-    private static func seed(_ store: AppStore, clock: PreviewClock, activeFocus: Bool) throws {
+    private static func seed(_ store: AppStore, clock: PreviewClock, activeFocus: Bool, adventureReady: Bool) throws {
         let cal = store.calendar
         let today = store.today
         let habit = HabitSuggestion.all.filter { $0.id == "read" }
@@ -77,7 +81,7 @@ extension PreviewMode {
         for back in stride(from: 13, through: 1, by: -1) {
             let day = today.adding(days: -back, calendar: cal)
             clock.set(day.date(atMinute: 20 * 60, in: cal))
-            for i in 0..<(1 + back % 3) {
+            for i in 0..<(2 + back % 3) {
                 let sample = pastTitles[(back + i) % pastTitles.count]
                 var draft = TaskDraft()
                 draft.title = sample.0
@@ -97,6 +101,10 @@ extension PreviewMode {
                 clock.set(day.date(atMinute: 21 * 60, in: cal))
                 _ = try store.saveJournal(day: day, mood: moods[back - 1], note: notes[back % notes.count])
             }
+            if back % 3 != 1, Adventure.isReady(on: day, ledger: store.ledger, calendar: cal) {
+                clock.set(day.date(atMinute: 21 * 60 + 30, in: cal))
+                try store.claimAdventure(day: day)
+            }
         }
         clock.reset()
 
@@ -105,6 +113,11 @@ extension PreviewMode {
         }
         try store.equip(itemID: "plant.monstera")
         try store.equip(itemID: "seat.cushion")
+        for item in ["hat.sprout", "hat.beanie", "neck.scarf", "fur.ginger"] {
+            try store.buy(itemID: item)
+        }
+        try store.equip(itemID: "hat.beanie")
+        try store.equip(itemID: "neck.scarf")
 
         // Hôm nay: các mốc đặt quanh giờ hiện tại để luôn có việc đã qua, đang tới và trễ giờ.
         let nowMinute = cal.minuteOfDay(store.now)
@@ -139,6 +152,16 @@ extension PreviewMode {
             try store.createTask(draft)
         }
         try store.ensureUpcomingOccurrences()
+
+        if adventureReady {
+            // Hôm nay đủ năng lượng: thêm một phiên tập trung buổi sáng và bài thở.
+            clock.set(today.date(atMinute: 7 * 60, in: cal))
+            try store.startFocus(kind: .focus, minutes: 25, occurrenceID: nil)
+            clock.set(today.date(atMinute: 7 * 60 + 26, in: cal))
+            _ = try store.reconcileFocus()
+            clock.reset()
+            try store.completeBreathing(day: today)
+        }
 
         if activeFocus {
             clock.set(store.now.addingTimeInterval(-7 * 60))

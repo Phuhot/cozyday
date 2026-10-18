@@ -4,7 +4,7 @@ import SwiftData
 extension AppStore {
     var ownedIDs: Set<String> { Set(owned.map(\.itemID)) }
 
-    func equippedItem(in slot: RoomSlot) -> CatalogItem? {
+    func equippedItem(in slot: ItemSlot) -> CatalogItem? {
         equipped.first { $0.slot == slot }.flatMap { Catalog.item($0.itemID) }
     }
 
@@ -27,24 +27,33 @@ extension AppStore {
         }
     }
 
+    /// Dùng một món đã có. Món mặc định (mèo, lông kem) = bỏ trống vị trí đó.
     func equip(itemID: String) throws {
         guard let item = Catalog.item(itemID) else { throw StoreError.notFound }
-        guard ownedIDs.contains(itemID) else { throw StoreError.invalid("Bạn chưa sở hữu món này.") }
+        guard Catalog.isOwned(itemID, owned: ownedIDs) else { throw StoreError.invalid("Bạn chưa sở hữu món này.") }
         try commit {
-            try self.setEquipped(slot: item.slot, itemID: itemID)
+            if item.isDefault {
+                try self.removeEquipped(slot: item.slot)
+            } else {
+                try self.setEquipped(slot: item.slot, itemID: itemID)
+            }
         }
     }
 
-    func unequip(slot: RoomSlot) throws {
+    func unequip(slot: ItemSlot) throws {
         try commit {
-            let raw = slot.rawValue
-            let models = try self.context.fetch(FetchDescriptor<EquippedSlotModel>(predicate: #Predicate { $0.slotRaw == raw }))
-            models.forEach { self.context.delete($0) }
-            self.equipped.removeAll { $0.slot == slot }
+            try self.removeEquipped(slot: slot)
         }
     }
 
-    private func setEquipped(slot: RoomSlot, itemID: String) throws {
+    private func removeEquipped(slot: ItemSlot) throws {
+        let raw = slot.rawValue
+        let models = try context.fetch(FetchDescriptor<EquippedSlotModel>(predicate: #Predicate { $0.slotRaw == raw }))
+        models.forEach { context.delete($0) }
+        equipped.removeAll { $0.slot == slot }
+    }
+
+    private func setEquipped(slot: ItemSlot, itemID: String) throws {
         let raw = slot.rawValue
         let models = try context.fetch(FetchDescriptor<EquippedSlotModel>(predicate: #Predicate { $0.slotRaw == raw }))
         if let first = models.first {

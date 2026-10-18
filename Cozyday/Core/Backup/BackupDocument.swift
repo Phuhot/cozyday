@@ -168,7 +168,7 @@ enum BackupValidator {
         try unique(d.ledger.map(\.id), "sổ cái")
         try unique(d.ledger.map(\.key), "khóa sổ cái")
         try unique(d.ownedItems.map(\.itemID), "đồ đã sở hữu")
-        try unique(d.equipped.map(\.slot), "vị trí trong phòng")
+        try unique(d.equipped.map(\.slot), "vị trí đồ")
         try unique(d.focusSessions.map(\.id), "phiên tập trung")
         try unique(d.journal.map(\.id), "nhật ký")
         try unique(d.journal.map(\.day), "ngày nhật ký")

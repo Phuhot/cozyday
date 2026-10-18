@@ -14,19 +14,31 @@ struct CozydayApp: App {
         WindowGroup {
             switch boot {
             case .ready(let env):
-                RootView()
-                    .environment(env.store)
-                    .environment(env.ui)
-                    .environment(env.dayClock)
-                    .environment(env.notifications)
-                    .environment(AppRouter.shared)
-                    .tint(Palette.lavender)
+                #if DEBUG
+                if PreviewMode.current == .gallery {
+                    PetGalleryView()
+                } else {
+                    root(env)
+                }
+                #else
+                root(env)
+                #endif
             case .failed(let message):
                 StorageErrorView(message: message)
             case .testHost:
                 Text("Cozyday test host")
             }
         }
+    }
+
+    private func root(_ env: AppEnvironment) -> some View {
+        RootView()
+            .environment(env.store)
+            .environment(env.ui)
+            .environment(env.dayClock)
+            .environment(env.notifications)
+            .environment(AppRouter.shared)
+            .tint(Palette.lavender)
     }
 }
 

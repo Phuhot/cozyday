@@ -5,6 +5,8 @@ enum LedgerKind: String, Codable, CaseIterable {
     case focusCompleted
     case journalWritten
     case purchase
+    case adventure
+    case breathing
 
     var label: String {
         switch self {
@@ -12,6 +14,8 @@ enum LedgerKind: String, Codable, CaseIterable {
         case .focusCompleted: return "Phiên tập trung"
         case .journalWritten: return "Viết nhật ký"
         case .purchase: return "Mua đồ"
+        case .adventure: return "Chuyến phiêu lưu"
+        case .breathing: return "Bài thở"
         }
     }
 }
@@ -35,6 +39,8 @@ enum LedgerKeys {
     static func focus(_ sessionID: UUID) -> String { "focus:\(sessionID.uuidString.lowercased())" }
     static func journal(_ day: DayKey) -> String { "journal:\(day.string)" }
     static func purchase(_ itemID: String) -> String { "purchase:\(itemID)" }
+    static func adventure(_ day: DayKey) -> String { "adventure:\(day.string)" }
+    static func breathing(_ day: DayKey) -> String { "breathing:\(day.string)" }
 }
 
 struct Wallet: Equatable {
@@ -80,6 +86,16 @@ enum RewardPolicy {
             id: UUID(), key: key, kind: .focusCompleted,
             xp: reward.xp, coins: reward.coins,
             createdAt: now, refID: sessionID.uuidString.lowercased(), memo: "\(plannedMinutes) phút"
+        )
+    }
+
+    static func forBreathing(day: DayKey, existingKeys: Set<String>, now: Date) -> LedgerEntry? {
+        let key = LedgerKeys.breathing(day)
+        guard !existingKeys.contains(key) else { return nil }
+        return LedgerEntry(
+            id: UUID(), key: key, kind: .breathing,
+            xp: RewardConfig.breathingXP, coins: RewardConfig.breathingCoins,
+            createdAt: now, refID: day.string, memo: day.string
         )
     }
 

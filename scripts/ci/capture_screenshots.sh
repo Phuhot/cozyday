@@ -56,6 +56,10 @@ shot 08-shop shop
 shot 09-journal journal
 shot 10-progress progress
 shot 11-settings settings
+shot 12-wardrobe wardrobe
+shot 13-adventure adventure
+shot 14-memories memories
+shot 15-pet-gallery gallery
 
 log "Giao diện tối"
 xcrun simctl ui "$SIM_ID" appearance dark
@@ -64,6 +68,8 @@ shot dark-06-focus focus
 shot dark-07-corner corner
 shot dark-09-journal journal
 shot dark-10-progress progress
+shot dark-12-wardrobe wardrobe
+shot dark-15-pet-gallery gallery
 xcrun simctl ui "$SIM_ID" appearance light
 
 log "Cỡ chữ rất lớn (Trợ năng)"

@@ -39,9 +39,14 @@ final class RewardAndShopTests: XCTestCase {
 
     func testCatalogHasFixedUniqueIDsAndFreeItems() {
         XCTAssertEqual(Set(Catalog.items.map(\.id)).count, Catalog.items.count)
-        XCTAssertTrue((12...15).contains(Catalog.items.count))
+        XCTAssertEqual(Catalog.roomItems.count, 15)
+        XCTAssertGreaterThanOrEqual(Catalog.petItems.count, 30)
         XCTAssertGreaterThanOrEqual(Catalog.items.filter(\.isFree).count, 3)
-        for slot in RoomSlot.allCases {
+        XCTAssertTrue(Catalog.items.allSatisfy { $0.id.hasPrefix($0.slot.rawValue + ".") }, "ID phải bắt đầu bằng tên vị trí")
+        for slot in ItemSlot.allCases where slot.hasDefault {
+            XCTAssertNotNil(Catalog.defaultItem(for: slot))
+        }
+        for slot in ItemSlot.allCases {
             XCTAssertFalse(Catalog.items(in: slot).isEmpty, "slot \(slot) trống")
         }
     }

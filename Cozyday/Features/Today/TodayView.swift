@@ -280,6 +280,7 @@ struct TodayHeader: View {
     let isToday: Bool
     @Environment(AppStore.self) private var store
     @Environment(UIState.self) private var ui
+    @Environment(AppRouter.self) private var router
 
     private var greeting: String {
         guard isToday else { return "Xem trước / xem lại một ngày khác" }
@@ -318,8 +319,15 @@ struct TodayHeader: View {
                 }
             }
             Spacer(minLength: 0)
-            PetView(mood: ui.petMood(store: store), name: store.profile.displayPetName, bounceTrigger: ui.celebrateCounter)
-                .frame(width: 64, height: 64)
+            Button {
+                router.selectedTab = .corner
+            } label: {
+                PetView(appearance: store.petAppearance, mood: ui.petMood(store: store),
+                        name: store.profile.displayPetName, bounceTrigger: ui.celebrateCounter)
+                    .frame(width: 64, height: 64)
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("Mở Góc nhỏ")
         }
         .padding(.top, Spacing.s)
     }

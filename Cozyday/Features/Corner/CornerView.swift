@@ -1,11 +1,16 @@
 import SwiftUI
 
-/// Tab "Góc nhỏ": mèo, căn phòng theo slot, cấp độ và lối vào cửa hàng.
+/// Tab "Góc nhỏ": thú cưng trong phòng, cấp độ & giai đoạn lớn, chuyến phiêu lưu trong ngày,
+/// lối vào Tủ đồ (ngoại hình thú cưng) và Trang trí phòng.
 struct CornerView: View {
     @Environment(AppStore.self) private var store
     @Environment(UIState.self) private var ui
-    @State private var shopSlot: RoomSlot?
+    @Environment(DayClock.self) private var dayClock
+    @State private var shopSlot: ItemSlot?
     @State private var showShop = false
+    @State private var showWardrobe = false
+    @State private var showAdventure = false
+    @State private var showMemories = false
     @State private var editingName = false
     @State private var nameDraft = ""
 
@@ -14,29 +19,41 @@ struct CornerView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: Spacing.l) {
                     RoomView(
-                        equipped: Dictionary(store.equipped.map { ($0.slot, $0.itemID) }, uniquingKeysWith: { a, _ in a }),
+                        equipped: store.equippedMap,
+                        appearance: store.petAppearance,
                         petMood: ui.petMood(store: store),
                         petName: store.profile.displayPetName,
                         bounceTrigger: ui.celebrateCounter,
+                        haptics: store.profile.hapticsEnabled,
+                        speech: { tap in PetDialogue.line(for: store.petDialogueContext(today: dayClock.today), tap: tap) },
                         onTapSlot: { slot in
                             shopSlot = slot
                             showShop = true
                         }
                     )
 
-                    levelCard
-
-                    Button {
-                        shopSlot = nil
-                        showShop = true
-                    } label: {
-                        Label("Cửa hàng & trang trí", systemImage: "bag")
-                    }
-                    .buttonStyle(PrimaryButtonStyle())
-
-                    Text("Chạm vào một vị trí trong phòng để chọn đồ cho vị trí đó.")
+                    Text("Chạm vào \(store.profile.displayPetName) để vuốt ve, chạm vào một vị trí trong phòng để chọn đồ.")
                         .font(Typography.caption)
                         .foregroundStyle(Palette.inkMuted)
+
+                    levelCard
+                    AdventureCard(showStory: $showAdventure, showMemories: $showMemories)
+
+                    HStack(spacing: Spacing.m) {
+                        Button {
+                            showWardrobe = true
+                        } label: {
+                            Label("Tủ đồ", systemImage: "tshirt")
+                        }
+                        .buttonStyle(PrimaryButtonStyle())
+                        Button {
+                            shopSlot = nil
+                            showShop = true
+                        } label: {
+                            Label("Trang trí phòng", systemImage: "sofa")
+                        }
+                        .buttonStyle(SoftButtonStyle(tint: Palette.lavender))
+                    }
                 }
                 .padding(Spacing.l)
             }
@@ -48,14 +65,30 @@ struct CornerView: View {
             .sheet(isPresented: $showShop) {
                 ShopView(initialSlot: shopSlot)
             }
+            .sheet(isPresented: $showWardrobe) {
+                WardrobeView()
+            }
+            .sheet(isPresented: $showAdventure) {
+                AdventureStorySheet(day: dayClock.today)
+                    .presentationDetents([.medium, .large])
+            }
+            .sheet(isPresented: $showMemories) {
+                MemoryBookView()
+            }
             .task {
                 // Chỉ khi CI chụp ảnh giao diện (bản Debug).
-                guard PreviewMode.current == .shop else { return }
+                guard let screen = PreviewMode.current else { return }
                 try? await Task.sleep(nanoseconds: 600_000_000)
-                showShop = true
+                switch screen {
+                case .shop: showShop = true
+                case .wardrobe: showWardrobe = true
+                case .adventure: showAdventure = true
+                case .memories: showMemories = true
+                default: break
+                }
             }
-            .alert("Đổi tên mèo", isPresented: $editingName) {
-                TextField("Tên mèo", text: $nameDraft)
+            .alert("Đổi tên thú cưng", isPresented: $editingName) {
+                TextField("Tên", text: $nameDraft)
                 Button("Lưu") {
                     let name = nameDraft
                     ui.run { try store.updateProfile { $0.petName = String(name.trimmingCharacters(in: .whitespacesAndNewlines).prefix(30)) } }
@@ -67,12 +100,14 @@ struct CornerView: View {
 
     private var levelCard: some View {
         let wallet = store.wallet
+        let stage = PetStage.forLevel(wallet.level)
         return CozyCard {
             VStack(alignment: .leading, spacing: Spacing.s) {
                 HStack {
                     Text(store.profile.displayPetName)
                         .font(Typography.title)
                         .foregroundStyle(Palette.ink)
+                        .lineLimit(1)
                     Button {
                         nameDraft = store.profile.petName
                         editingName = true
@@ -80,7 +115,7 @@ struct CornerView: View {
                         Image(systemName: "pencil")
                             .frame(width: HitTarget.min, height: HitTarget.min)
                     }
-                    .accessibilityLabel("Đổi tên mèo")
+                    .accessibilityLabel("Đổi tên thú cưng")
                     Spacer()
                     Text("Cấp \(wallet.level)")
                         .font(Typography.headline)
@@ -94,7 +129,18 @@ struct CornerView: View {
                 Text("\(wallet.xpIntoLevel)/\(RewardConfig.xpPerLevel) XP tới cấp \(wallet.level + 1) · tổng \(wallet.xp) XP")
                     .font(Typography.caption)
                     .foregroundStyle(Palette.inkMuted)
-                Text("\(store.profile.displayPetName) \(ui.petMood(store: store).label). Mèo không bao giờ ốm hay giận khi bạn nghỉ vài ngày.")
+                Label {
+                    if let next = stage.next {
+                        Text("\(stage.label) — lớn thành \"\(next.label)\" ở cấp \(next.startLevel)")
+                    } else {
+                        Text(stage.label)
+                    }
+                } icon: {
+                    Image(systemName: "leaf")
+                }
+                .font(Typography.callout.weight(.semibold))
+                .foregroundStyle(Palette.sage)
+                Text("\(store.profile.displayPetName) \(ui.petMood(store: store).label). Thú cưng không bao giờ ốm hay giận khi bạn nghỉ vài ngày.")
                     .font(Typography.callout)
                     .foregroundStyle(Palette.ink)
             }
@@ -103,11 +149,11 @@ struct CornerView: View {
 }
 
 struct ShopView: View {
-    var initialSlot: RoomSlot?
+    var initialSlot: ItemSlot?
     @Environment(AppStore.self) private var store
     @Environment(UIState.self) private var ui
     @Environment(\.dismiss) private var dismiss
-    @State private var slot: RoomSlot = .desk
+    @State private var slot: ItemSlot = .desk
     @State private var preview: CatalogItem?
     @State private var buying = false
 
@@ -117,7 +163,7 @@ struct ShopView: View {
                 VStack(alignment: .leading, spacing: Spacing.l) {
                     HStack {
                         Picker("Vị trí", selection: $slot) {
-                            ForEach(RoomSlot.allCases) { Text($0.label).tag($0) }
+                            ForEach(ItemSlot.room) { Text($0.label).tag($0) }
                         }
                         .pickerStyle(.menu)
                         .tint(Palette.lavender)
@@ -152,7 +198,7 @@ struct ShopView: View {
             }
             .overlay(alignment: .top) { ErrorOverlay() }
         }
-        .onAppear { if let initialSlot { slot = initialSlot } }
+        .onAppear { if let initialSlot, !initialSlot.isPet { slot = initialSlot } }
     }
 
     private func itemCard(_ item: CatalogItem) -> some View {

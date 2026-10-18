@@ -84,6 +84,7 @@ enum Typography {
     static let body = Font.system(.body)
     static let callout = Font.system(.callout)
     static let caption = Font.system(.caption)
+    static let caption2 = Font.system(.caption2)
     static let numeric = Font.system(.title, design: .rounded).weight(.bold).monospacedDigit()
 }
 

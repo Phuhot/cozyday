@@ -157,7 +157,7 @@ extension EquippedSlotModel {
     }
 
     var record: EquippedRecord? {
-        RoomSlot(rawValue: slotRaw).map { EquippedRecord(slot: $0, itemID: itemID) }
+        ItemSlot(rawValue: slotRaw).map { EquippedRecord(slot: $0, itemID: itemID) }
     }
 }
 
