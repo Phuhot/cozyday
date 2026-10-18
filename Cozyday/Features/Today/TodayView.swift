@@ -187,6 +187,7 @@ struct TodayView: View {
                 router.showFocus = false
                 sheet = .focus(nil)
             }
+            .task { await openPreviewSheet() }
         }
     }
 
@@ -211,6 +212,23 @@ struct TodayView: View {
         }
         .padding(Spacing.xl)
         .accessibilityLabel("Thêm việc")
+    }
+
+    /// Chỉ dùng khi CI chụp ảnh giao diện (bản Debug); bản Release không vào được nhánh này.
+    private func openPreviewSheet() async {
+        guard let screen = PreviewMode.current else { return }
+        try? await Task.sleep(nanoseconds: 600_000_000)
+        switch screen {
+        case .editor:
+            sheet = .newTask(day: day, startMinute: min(TimeOfDay.roundUp(store.calendar.minuteOfDay(store.now) + 5, step: 30), 23 * 60))
+        case .replan:
+            let plan = store.replanPlan(for: day, includeUnscheduled: false)
+            if !plan.isEmpty { sheet = .replan(plan, day) }
+        case .inbox:
+            sheet = .inbox
+        default:
+            break
+        }
     }
 
     @ViewBuilder

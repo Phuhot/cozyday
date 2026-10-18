@@ -31,6 +31,7 @@ Apple Account miễn phí của bạn → iPhone**. App đã cài chạy độc 
 - Hướng dẫn từng bước: [`docs/INSTALL_WINDOWS_IPHONE_VI.md`](docs/INSTALL_WINDOWS_IPHONE_VI.md)
 - Gặp lỗi: [`docs/TROUBLESHOOTING_VI.md`](docs/TROUBLESHOOTING_VI.md)
 - Checklist kiểm tra trên máy thật: [`docs/TEST_CHECKLIST_VI.md`](docs/TEST_CHECKLIST_VI.md)
+- **Xem giao diện trước khi cài** (ảnh chụp trên iOS Simulator): [`docs/UI_PREVIEW_VI.md`](docs/UI_PREVIEW_VI.md)
 
 IPA chưa ký **không** tự cài được bằng Safari; phải qua công cụ ký như Sideloadly. Build thành công ≠ cài thành công —
 việc cài được xác nhận bằng checklist trên iPhone thật.

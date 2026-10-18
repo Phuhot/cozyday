@@ -3,6 +3,8 @@
 # Cách chạy chủ động: tab Actions → "iOS unsigned IPA" → Run workflow.
 # Push lên nhánh main KHÔNG tự chạy (tiết kiệm phút macOS). Riêng nhánh claude/** (nhánh
 # Claude dùng để phát triển) tự chạy khi đổi code/cấu hình build — không chạy khi chỉ sửa docs.
+# Ảnh giao diện: job test luôn chụp và upload artifact; chỉ commit ảnh vào docs/screenshots khi
+# commit message có "[ui-preview]" hoặc khi Run workflow có tick "Chụp ảnh giao diện".
 name: iOS unsigned IPA
 
 on:
@@ -10,6 +12,10 @@ on:
     inputs:
       run_tests:
         description: "Chạy thêm unit test trên iOS Simulator (tốn thêm phút macOS)"
+        type: boolean
+        default: false
+      ui_preview:
+        description: "Chụp ảnh giao diện trên iOS Simulator và lưu vào docs/screenshots"
         type: boolean
         default: false
   push:
@@ -89,10 +95,10 @@ jobs:
           retention-days: 7
 
   simulator-tests:
-    name: Unit test trên iOS Simulator
-    if: github.event_name == 'push' || inputs.run_tests
+    name: Unit test + ảnh giao diện trên iOS Simulator
+    if: github.event_name == 'push' || inputs.run_tests || inputs.ui_preview
     runs-on: macos-26
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - name: Lấy source
         uses: actions/checkout@v7
@@ -114,6 +120,25 @@ jobs:
       - name: Chạy test
         run: scripts/ci/run_simulator_tests.sh
 
+      - name: Chụp ảnh giao diện (dữ liệu mẫu, bản Debug)
+        run: scripts/ci/capture_screenshots.sh
+
+      - name: Upload ảnh giao diện
+        uses: actions/upload-artifact@v7
+        with:
+          name: Cozyday-ui-screenshots-run${{ github.run_number }}
+          path: build/screenshots/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload bản .app cho simulator
+        uses: actions/upload-artifact@v7
+        with:
+          name: Cozyday-simulator-app-run${{ github.run_number }}
+          path: build/output/Cozyday-simulator-app.zip
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Upload log test
         if: always()
         uses: actions/upload-artifact@v7
@@ -122,3 +147,28 @@ jobs:
           path: build/logs/
           if-no-files-found: ignore
           retention-days: 7
+
+  publish-screenshots:
+    name: Lưu ảnh giao diện vào docs/screenshots
+    needs: simulator-tests
+    if: inputs.ui_preview || (github.event_name == 'push' && contains(github.event.head_commit.message, '[ui-preview]'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Lấy source (đầu nhánh hiện tại)
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Tải ảnh từ job simulator
+        uses: actions/download-artifact@v8
+        with:
+          name: Cozyday-ui-screenshots-run${{ github.run_number }}
+          path: build/screenshots
+
+      - name: Commit ảnh
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: scripts/ci/publish_screenshots.sh

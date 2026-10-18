@@ -53,6 +53,10 @@ echo "$BUILD_VER" | grep -qE "platform IOS$" || { echo "$BUILD_VER"; fail "LC_BU
 if otool -l "$EXE" | grep -q "sectname __entitlements"; then
   fail "Binary chứa section __entitlements (dấu hiệu build simulator)"
 fi
+# Chế độ dữ liệu mẫu (chụp ảnh giao diện) chỉ được có trong bản Debug.
+if strings -a "$EXE" | grep -q "CozyPreview"; then
+  fail "Bản Release chứa mã xem trước CozyPreview (lẽ ra chỉ có trong Debug)"
+fi
 
 # 4. Icon
 [[ -f "$APP/Assets.car" ]] || fail "Thiếu Assets.car (asset catalog chưa được biên dịch)"

@@ -27,6 +27,8 @@ print(best[1])
 print(best[2] + " / " + best[3], file=sys.stderr)
 ')"
 [[ -n "$SIM_ID" ]] || fail "Không chọn được simulator"
+# Bước chụp ảnh giao diện dùng lại đúng simulator này (đã khởi động sẵn).
+echo "$SIM_ID" > "$BUILD_DIR/simulator-id.txt"
 
 RESULT="$BUILD_DIR/TestResults.xcresult"
 rm -rf "$RESULT"

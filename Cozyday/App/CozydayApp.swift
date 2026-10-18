@@ -49,6 +49,15 @@ enum AppBoot {
         if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
             return .testHost
         }
+        #if DEBUG
+        if let screen = PreviewMode.current {
+            do {
+                return .ready(try PreviewMode.makeEnvironment(for: screen))
+            } catch {
+                return .failed("Không tạo được dữ liệu xem trước: \(error)")
+            }
+        }
+        #endif
         do {
             let container = try PersistenceController.makeContainer()
             let store = try AppStore(container: container)

@@ -49,6 +49,12 @@ struct CornerView: View {
             .sheet(isPresented: $showShop) {
                 ShopView(initialSlot: shopSlot)
             }
+            .task {
+                // Chỉ khi CI chụp ảnh giao diện (bản Debug).
+                guard PreviewMode.current == .shop else { return }
+                try? await Task.sleep(nanoseconds: 600_000_000)
+                showShop = true
+            }
             .alert("Đổi tên mèo", isPresented: $editingName) {
                 TextField("Tên mèo", text: $nameDraft)
                 Button("Lưu") {
