@@ -54,6 +54,11 @@ enum Palette {
     static let woodDark = Color.dynamic(light: 0xA07448, dark: 0x8E653E)
     static let roomWall = Color.dynamic(light: 0xF3E9F7, dark: 0x332E42)
     static let roomFloor = Color.dynamic(light: 0xEAD9C3, dark: 0x3C3546)
+    /// Bóng đổ mềm của thẻ và nút.
+    static let shadow = Color.dynamic(light: 0x8D78CF, dark: 0x000000)
+    /// Bong bóng lời thoại của thú cưng (nâu sữa ấm).
+    static let bubble = Color.dynamic(light: 0xF6E3D3, dark: 0x4A3A35)
+    static let bubbleInk = Color.dynamic(light: 0x6B4A3A, dark: 0xF6E3D3)
 }
 
 enum Spacing {
@@ -67,9 +72,10 @@ enum Spacing {
 }
 
 enum Radius {
-    static let s: CGFloat = 8
-    static let m: CGFloat = 12
-    static let l: CGFloat = 18
+    static let s: CGFloat = 10
+    static let m: CGFloat = 16
+    static let l: CGFloat = 22
+    static let xl: CGFloat = 28
 }
 
 /// Vùng chạm tối thiểu theo Human Interface Guidelines.
@@ -81,16 +87,18 @@ enum Typography {
     static let largeTitle = Font.system(.largeTitle, design: .rounded).weight(.bold)
     static let title = Font.system(.title2, design: .rounded).weight(.semibold)
     static let headline = Font.system(.headline, design: .rounded)
-    static let body = Font.system(.body)
-    static let callout = Font.system(.callout)
-    static let caption = Font.system(.caption)
-    static let caption2 = Font.system(.caption2)
+    static let body = Font.system(.body, design: .rounded)
+    static let callout = Font.system(.callout, design: .rounded)
+    static let caption = Font.system(.caption, design: .rounded)
+    static let caption2 = Font.system(.caption2, design: .rounded)
     static let numeric = Font.system(.title, design: .rounded).weight(.bold).monospacedDigit()
 }
 
 enum Motion {
     static let gentle = Animation.spring(response: 0.35, dampingFraction: 0.85)
     static let quick = Animation.easeOut(duration: 0.2)
+    /// Bật nảy kiểu "boing" cho hiệu ứng vui (popup thưởng, nút bấm).
+    static let bouncy = Animation.spring(response: 0.42, dampingFraction: 0.55)
 
     /// Trả về nil khi người dùng bật Giảm chuyển động.
     static func gentle(_ reduceMotion: Bool) -> Animation? {

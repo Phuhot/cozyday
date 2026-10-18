@@ -21,9 +21,12 @@ struct RootView: View {
         .overlay(alignment: .top) { ErrorOverlay() }
         .overlay(alignment: .bottom) {
             if let toast = ui.toast {
-                RewardToast(text: toast)
-                    .padding(.bottom, 90)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                PetRewardPopup(text: toast, appearance: store.petAppearance, seed: ui.celebrateCounter)
+                    .id(ui.celebrateCounter)
+                    .padding(.bottom, 96)
+                    .padding(.horizontal, Spacing.l)
+                    .transition(.scale(scale: 0.6, anchor: .bottom).combined(with: .opacity))
+                    .allowsHitTesting(false)
                     .accessibilityAddTraits(.updatesFrequently)
             }
         }

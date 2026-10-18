@@ -1,45 +1,36 @@
 import SwiftUI
 
-/// Tab "Góc nhỏ": thú cưng trong phòng, cấp độ & giai đoạn lớn, chuyến phiêu lưu trong ngày,
-/// lối vào Tủ đồ (ngoại hình thú cưng) và Trang trí phòng.
+/// Tab "Góc nhỏ": thú cưng trong các căn phòng (phòng học, phòng ngủ, bếp, phòng tắm, vườn), cấp độ & giai đoạn lớn,
+/// chuyến phiêu lưu trong ngày, lối vào Tủ đồ, Bộ sưu tập và Trang trí.
 struct CornerView: View {
     @Environment(AppStore.self) private var store
     @Environment(UIState.self) private var ui
     @Environment(DayClock.self) private var dayClock
-    @State private var shopSlot: ItemSlot?
-    @State private var showShop = false
+    /// Phòng đang xem — chỉ là tiện ích hiển thị trên máy này, không phải dữ liệu cần sao lưu.
+    @AppStorage("corner.room") private var roomRaw = RoomKind.study.rawValue
+    @State private var shopTarget: ShopTarget?
     @State private var showWardrobe = false
+    @State private var showCollection = false
     @State private var showAdventure = false
     @State private var showMemories = false
     @State private var editingName = false
     @State private var nameDraft = ""
 
+    private var room: RoomKind { RoomKind(rawValue: roomRaw) ?? .study }
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: Spacing.l) {
-                    RoomView(
-                        equipped: store.equippedMap,
-                        appearance: store.petAppearance,
-                        petMood: ui.petMood(store: store),
-                        petName: store.profile.displayPetName,
-                        bounceTrigger: ui.celebrateCounter,
-                        haptics: store.profile.hapticsEnabled,
-                        speech: { tap in PetDialogue.line(for: store.petDialogueContext(today: dayClock.today), tap: tap) },
-                        onTapSlot: { slot in
-                            shopSlot = slot
-                            showShop = true
-                        }
-                    )
+                    RoomPicker(selection: Binding(get: { room }, set: { roomRaw = $0.rawValue }), level: store.wallet.level)
 
-                    Text("Chạm vào \(store.profile.displayPetName) để vuốt ve, chạm vào một vị trí trong phòng để chọn đồ.")
+                    roomArea
+
+                    Text("Chạm để vuốt ve, vuốt qua lại để nựng, giữ rồi kéo để đưa \(store.profile.displayPetName) sang chỗ khác. Chạm một ô trong phòng để chọn đồ.")
                         .font(Typography.caption)
                         .foregroundStyle(Palette.inkMuted)
 
-                    levelCard
-                    AdventureCard(showStory: $showAdventure, showMemories: $showMemories)
-
-                    HStack(spacing: Spacing.m) {
+                    HStack(spacing: Spacing.s) {
                         Button {
                             showWardrobe = true
                         } label: {
@@ -47,13 +38,23 @@ struct CornerView: View {
                         }
                         .buttonStyle(PrimaryButtonStyle())
                         Button {
-                            shopSlot = nil
-                            showShop = true
+                            showCollection = true
                         } label: {
-                            Label("Trang trí phòng", systemImage: "sofa")
+                            Label("Bộ sưu tập", systemImage: "square.grid.3x3")
                         }
-                        .buttonStyle(SoftButtonStyle(tint: Palette.lavender))
+                        .buttonStyle(PrimaryButtonStyle(color: Palette.peach))
                     }
+                    Button {
+                        shopTarget = ShopTarget(room: room.isUnlocked(level: store.wallet.level) ? room : .study, slot: nil)
+                    } label: {
+                        Label("Trang trí \(room.name.lowercased())", systemImage: "sofa")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(SoftButtonStyle(tint: Palette.lavender))
+
+                    levelCard
+                    PetWeekCard()
+                    AdventureCard(showStory: $showAdventure, showMemories: $showMemories)
                 }
                 .padding(Spacing.l)
             }
@@ -62,11 +63,14 @@ struct CornerView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) { SettingsButton() }
             }
-            .sheet(isPresented: $showShop) {
-                ShopView(initialSlot: shopSlot)
+            .sheet(item: $shopTarget) { target in
+                ShopView(initialRoom: target.room, initialSlot: target.slot)
             }
             .sheet(isPresented: $showWardrobe) {
                 WardrobeView()
+            }
+            .sheet(isPresented: $showCollection) {
+                PetCollectionView()
             }
             .sheet(isPresented: $showAdventure) {
                 AdventureStorySheet(day: dayClock.today)
@@ -78,12 +82,20 @@ struct CornerView: View {
             .task {
                 // Chỉ khi CI chụp ảnh giao diện (bản Debug).
                 guard let screen = PreviewMode.current else { return }
+                switch screen {
+                case .bedroom: roomRaw = RoomKind.bedroom.rawValue
+                case .kitchen: roomRaw = RoomKind.kitchen.rawValue
+                case .bath: roomRaw = RoomKind.bath.rawValue
+                case .garden: roomRaw = RoomKind.garden.rawValue
+                default: roomRaw = RoomKind.study.rawValue
+                }
                 try? await Task.sleep(nanoseconds: 600_000_000)
                 switch screen {
-                case .shop: showShop = true
+                case .shop: shopTarget = ShopTarget(room: .bedroom, slot: .bed)
                 case .wardrobe: showWardrobe = true
                 case .adventure: showAdventure = true
                 case .memories: showMemories = true
+                case .collection, .look: showCollection = true
                 default: break
                 }
             }
@@ -95,6 +107,46 @@ struct CornerView: View {
                 }
                 Button("Hủy", role: .cancel) {}
             }
+        }
+    }
+
+    @ViewBuilder
+    private var roomArea: some View {
+        let level = store.wallet.level
+        if room.isUnlocked(level: level) {
+            RoomView(
+                room: room,
+                equipped: store.equippedMap,
+                appearance: store.petAppearance,
+                petMood: ui.petMood(store: store),
+                petName: store.profile.displayPetName,
+                bounceTrigger: ui.celebrateCounter,
+                haptics: store.profile.hapticsEnabled,
+                speech: { tap in PetDialogue.line(for: store.petDialogueContext(today: dayClock.today), tap: tap) },
+                onTapSlot: { slot in shopTarget = ShopTarget(room: room, slot: slot) }
+            )
+        } else {
+            RoomView(room: room, equipped: [:], appearance: store.petAppearance, petMood: .rest,
+                     petName: store.profile.displayPetName, bounceTrigger: 0)
+                .blur(radius: 3)
+                .overlay {
+                    VStack(spacing: Spacing.s) {
+                        Image(systemName: "lock.fill")
+                            .font(.title2)
+                            .foregroundStyle(Palette.lavender)
+                        Text("\(room.name) mở ở cấp \(room.requiredLevel)")
+                            .font(Typography.headline)
+                            .foregroundStyle(Palette.ink)
+                        Text("Còn \(max(0, (room.requiredLevel - 1) * RewardConfig.xpPerLevel - store.wallet.xp)) XP nữa. Hoàn thành việc, tập trung hoặc viết nhật ký để lên cấp.")
+                            .font(Typography.caption)
+                            .foregroundStyle(Palette.inkMuted)
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding(Spacing.l)
+                    .background(Palette.surface.opacity(0.92), in: RoundedRectangle(cornerRadius: Radius.l, style: .continuous))
+                    .padding(Spacing.xl)
+                }
+                .accessibilityElement(children: .combine)
         }
     }
 
@@ -148,36 +200,139 @@ struct CornerView: View {
     }
 }
 
+/// Mở cửa hàng ở một phòng / vị trí cụ thể.
+struct ShopTarget: Identifiable {
+    var room: RoomKind
+    var slot: ItemSlot?
+    var id: String { room.rawValue + (slot?.rawValue ?? "") }
+}
+
+/// Hàng chọn phòng: phòng chưa mở hiện ổ khóa và cấp cần đạt.
+struct RoomPicker: View {
+    @Binding var selection: RoomKind
+    let level: Int
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: Spacing.s) {
+                ForEach(RoomKind.allCases) { room in
+                    let unlocked = room.isUnlocked(level: level)
+                    let isOn = selection == room
+                    Button {
+                        selection = room
+                    } label: {
+                        HStack(spacing: Spacing.xs) {
+                            Image(systemName: unlocked ? room.symbol : "lock.fill")
+                            Text(room.name)
+                            if !unlocked {
+                                Text("Cấp \(room.requiredLevel)").font(Typography.caption2)
+                            }
+                        }
+                        .font(Typography.callout.weight(.semibold))
+                        .padding(.horizontal, Spacing.m)
+                        .frame(minHeight: HitTarget.min)
+                        .foregroundStyle(isOn ? Palette.onAccent : (unlocked ? Palette.ink : Palette.inkMuted))
+                        .background(isOn ? Palette.lavender : Palette.surface, in: Capsule())
+                        .overlay(Capsule().strokeBorder(isOn ? Color.clear : Palette.line))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(unlocked ? room.name : "\(room.name), mở ở cấp \(room.requiredLevel)")
+                    .accessibilityAddTraits(isOn ? .isSelected : [])
+                }
+            }
+            .padding(.vertical, 2)
+        }
+    }
+}
+
+/// "Tuần này của Bông": 7 cái đầu thú cưng, có màu ở ngày bạn có hoạt động, xám ở ngày nghỉ.
+struct PetWeekCard: View {
+    @Environment(AppStore.self) private var store
+    @Environment(DayClock.self) private var dayClock
+
+    var body: some View {
+        let today = dayClock.today
+        let days = today.adding(days: -6, calendar: store.calendar).through(today, calendar: store.calendar)
+        let active = store.activeDays(in: days)
+        let look = store.petAppearance
+        CozyCard {
+            VStack(alignment: .leading, spacing: Spacing.s) {
+                HStack {
+                    Text("Tuần này của \(store.profile.displayPetName)")
+                        .font(Typography.headline)
+                        .foregroundStyle(Palette.ink)
+                    Spacer()
+                    Text("\(active.count)/7 ngày")
+                        .font(Typography.callout.weight(.semibold))
+                        .foregroundStyle(Palette.sage)
+                }
+                HStack(spacing: 0) {
+                    ForEach(days, id: \.self) { day in
+                        let on = active.contains(day)
+                        VStack(spacing: 2) {
+                            PetArt(mood: on ? .happy : .rest, appearance: look)
+                                .frame(width: 40, height: 40)
+                                .saturation(on ? 1 : 0)
+                                .opacity(on ? 1 : 0.4)
+                            Text(DateText.weekdayShort(day, calendar: store.calendar))
+                                .font(Typography.caption2.weight(.bold))
+                                .foregroundStyle(on ? Palette.lavender : Palette.inkMuted)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel("\(DateText.full(day, calendar: store.calendar)): \(on ? "có hoạt động" : "nghỉ")")
+                    }
+                }
+                Text(active.count >= 5 ? "Một tuần thật chăm chỉ! \(store.profile.displayPetName) vui lắm." :
+                        "Ngày nghỉ cũng không sao — \(store.profile.displayPetName) vẫn chờ bạn.")
+                    .font(Typography.caption)
+                    .foregroundStyle(Palette.inkMuted)
+            }
+        }
+    }
+}
+
+/// Cửa hàng trang trí: chọn phòng → vị trí → món đồ. Phòng chưa mở vẫn xem được đồ nhưng chưa mua được.
 struct ShopView: View {
+    var initialRoom: RoomKind = .study
     var initialSlot: ItemSlot?
     @Environment(AppStore.self) private var store
     @Environment(UIState.self) private var ui
     @Environment(\.dismiss) private var dismiss
+    @State private var room: RoomKind = .study
     @State private var slot: ItemSlot = .desk
     @State private var preview: CatalogItem?
-    @State private var buying = false
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: Spacing.l) {
                     HStack {
-                        Picker("Vị trí", selection: $slot) {
-                            ForEach(ItemSlot.room) { Text($0.label).tag($0) }
-                        }
-                        .pickerStyle(.menu)
-                        .tint(Palette.lavender)
-                        Spacer()
+                        RoomPicker(selection: $room, level: store.wallet.level)
                         CoinBadge(coins: store.wallet.coins)
                     }
 
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: Spacing.m)], spacing: Spacing.m) {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: Spacing.s) {
+                            ForEach(room.slots) { s in
+                                ChipToggle(title: s.label, isOn: slot == s, tint: Palette.peach) { slot = s }
+                            }
+                        }
+                    }
+
+                    if !room.isUnlocked(level: store.wallet.level) {
+                        Label("\(room.name) mở ở cấp \(room.requiredLevel). Bạn vẫn xem trước được đồ.", systemImage: "lock.fill")
+                            .font(Typography.callout)
+                            .foregroundStyle(Palette.inkMuted)
+                    }
+
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: slot.isTheme ? 160 : 104), spacing: Spacing.m)], spacing: Spacing.m) {
                         ForEach(Catalog.items(in: slot)) { item in
                             itemCard(item)
                         }
                     }
 
-                    if store.equippedItem(in: slot) != nil {
+                    if store.equippedItem(in: slot) != nil, !slot.hasDefault {
                         Button("Bỏ đồ ở vị trí này") {
                             ui.run { try store.unequip(slot: slot) }
                         }
@@ -187,7 +342,7 @@ struct ShopView: View {
                 .padding(Spacing.l)
             }
             .cozyBackground()
-            .navigationTitle("Cửa hàng")
+            .navigationTitle("Trang trí")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Xong") { dismiss() } }
@@ -198,33 +353,52 @@ struct ShopView: View {
             }
             .overlay(alignment: .top) { ErrorOverlay() }
         }
-        .onAppear { if let initialSlot, !initialSlot.isPet { slot = initialSlot } }
+        .onAppear {
+            room = initialSlot?.roomKind ?? initialRoom
+            slot = initialSlot ?? room.slots.first(where: { !$0.isTheme }) ?? room.themeSlot
+        }
+        .onChange(of: room) { _, newRoom in
+            if slot.roomKind != newRoom { slot = newRoom.slots.first(where: { !$0.isTheme }) ?? newRoom.themeSlot }
+        }
+    }
+
+    private func status(_ item: CatalogItem) -> (String, Color) {
+        let inUse = (store.equippedItem(in: item.slot)?.id ?? Catalog.defaultItem(for: item.slot)?.id) == item.id
+        if inUse { return ("Đang dùng", Palette.sage) }
+        if Catalog.isOwned(item.id, owned: store.ownedIDs) { return ("Đã có", Palette.inkMuted) }
+        if store.wallet.level < item.requiredLevel { return ("🔒 Cấp \(item.requiredLevel)", Palette.inkMuted) }
+        return (item.isFree ? "Miễn phí" : "\(item.price) xu", Palette.honey)
     }
 
     private func itemCard(_ item: CatalogItem) -> some View {
-        let owned = store.ownedIDs.contains(item.id)
-        let equipped = store.equippedItem(in: item.slot)?.id == item.id
+        let (label, color) = status(item)
+        let inUse = label == "Đang dùng"
+        let locked = store.wallet.level < item.requiredLevel && !Catalog.isOwned(item.id, owned: store.ownedIDs)
         return Button { preview = item } label: {
-            VStack(alignment: .leading, spacing: Spacing.s) {
+            VStack(alignment: .leading, spacing: Spacing.xs) {
                 ItemArt(itemID: item.id)
-                    .frame(height: 90)
+                    .aspectRatio(item.slot.isTheme ? RoomLayout.aspect : 1, contentMode: .fit)
                     .frame(maxWidth: .infinity)
-                    .background(Palette.roomWall, in: RoundedRectangle(cornerRadius: Radius.m))
+                    .padding(item.slot.isTheme ? 0 : Spacing.xs)
+                    .background(Palette.roomWall, in: RoundedRectangle(cornerRadius: Radius.m, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: Radius.m, style: .continuous))
+                    .opacity(locked ? 0.55 : 1)
                 Text(item.name)
-                    .font(Typography.headline)
+                    .font(Typography.callout.weight(.semibold))
                     .foregroundStyle(Palette.ink)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
-                Text(equipped ? "Đang dùng" : owned ? "Đã có" : item.isFree ? "Miễn phí" : "\(item.price) xu")
-                    .font(Typography.caption.weight(.semibold))
-                    .foregroundStyle(equipped ? Palette.sage : owned ? Palette.inkMuted : Palette.honey)
+                Text(label)
+                    .font(Typography.caption.weight(.bold))
+                    .foregroundStyle(color)
             }
-            .padding(Spacing.m)
+            .padding(Spacing.s)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Palette.surface, in: RoundedRectangle(cornerRadius: Radius.l))
-            .overlay(RoundedRectangle(cornerRadius: Radius.l).strokeBorder(equipped ? Palette.sage : Palette.line, lineWidth: equipped ? 2 : 1))
+            .background(Palette.surface, in: RoundedRectangle(cornerRadius: Radius.l, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Radius.l, style: .continuous).strokeBorder(inUse ? Palette.sage : Palette.line, lineWidth: inUse ? 2 : 1))
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("\(item.name), \(label)")
         .accessibilityHint("Xem trước")
     }
 }
@@ -236,51 +410,75 @@ struct ItemPreviewSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var working = false
 
+    private var trialEquipped: [ItemSlot: String] {
+        var map = store.equippedMap
+        map[item.slot] = item.id
+        return map
+    }
+
     var body: some View {
-        let owned = store.ownedIDs.contains(item.id)
-        let equipped = store.equippedItem(in: item.slot)?.id == item.id
+        let owned = Catalog.isOwned(item.id, owned: store.ownedIDs)
+        let inUse = (store.equippedItem(in: item.slot)?.id ?? Catalog.defaultItem(for: item.slot)?.id) == item.id
         let coins = store.wallet.coins
-        VStack(spacing: Spacing.l) {
-            ItemArt(itemID: item.id)
-                .frame(width: 160, height: 160)
-                .background(Palette.roomWall, in: RoundedRectangle(cornerRadius: Radius.l))
-            VStack(spacing: Spacing.xs) {
-                Text(item.name).font(Typography.title).foregroundStyle(Palette.ink)
-                Text(item.blurb).font(Typography.callout).foregroundStyle(Palette.inkMuted).multilineTextAlignment(.center)
-                Text("\(item.slot.label) · \(item.isFree ? "Miễn phí" : "\(item.price) xu")")
-                    .font(Typography.caption).foregroundStyle(Palette.inkMuted)
-            }
-            if equipped {
-                Label("Đang dùng trong phòng", systemImage: "checkmark.circle.fill")
-                    .foregroundStyle(Palette.sage)
-                    .frame(minHeight: HitTarget.min)
-            } else if owned {
-                Button("Đặt vào phòng") {
-                    ui.run { try store.equip(itemID: item.id) }
-                    dismiss()
+        let level = store.wallet.level
+        let roomLocked = !(item.slot.roomKind?.isUnlocked(level: level) ?? true)
+        ScrollView {
+            VStack(spacing: Spacing.l) {
+                if let room = item.slot.roomKind {
+                    // Xem trước ngay trong phòng.
+                    RoomView(room: room, equipped: trialEquipped, appearance: store.petAppearance, petMood: .happy,
+                             petName: store.profile.displayPetName, bounceTrigger: 0)
+                } else {
+                    ItemArt(itemID: item.id)
+                        .frame(width: 160, height: 160)
+                        .background(Palette.roomWall, in: RoundedRectangle(cornerRadius: Radius.l))
                 }
-                .buttonStyle(PrimaryButtonStyle(color: Palette.sage))
-            } else if coins >= item.price {
-                Button(item.isFree ? "Nhận miễn phí" : "Mua với \(item.price) xu") {
-                    guard !working else { return }
-                    working = true
-                    let ok = ui.run { try store.buy(itemID: item.id) }
-                    working = false
-                    if ok {
-                        ui.showReward(item.isFree ? "Đã nhận \(item.name)" : "Đã mua \(item.name)")
+                VStack(spacing: Spacing.xs) {
+                    Text(item.name).font(Typography.title).foregroundStyle(Palette.ink)
+                    Text(item.blurb).font(Typography.callout).foregroundStyle(Palette.inkMuted).multilineTextAlignment(.center)
+                    Text("\(item.slot.roomKind?.name ?? "Thú cưng") · \(item.slot.label) · \(item.isFree ? "Miễn phí" : "\(item.price) xu")")
+                        .font(Typography.caption).foregroundStyle(Palette.inkMuted)
+                }
+                if inUse {
+                    Label("Đang dùng", systemImage: "checkmark.circle.fill")
+                        .foregroundStyle(Palette.sage)
+                        .frame(minHeight: HitTarget.min)
+                } else if owned {
+                    Button("Dùng món này") {
+                        ui.run { try store.equip(itemID: item.id) }
                         dismiss()
                     }
+                    .buttonStyle(PrimaryButtonStyle(color: Palette.sage))
+                } else if roomLocked || level < item.requiredLevel {
+                    Label("Mở khóa ở cấp \(max(item.requiredLevel, item.slot.roomKind?.requiredLevel ?? 1)) (đang cấp \(level))", systemImage: "lock.fill")
+                        .font(Typography.callout)
+                        .foregroundStyle(Palette.inkMuted)
+                        .frame(minHeight: HitTarget.min)
+                } else if coins >= item.price {
+                    Button(item.isFree ? "Nhận miễn phí" : "Mua với \(item.price) xu") {
+                        guard !working else { return }
+                        working = true
+                        let ok = ui.run {
+                            try store.buy(itemID: item.id)
+                            try store.equip(itemID: item.id)
+                        }
+                        working = false
+                        if ok {
+                            ui.showReward(item.isFree ? "Đã nhận \(item.name)" : "Đã mua \(item.name)")
+                            dismiss()
+                        }
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
+                    .disabled(working)
+                } else {
+                    Text("Cần thêm \(item.price - coins) xu. Hoàn thành việc hoặc phiên tập trung để nhận xu.")
+                        .font(Typography.callout)
+                        .foregroundStyle(Palette.inkMuted)
+                        .multilineTextAlignment(.center)
                 }
-                .buttonStyle(PrimaryButtonStyle())
-                .disabled(working)
-            } else {
-                Text("Cần thêm \(item.price - coins) xu. Hoàn thành việc hoặc phiên tập trung để nhận xu.")
-                    .font(Typography.callout)
-                    .foregroundStyle(Palette.inkMuted)
-                    .multilineTextAlignment(.center)
             }
+            .padding(Spacing.xl)
         }
-        .padding(Spacing.xl)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .cozyBackground()
     }

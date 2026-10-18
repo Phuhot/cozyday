@@ -24,11 +24,18 @@ GitHub Actions mở app trên **iPhone ảo (iOS Simulator)** của máy macOS, 
 
 | | | |
 |---|---|---|
-| ![Các kiểu thú cưng](screenshots/15-pet-gallery.jpg) 5 hình dạng × màu lông × trang phục × giai đoạn lớn | ![Tủ đồ](screenshots/12-wardrobe.jpg) Tủ đồ — mặc thử trước khi mua | ![Chuyến đi](screenshots/13-adventure.jpg) Nghe kể chuyến đi |
+| ![Các kiểu thú cưng](screenshots/15-pet-gallery.jpg) Các bộ phối: 11 loài × màu lông × trang phục × giai đoạn lớn | ![Tủ đồ](screenshots/12-wardrobe.jpg) Tủ đồ — mặc thử trước khi mua | ![Chuyến đi](screenshots/13-adventure.jpg) Nghe kể chuyến đi |
 | ![Sổ ký ức](screenshots/14-memories.jpg) Sổ ký ức | ![Bài thở](screenshots/16-breathing.jpg) Bài thở | ![Chi tiết việc](screenshots/17-task-detail.jpg) Việc con trong chi tiết việc |
-| ![Viết nhật ký](screenshots/18-journal-editor.jpg) Gợi ý viết nhật ký | | |
+| ![Viết nhật ký](screenshots/18-journal-editor.jpg) Gợi ý viết nhật ký | ![Bộ sưu tập](screenshots/23-collection.jpg) Bộ sưu tập: các loài & bộ phối sẵn | ![Xem thử một bộ](screenshots/24-look.jpg) Xem thử & mua cả bộ |
 
-Ảnh tĩnh không thể hiện animation (thở, chớp mắt, vẫy đuôi, đi lại, tim bay khi chạm). Phần đó chỉ thấy khi chạy trên máy.
+## Các không gian
+
+| | | |
+|---|---|---|
+| ![Phòng ngủ](screenshots/19-bedroom.jpg) Phòng ngủ | ![Bếp](screenshots/20-kitchen.jpg) Bếp & bàn ăn | ![Phòng tắm](screenshots/21-bath.jpg) Phòng tắm |
+| ![Khu vườn](screenshots/22-garden.jpg) Khu vườn | | |
+
+Ảnh tĩnh không thể hiện animation (thở, chớp mắt, vẫy đuôi, đi lại, tim bay khi chạm, nựng, nhấc lên và thả). Phần đó chỉ thấy khi chạy trên máy.
 
 ## Giao diện tối
 
@@ -36,7 +43,7 @@ GitHub Actions mở app trên **iPhone ảo (iOS Simulator)** của máy macOS, 
 |---|---|---|
 | ![Hôm nay — tối](screenshots/dark-02-today.jpg) | ![Tập trung — tối](screenshots/dark-06-focus.jpg) | ![Góc nhỏ — tối](screenshots/dark-07-corner.jpg) |
 | ![Nhật ký — tối](screenshots/dark-09-journal.jpg) | ![Tiến bộ — tối](screenshots/dark-10-progress.jpg) | ![Tủ đồ — tối](screenshots/dark-12-wardrobe.jpg) |
-| ![Thú cưng — tối](screenshots/dark-15-pet-gallery.jpg) | | |
+| ![Thú cưng — tối](screenshots/dark-15-pet-gallery.jpg) | ![Phòng ngủ — tối](screenshots/dark-19-bedroom.jpg) | |
 
 ## Cỡ chữ rất lớn (Trợ năng)
 

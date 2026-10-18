@@ -21,6 +21,12 @@ enum PreviewScreen: String, CaseIterable {
     case breathing
     case taskDetail
     case journalEditor
+    case bedroom
+    case kitchen
+    case bath
+    case garden
+    case collection
+    case look
 }
 
 /// Chế độ xem trước chỉ có trong bản Debug: dữ liệu mẫu nằm trong bộ nhớ, không đụng tới kho dữ liệu thật.
@@ -56,7 +62,8 @@ extension PreviewMode {
         }
         let router = AppRouter.shared
         switch screen {
-        case .corner, .shop, .wardrobe, .adventure, .memories: router.selectedTab = .corner
+        case .corner, .shop, .wardrobe, .adventure, .memories, .bedroom, .kitchen, .bath, .garden, .collection, .look:
+            router.selectedTab = .corner
         case .journal, .breathing, .journalEditor: router.selectedTab = .journal
         case .progress: router.selectedTab = .progress
         case .focus: router.showFocus = true
@@ -121,6 +128,26 @@ extension PreviewMode {
         }
         try store.equip(itemID: "hat.beanie")
         try store.equip(itemID: "neck.scarf")
+
+        // Xu thưởng riêng cho ảnh xem trước để trang trí đủ các phòng (chỉ có trong bản Debug).
+        try store.commit {
+            store.insertLedger(LedgerEntry(id: UUID(), key: "preview:bonus", kind: .taskCompleted, xp: 0, coins: 4000,
+                                           createdAt: store.now, refID: nil, memo: "Xem trước"))
+        }
+        let rooms: [String] = [
+            "studyTheme.mint", "desk.computer", "wall.corkboard", "lamp.mushroom", "seat.beanbag", "plant.bonsai",
+            "bedroomTheme.cloud", "bed.wood", "nightstand.lamp", "bedroomWall.fairy", "closet.wardrobe", "bedroomRug.heart", "plush.teddy",
+            "kitchenTheme.gingham", "stove.retro", "fridge.pink", "dining.round", "kitchenWall.pans", "treat.cake",
+            "bathTheme.aqua", "tub.claw", "sink.mirror", "bathShelf.towels", "bathMat.duck", "bathToy.duck",
+            "gardenTheme.day", "tree.apple", "flowerBed.tulip", "gardenSeat.swing", "pond.lily", "gardenDeco.birdhouse"
+        ]
+        for item in rooms where Catalog.item(item)?.isDefault == false {
+            try store.buy(itemID: item)
+            try store.equip(itemID: item)
+        }
+        for item in ["hat.cap", "glasses.star", "back.balloon", "outfit.hoodie"] {
+            try store.buy(itemID: item)
+        }
 
         // Hôm nay: các mốc đặt quanh giờ hiện tại để luôn có việc đã qua, đang tới và trễ giờ.
         let nowMinute = cal.minuteOfDay(store.now)

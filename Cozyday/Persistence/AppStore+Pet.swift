@@ -44,7 +44,7 @@ extension AppStore {
         ledger.filter { $0.kind == .adventure }
             .compactMap { e in e.refID.flatMap(DayKey.init(string:)) }
             .sorted(by: >)
-            .map { AdventureMemory(day: $0, story: Adventure.story(for: $0, petName: profile.displayPetName)) }
+            .map { AdventureMemory(day: $0, story: Adventure.story(for: $0, petName: profile.displayPetName, species: petAppearance.species)) }
     }
 
     // MARK: Bài thở
@@ -54,6 +54,14 @@ extension AppStore {
         guard let entry = RewardPolicy.forBreathing(day: day, existingKeys: ledgerKeys, now: now) else { return nil }
         try commit { self.insertLedger(entry) }
         return entry
+    }
+
+    // MARK: Tuần của thú cưng
+
+    /// Những ngày trong `days` có ít nhất một hoạt động (việc xong, tập trung, nhật ký).
+    func activeDays(in days: [DayKey]) -> Set<DayKey> {
+        Set(StatsCalculator.summary(days: days, occurrences: occurrences, focusSessions: focusSessions,
+                                    journal: journal, calendar: calendar).days.filter(\.isActive).map(\.day))
     }
 
     // MARK: Lời thoại

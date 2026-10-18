@@ -1,124 +1,34 @@
 import SwiftUI
 
-/// Hình vẽ gốc cho từng món đồ trong danh mục (hệ tọa độ 100×100, vẽ bằng code).
+/// Hình vẽ gốc cho từng món đồ trong danh mục, vẽ bằng code.
+/// Đồ thường: hệ tọa độ vuông 100×100. Tường & sàn / bầu trời: cả căn phòng, 125×100.
 struct ItemArt: View {
     let itemID: String
+
+    static func isScene(_ id: String) -> Bool { ItemPainter.isScene(id) }
 
     var body: some View {
         Canvas { context, size in
             var ctx = context
-            ctx.scaleBy(x: size.width / 100, y: size.height / 100)
+            let width: CGFloat = Self.isScene(itemID) ? RoomLayout.width : 100
+            let k = min(size.width / width, size.height / 100)
+            ctx.translateBy(x: (size.width - width * k) / 2, y: (size.height - 100 * k) / 2)
+            ctx.scaleBy(x: k, y: k)
             Self.draw(itemID, in: ctx)
         }
         .accessibilityHidden(true)
     }
 
     static func draw(_ id: String, in ctx: GraphicsContext) {
-        let wood = Palette.wood
-        let woodDark = Palette.woodDark
-        switch id {
-        // MARK: Bàn
-        case "desk.pine", "desk.lavender", "desk.sage":
-            let top: Color = id == "desk.pine" ? wood : (id == "desk.lavender" ? Palette.lavender : Palette.sage)
-            let leg: Color = id == "desk.pine" ? woodDark : top.opacity(0.75)
-            ctx.rect(8, 40, 84, 9, top, radius: 3)
-            ctx.rect(14, 49, 6, 42, leg, radius: 2)
-            ctx.rect(80, 49, 6, 42, leg, radius: 2)
-            if id == "desk.sage" {
-                ctx.rect(56, 50, 26, 18, top.opacity(0.85), radius: 2)
-                ctx.rect(66, 57, 6, 2.5, Color.white.opacity(0.8), radius: 1)
-            }
-            if id == "desk.lavender" {
-                ctx.rect(26, 34, 18, 6, Palette.peach, radius: 1.5) // sổ
-                ctx.rect(28, 30, 14, 4, Palette.sage, radius: 1.5)
-            } else {
-                ctx.rect(30, 33, 16, 7, Palette.lavenderSoft, radius: 1.5)
-            }
-        // MARK: Ghế / thảm
-        case "seat.rug":
-            ctx.ellipse(4, 70, 92, 24, Palette.catShade)
-            ctx.ellipse(14, 74, 72, 16, Palette.catCream)
-        case "seat.cushion":
-            ctx.ellipse(10, 66, 80, 28, Palette.lavender)
-            ctx.ellipse(18, 66, 64, 18, Palette.lavenderSoft)
-            ctx.ellipse(47, 72, 6, 6, Palette.lavender)
-        case "seat.armchair":
-            ctx.rect(10, 34, 80, 44, Palette.peach, radius: 14)
-            ctx.rect(4, 50, 18, 34, Palette.peach.opacity(0.85), radius: 8)
-            ctx.rect(78, 50, 18, 34, Palette.peach.opacity(0.85), radius: 8)
-            ctx.rect(20, 58, 60, 18, Palette.catCream, radius: 6)
-            ctx.rect(14, 84, 5, 10, woodDark, radius: 1)
-            ctx.rect(81, 84, 5, 10, woodDark, radius: 1)
-        // MARK: Cây
-        case "plant.cactus":
-            ctx.rect(32, 68, 36, 26, Palette.peach, radius: 4)
-            ctx.rect(42, 34, 16, 38, Palette.sage, radius: 8)
-            ctx.rect(28, 46, 10, 18, Palette.sage, radius: 5)
-            ctx.rect(62, 40, 10, 16, Palette.sage, radius: 5)
-            ctx.ellipse(47, 28, 6, 6, Color.dynamic(light: 0xF4B0B0, dark: 0xF4B0B0))
-        case "plant.monstera":
-            ctx.rect(30, 70, 40, 24, Palette.catShade, radius: 5)
-            for (x, y, w, h) in [(16.0, 30.0, 34.0, 26.0), (48.0, 22.0, 36.0, 28.0), (30.0, 46.0, 40.0, 26.0)] {
-                ctx.ellipse(x, y, w, h, Palette.sage)
-            }
-            ctx.strokePath(Palette.sageSoft, width: 1.5) { p in
-                p.move(to: CGPoint(x: 50, y: 70)); p.addLine(to: CGPoint(x: 34, y: 42))
-                p.move(to: CGPoint(x: 50, y: 70)); p.addLine(to: CGPoint(x: 66, y: 36))
-            }
-        case "plant.tulip":
-            ctx.rect(30, 70, 40, 24, Palette.lavender, radius: 5)
-            for x in [36.0, 50.0, 64.0] {
-                ctx.rect(x - 1, 40, 2.5, 32, Palette.sage)
-                ctx.ellipse(x - 6, 30, 12, 14, x == 50 ? Palette.peach : Palette.blush)
-            }
-        // MARK: Đèn
-        case "lamp.candle":
-            ctx.rect(36, 56, 28, 38, Palette.catCream, radius: 4)
-            ctx.rect(49, 48, 2, 8, Palette.catInk)
-            ctx.ellipse(44, 32, 12, 18, Palette.honey)
-            ctx.ellipse(47, 38, 6, 10, Color.white.opacity(0.8))
-        case "lamp.desk":
-            ctx.ellipse(28, 86, 44, 9, woodDark)
-            ctx.strokePath(Palette.catInk, width: 3) { p in
-                p.move(to: CGPoint(x: 50, y: 88)); p.addLine(to: CGPoint(x: 40, y: 52)); p.addLine(to: CGPoint(x: 58, y: 30))
-            }
-            ctx.polygon([CGPoint(x: 50, y: 18), CGPoint(x: 80, y: 36), CGPoint(x: 66, y: 46)], Palette.lavender)
-            ctx.ellipse(66, 40, 10, 8, Palette.honey.opacity(0.9))
-        case "lamp.paper":
-            ctx.rect(49, 30, 2, 64, woodDark)
-            ctx.ellipse(40, 90, 20, 6, woodDark)
-            ctx.ellipse(22, 6, 56, 50, Palette.catCream)
-            ctx.ellipse(30, 14, 40, 34, Palette.honey.opacity(0.35))
-        // MARK: Đồ treo tường
-        case "wall.clock":
-            ctx.ellipse(20, 20, 60, 60, Palette.lavender)
-            ctx.ellipse(26, 26, 48, 48, Palette.catCream)
-            ctx.strokePath(Palette.catInk, width: 3) { p in
-                p.move(to: CGPoint(x: 50, y: 50)); p.addLine(to: CGPoint(x: 50, y: 34))
-                p.move(to: CGPoint(x: 50, y: 50)); p.addLine(to: CGPoint(x: 62, y: 56))
-            }
-        case "wall.poster":
-            ctx.rect(14, 18, 72, 60, woodDark, radius: 3)
-            ctx.rect(18, 22, 64, 52, Palette.lavenderSoft)
-            ctx.polygon([CGPoint(x: 18, y: 74), CGPoint(x: 42, y: 44), CGPoint(x: 62, y: 74)], Palette.sage)
-            ctx.polygon([CGPoint(x: 40, y: 74), CGPoint(x: 64, y: 50), CGPoint(x: 82, y: 74)], Palette.sage.opacity(0.7))
-            ctx.ellipse(62, 28, 10, 10, Palette.honey)
-        case "wall.shelf":
-            ctx.rect(8, 64, 84, 6, woodDark, radius: 2)
-            ctx.rect(16, 36, 9, 28, Palette.lavender, radius: 1)
-            ctx.rect(26, 40, 8, 24, Palette.peach, radius: 1)
-            ctx.rect(35, 34, 9, 30, Palette.sage, radius: 1)
-            ctx.rect(62, 50, 16, 14, Palette.catShade, radius: 3)
-            ctx.ellipse(60, 36, 20, 16, Palette.sage)
-        default:
-            ctx.rect(20, 20, 60, 60, Palette.surfaceMuted, radius: 8)
-        }
+        ItemPainter.draw(id, in: ctx)
     }
 }
 
-/// Góc phòng với 5 vị trí cố định và thú cưng. Vị trí trống hiển thị khung gợi ý.
-/// Khi thư giãn, thú cưng đi qua đi lại trên sàn (tắt khi bật Giảm chuyển động).
+/// Một căn phòng với các vị trí cố định và thú cưng. Vị trí trống hiển thị khung gợi ý.
+/// Thú cưng tự đi qua đi lại (tắt khi bật Giảm chuyển động); giữ để nhấc lên và thả sang chỗ khác,
+/// vuốt qua lại trên người để nựng.
 struct RoomView: View {
+    var room: RoomKind = .study
     var equipped: [ItemSlot: String]
     var appearance = PetAppearance()
     var petMood: PetMood
@@ -129,35 +39,30 @@ struct RoomView: View {
     var onTapSlot: ((ItemSlot) -> Void)?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var colorScheme
     @State private var start = Date()
+    /// Vị trí "nhà" của thú cưng (tỉ lệ bề rộng phòng) sau khi được kéo thả.
+    @State private var home: CGFloat?
+    @State private var drag: CGSize?
 
-    private struct SlotFrame {
-        let x: CGFloat, y: CGFloat, w: CGFloat, h: CGFloat
-    }
+    private var canWander: Bool { !reduceMotion && drag == nil && (petMood == .idle || petMood == .happy) }
 
-    private func frame(for slot: ItemSlot) -> SlotFrame {
-        switch slot {
-        case .wall: return SlotFrame(x: 0.08, y: 0.08, w: 0.30, h: 0.30)
-        case .lamp: return SlotFrame(x: 0.80, y: 0.30, w: 0.18, h: 0.34)
-        case .desk: return SlotFrame(x: 0.50, y: 0.40, w: 0.34, h: 0.34)
-        case .plant: return SlotFrame(x: 0.02, y: 0.52, w: 0.20, h: 0.26)
-        default: return SlotFrame(x: 0.18, y: 0.66, w: 0.40, h: 0.30)
-        }
-    }
-
-    private var canWander: Bool { !reduceMotion && (petMood == .idle || petMood == .happy) }
+    /// Chỗ đứng mặc định (tỉ lệ bề rộng phòng): khoảng sàn trống trước đồ đạc của từng phòng.
+    private var defaultHome: CGFloat { RoomLayout.petHome(room) }
 
     /// Vị trí ngang (tỉ lệ bề rộng phòng), đang đi hay không, hướng mặt — theo chu kỳ 26 giây.
     private func wander(at date: Date) -> (x: CGFloat, walking: Bool, left: Bool) {
-        let a: CGFloat = 0.20, b: CGFloat = 0.46
+        let a = home ?? defaultHome
+        let b = a > 0.45 ? a - 0.24 : a + 0.26
+        let goesLeft = b < a
         guard canWander else { return (a, false, false) }
         let t = date.timeIntervalSince(start).truncatingRemainder(dividingBy: 26)
         func ease(_ v: Double) -> CGFloat { CGFloat(v * v * (3 - 2 * v)) }
         switch t {
         case ..<9: return (a, false, false)
-        case ..<12: return (a + (b - a) * ease((t - 9) / 3), true, false)
-        case ..<21: return (b, false, t > 19)
-        case ..<24: return (b - (b - a) * ease((t - 21) / 3), true, true)
+        case ..<12: return (a + (b - a) * ease((t - 9) / 3), true, goesLeft)
+        case ..<21: return (b, false, t > 19 ? !goesLeft : goesLeft)
+        case ..<24: return (b - (b - a) * ease((t - 21) / 3), true, !goesLeft)
         default: return (a, false, false)
         }
     }
@@ -165,39 +70,50 @@ struct RoomView: View {
     var body: some View {
         GeometryReader { geo in
             let w = geo.size.width, h = geo.size.height
+            let k = h / 100
             ZStack(alignment: .topLeading) {
-                // tường + sàn
-                VStack(spacing: 0) {
-                    Palette.roomWall.frame(height: h * 0.62)
-                    Palette.roomFloor
-                }
-                // cửa sổ
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(Palette.lavenderSoft)
-                    .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Palette.wood, lineWidth: 4))
-                    .frame(width: w * 0.24, height: h * 0.26)
-                    .offset(x: w * 0.46, y: h * 0.08)
+                ItemArt(itemID: equipped[room.themeSlot] ?? Catalog.defaultItem(for: room.themeSlot)?.id ?? "")
+                    .frame(width: w, height: h)
+                    .allowsHitTesting(false)
 
-                ForEach(ItemSlot.room) { slot in
-                    let f = frame(for: slot)
-                    slotView(slot)
-                        .frame(width: w * f.w, height: h * f.h)
-                        .offset(x: w * f.x, y: h * f.y)
+                ForEach(RoomLayout.drawOrder(room)) { slot in
+                    if let spot = RoomLayout.spot(slot) {
+                        slotView(slot)
+                            .frame(width: spot.size * k, height: spot.size * k)
+                            .offset(x: spot.x * k, y: spot.y * k)
+                    }
+                }
+
+                if colorScheme == .dark {
+                    Color.black.opacity(0.12).allowsHitTesting(false)
                 }
 
                 TimelineView(.animation(minimumInterval: 1.0 / 30, paused: !canWander)) { timeline in
                     let spot = wander(at: timeline.date)
+                    let size = w * 0.30
                     PetView(appearance: appearance, mood: petMood, name: petName, bounceTrigger: bounceTrigger,
                             walking: spot.walking, facingLeft: spot.left, interactive: speech != nil,
-                            haptics: haptics, speech: speech)
-                        .frame(width: w * 0.30, height: w * 0.30)
-                        .offset(x: w * spot.x, y: h * 0.86 - w * 0.30)
+                            haptics: haptics, speech: speech,
+                            react: speech == nil ? nil : { reaction, seed in
+                                PetDialogue.reaction(reaction, petName: petName, species: appearance.species, seed: seed)
+                            },
+                            onPickUp: { drag = $0 },
+                            onDrop: { translation in
+                                let x = min(max((spot.x * w + translation.width) / w, 0.02), 0.68)
+                                home = x
+                                drag = nil
+                                start = Date()
+                            })
+                        .frame(width: size, height: size)
+                        .offset(x: w * spot.x + (drag?.width ?? 0),
+                                y: h * 0.86 - size + min(max(drag?.height ?? 0, -h * 0.5), h * 0.08))
                 }
             }
         }
-        .aspectRatio(1.25, contentMode: .fit)
-        .clipShape(RoundedRectangle(cornerRadius: Radius.l, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: Radius.l, style: .continuous).strokeBorder(Palette.line))
+        .aspectRatio(RoomLayout.aspect, contentMode: .fit)
+        .clipShape(RoundedRectangle(cornerRadius: Radius.xl, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: Radius.xl, style: .continuous).strokeBorder(Palette.line))
+        .onChange(of: room) { _, _ in home = nil }
     }
 
     private func slotLabel(_ slot: ItemSlot) -> String {
@@ -210,10 +126,11 @@ struct RoomView: View {
         let content = Group {
             if let id = equipped[slot] {
                 ItemArt(itemID: id)
-            } else {
+            } else if onTapSlot != nil {
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .strokeBorder(Palette.inkMuted.opacity(0.35), style: StrokeStyle(lineWidth: 1.5, dash: [4, 4]))
                     .overlay(Image(systemName: "plus").font(.caption).foregroundStyle(Palette.inkMuted.opacity(0.6)))
+                    .padding(4)
             }
         }
         if let onTapSlot {

@@ -63,6 +63,12 @@ shot 15-pet-gallery gallery
 shot 16-breathing breathing
 shot 17-task-detail taskDetail
 shot 18-journal-editor journalEditor
+shot 19-bedroom bedroom
+shot 20-kitchen kitchen
+shot 21-bath bath
+shot 22-garden garden
+shot 23-collection collection
+shot 24-look look
 
 log "Giao diện tối"
 xcrun simctl ui "$SIM_ID" appearance dark
@@ -73,6 +79,7 @@ shot dark-09-journal journal
 shot dark-10-progress progress
 shot dark-12-wardrobe wardrobe
 shot dark-15-pet-gallery gallery
+shot dark-19-bedroom bedroom
 xcrun simctl ui "$SIM_ID" appearance light
 
 log "Cỡ chữ rất lớn (Trợ năng)"

@@ -53,6 +53,20 @@ iPhone: ________ · iOS: ________ · Bản build (Cài đặt → Thông tin →
 - [ ] Bài thở: vòng tròn phồng/xẹp theo nhịp, chữ đổi đúng; chạy hết giờ → +1 xu (một lần mỗi ngày); bấm Dừng → không thưởng
 - [ ] Giảm chuyển động: thú cưng đứng yên, bài thở không phồng/xẹp
 
+### Phòng, bộ sưu tập, nựng thú cưng (bản phòng & bộ sưu tập)
+- [ ] Góc nhỏ: hàng chọn phòng có Phòng học, Phòng ngủ, Bếp & bàn ăn, Phòng tắm, Khu vườn; phòng chưa đủ cấp hiện ổ khóa và "Cấp N"
+- [ ] Đồ cũ của phòng học vẫn ở đúng chỗ sau khi cài đè
+- [ ] Chạm một ô trống trong phòng → mở Trang trí đúng vị trí; mua đồ → đồ hiện ngay trong phòng
+- [ ] Đổi "Tường & sàn" (vườn: "Bầu trời") của từng phòng; chọn lại món mặc định được
+- [ ] Vuốt qua lại trên thú cưng → mắt híp, má đỏ, tim bay, rung nhẹ, có câu nói
+- [ ] Giữ thú cưng ~nửa giây → nhấc lên (mắt tròn, chân lủng lẳng); kéo sang trái/phải rồi thả → thú cưng ở chỗ mới, nhảy nhẹ khi chạm sàn
+- [ ] Chạm nhanh thú cưng vẫn là vuốt ve (không bị nhấc lên); cuộn trang Góc nhỏ vẫn mượt
+- [ ] Bộ sưu tập: lưới 11 loài + 40 bộ phối sẵn; chạm một bộ → xem thử chuyển động; "Mua N món còn thiếu" trừ đúng tổng xu; thiếu xu/cấp → không trừ gì
+- [ ] Tủ đồ có thêm mục "Phụ kiện" (cánh, ba lô, bóng bay…)
+- [ ] Hoàn thành việc → thú cưng bật lên cùng bong bóng "+10 XP · +5 xu" rồi tự ẩn
+- [ ] Hôm nay: thú cưng nói một câu trong bong bóng nâu; chạm bong bóng → câu khác; chạm thú cưng → sang Góc nhỏ
+- [ ] Chuyến đi: câu chuyện thay đổi theo loài thú cưng đang dùng
+
 ### Lập kế hoạch (mới)
 - [ ] Việc con: thêm/xóa/sắp xếp trong form; đánh dấu trong chi tiết; timeline hiện "1/3"
 - [ ] Việc lặp có việc con: mỗi ngày bắt đầu chưa làm; sửa "lần này trở đi" giữ các mục đã đánh dấu

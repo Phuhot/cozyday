@@ -3,6 +3,7 @@ import Foundation
 /// Hình dạng thú cưng. `rawValue` = phần sau "species." trong ID vật phẩm.
 enum PetSpecies: String, CaseIterable {
     case cat, bunny, hamster, bear, fox
+    case puppy, duck, frog, capybara, panda, penguin
 
     var name: String {
         switch self {
@@ -11,6 +12,12 @@ enum PetSpecies: String, CaseIterable {
         case .hamster: return "hamster"
         case .bear: return "gấu nhỏ"
         case .fox: return "cáo"
+        case .puppy: return "cún con"
+        case .duck: return "vịt con"
+        case .frog: return "ếch xanh"
+        case .capybara: return "capybara"
+        case .panda: return "gấu trúc"
+        case .penguin: return "chim cánh cụt"
         }
     }
 }
@@ -18,6 +25,7 @@ enum PetSpecies: String, CaseIterable {
 /// Màu lông. Mã màu nằm ở lớp giao diện; ở đây chỉ là lựa chọn.
 enum FurColor: String, CaseIterable {
     case cream, snow, ginger, smoke, cocoa, peach, midnight, lilac
+    case honey, mint, sky
 }
 
 /// Giai đoạn lớn lên theo cấp — chỉ thay đổi dáng vẻ, không có hình phạt.
@@ -62,16 +70,19 @@ struct PetAppearance: Equatable {
     var glasses: String?
     var neck: String?
     var outfit: String?
+    /// Phụ kiện sau lưng / cầm tay (cánh, ba lô, bóng bay…).
+    var back: String?
     var stage: PetStage = .growing
 
     init(species: PetSpecies = .cat, fur: FurColor = .cream, hat: String? = nil, glasses: String? = nil,
-         neck: String? = nil, outfit: String? = nil, stage: PetStage = .growing) {
+         neck: String? = nil, outfit: String? = nil, back: String? = nil, stage: PetStage = .growing) {
         self.species = species
         self.fur = fur
         self.hat = hat
         self.glasses = glasses
         self.neck = neck
         self.outfit = outfit
+        self.back = back
         self.stage = stage
     }
 
@@ -85,7 +96,7 @@ struct PetAppearance: Equatable {
         self.init(
             species: suffix(pick(.species)).flatMap(PetSpecies.init(rawValue:)) ?? .cat,
             fur: suffix(pick(.fur)).flatMap(FurColor.init(rawValue:)) ?? .cream,
-            hat: pick(.hat), glasses: pick(.glasses), neck: pick(.neck), outfit: pick(.outfit),
+            hat: pick(.hat), glasses: pick(.glasses), neck: pick(.neck), outfit: pick(.outfit), back: pick(.back),
             stage: PetStage.forLevel(level)
         )
     }
@@ -101,6 +112,7 @@ struct PetAppearance: Equatable {
         case .glasses: copy.glasses = item.id
         case .neck: copy.neck = item.id
         case .outfit: copy.outfit = item.id
+        case .back: copy.back = item.id
         default: break
         }
         return copy
@@ -115,6 +127,7 @@ struct PetAppearance: Equatable {
         case .glasses: copy.glasses = nil
         case .neck: copy.neck = nil
         case .outfit: copy.outfit = nil
+        case .back: copy.back = nil
         default: break
         }
         return copy
@@ -129,7 +142,15 @@ struct PetAppearance: Equatable {
         case .glasses: return glasses
         case .neck: return neck
         case .outfit: return outfit
+        case .back: return back
         default: return nil
         }
+    }
+}
+
+extension PetAppearance {
+    /// Mọi món đồ tạo nên ngoại hình này (kể cả hình dạng & màu lông mặc định).
+    var itemIDs: [String] {
+        ItemSlot.pet.compactMap { itemID(in: $0) }
     }
 }

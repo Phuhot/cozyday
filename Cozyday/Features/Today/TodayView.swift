@@ -318,39 +318,65 @@ struct TodayHeader: View {
         return "\(part), \(store.profile.displayUserName)"
     }
 
+    @Environment(DayClock.self) private var dayClock
+    @State private var tip = 0
+
     var body: some View {
         let counted = tasks.filter { $0.status != .skipped }
         let done = counted.filter { $0.status == .done }.count
-        HStack(alignment: .center, spacing: Spacing.m) {
-            VStack(alignment: .leading, spacing: Spacing.xs) {
+        VStack(alignment: .leading, spacing: Spacing.m) {
+            VStack(alignment: .leading, spacing: Spacing.xxs) {
                 Text(DateText.long(day, calendar: store.calendar))
                     .font(Typography.title)
                     .foregroundStyle(Palette.ink)
                 Text(greeting)
                     .font(Typography.callout)
                     .foregroundStyle(Palette.inkMuted)
-                if !counted.isEmpty {
-                    HStack(spacing: Spacing.s) {
-                        ProgressView(value: Double(done), total: Double(max(1, counted.count)))
-                            .tint(Palette.sage)
-                            .frame(maxWidth: 140)
-                        Text("\(done)/\(counted.count) việc xong")
-                            .font(Typography.caption.weight(.semibold))
-                            .foregroundStyle(Palette.inkMuted)
-                    }
-                    .accessibilityElement(children: .combine)
+            }
+            // Thú cưng nói chuyện với bạn (chạm bong bóng để nghe câu khác, chạm thú cưng để sang Góc nhỏ).
+            HStack(alignment: .bottom, spacing: Spacing.xs) {
+                Button {
+                    router.selectedTab = .corner
+                } label: {
+                    PetView(appearance: store.petAppearance, mood: ui.petMood(store: store),
+                            name: store.profile.displayPetName, bounceTrigger: ui.celebrateCounter)
+                        .frame(width: 76, height: 76)
                 }
+                .buttonStyle(.plain)
+                .accessibilityHint("Mở Góc nhỏ")
+                VStack(alignment: .leading, spacing: Spacing.s) {
+                    Button {
+                        withAnimation(Motion.bouncy) { tip += 1 }
+                    } label: {
+                        Text(isToday ? PetDialogue.line(for: store.petDialogueContext(today: dayClock.today), tap: tip)
+                                     : "Mình xem giúp bạn ngày này nhé!")
+                            .font(Typography.callout.weight(.semibold))
+                            .foregroundStyle(Palette.bubbleInk)
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .id(tip)
+                            .transition(.scale(scale: 0.9).combined(with: .opacity))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityHint("Nghe câu khác")
+                    if !counted.isEmpty {
+                        HStack(spacing: Spacing.s) {
+                            ProgressView(value: Double(done), total: Double(max(1, counted.count)))
+                                .tint(Palette.sage)
+                            Text("\(done)/\(counted.count) việc")
+                                .font(Typography.caption.weight(.bold))
+                                .foregroundStyle(Palette.bubbleInk.opacity(0.8))
+                        }
+                        .accessibilityElement(children: .combine)
+                    }
+                }
+                .padding(.horizontal, Spacing.m)
+                .padding(.vertical, Spacing.m)
+                .background(Palette.bubble, in: UnevenRoundedRectangle(topLeadingRadius: 20, bottomLeadingRadius: 4,
+                                                                      bottomTrailingRadius: 20, topTrailingRadius: 20, style: .continuous))
+                .padding(.bottom, Spacing.m)
             }
-            Spacer(minLength: 0)
-            Button {
-                router.selectedTab = .corner
-            } label: {
-                PetView(appearance: store.petAppearance, mood: ui.petMood(store: store),
-                        name: store.profile.displayPetName, bounceTrigger: ui.celebrateCounter)
-                    .frame(width: 64, height: 64)
-            }
-            .buttonStyle(.plain)
-            .accessibilityHint("Mở Góc nhỏ")
         }
         .padding(.top, Spacing.s)
     }
@@ -365,6 +391,8 @@ enum DateText {
     }
 
     static func short(_ day: DayKey) -> String { "\(day.day)/\(day.month)" }
+
+    static func weekdayShort(_ day: DayKey, calendar: Calendar) -> String { Weekday.shortLabel(day.weekday(calendar: calendar)) }
 
     static func full(_ day: DayKey, calendar: Calendar) -> String {
         "\(weekdayName(day.weekday(calendar: calendar))), \(day.day)/\(day.month)/\(day.year)"

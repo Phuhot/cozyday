@@ -17,7 +17,7 @@
 | `TaskOccurrenceModel` | `id` (UUID), `occurrenceKey` (duy nhất về logic), `templateID?` | Từng lần việc. `dayRaw = ""` = Hộp chờ. `subtasksJSON` (V2): việc con của lần này. |
 | `LedgerEntryModel` | `id`, `key` (duy nhất về logic) | Sổ cái thưởng/chi. **Số dư xu và XP = tổng sổ cái**, không lưu số dư riêng. |
 | `OwnedItemModel` | `itemID` | Đồ đã sở hữu (đồ phòng và đồ thú cưng), kèm `transactionID` của dòng sổ cái mua. |
-| `EquippedSlotModel` | `slotRaw` | Món đang dùng ở mỗi vị trí: 5 vị trí phòng + 6 lớp thú cưng (`species`, `fur`, `hat`, `glasses`, `neck`, `outfit`). |
+| `EquippedSlotModel` | `slotRaw` | Món đang dùng ở mỗi vị trí: các vị trí của 5 không gian (phòng học, phòng ngủ, bếp, phòng tắm, vườn — mỗi nơi có một vị trí "tường & sàn"/"bầu trời") + 7 lớp thú cưng (`species`, `fur`, `hat`, `glasses`, `neck`, `outfit`, `back`). Thêm vị trí mới không cần đổi lược đồ: `slotRaw` là chuỗi. |
 | `FocusSessionModel` | `id` | Phiên tập trung/nghỉ, lưu mốc thời gian (không lưu "giây còn lại"). |
 | `JournalEntryModel` | `id`, `dayRaw` (một mục/ngày) | Mood 1–5 + ghi chú. |
 
@@ -87,8 +87,14 @@ Các con số nằm trong `Cozyday/Core/Rewards/RewardConfig.swift`.
 - Mua đồ: kiểm tra đủ xu + chưa sở hữu → ghi dòng sổ cái và đồ sở hữu **trong cùng một lần save**. Bấm nhanh hai lần: lần thứ hai bị từ chối.
 - Năng lượng chuyến đi: mỗi việc xong lần đầu, phiên tập trung có thưởng, nhật ký, bài thở trong ngày = +25%. Không bao giờ bị trừ.
 - Một số hình dạng/trang phục cần đạt cấp nhất định mới mua được. Cấp không bao giờ giảm (mua đồ chỉ trừ xu, không trừ XP).
+- Không gian mở theo cấp, không tốn xu: phòng học và phòng ngủ từ cấp 1, bếp cấp 2, phòng tắm cấp 3, vườn cấp 4.
+  Đồ của một phòng không mua được trước cấp mở phòng đó. Tường & sàn mặc định của mỗi phòng luôn thuộc về bạn.
+- **Mặc cả bộ** (Bộ sưu tập): mua mọi món còn thiếu trong một lần save — đủ cấp và đủ xu cho **cả bộ** mới mua, nếu không
+  thì không món nào bị trừ xu. Mỗi món vẫn ghi một dòng `purchase:<itemID>` riêng. Mặc bộ mới thay toàn bộ 7 lớp ngoại hình;
+  đồ cũ vẫn còn trong kho.
+- Vị trí thú cưng sau khi kéo thả và phòng đang xem chỉ là tiện ích hiển thị trên máy (không nằm trong sao lưu).
 - Việc con không có thưởng riêng.
-- XP chỉ để vui (cấp = XP/100 + 1). Mèo không ốm, không bỏ đi, không mất đồ khi bạn nghỉ. Chuỗi ngày không có hình phạt.
+- XP chỉ để vui (cấp = XP/100 + 1). Thú cưng không ốm, không bỏ đi, không mất đồ khi bạn nghỉ. Chuỗi ngày không có hình phạt.
 
 ## 4. Sao lưu và khôi phục
 

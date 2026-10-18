@@ -1,7 +1,7 @@
 # Cozyday
 
-App iPhone dùng cá nhân: sắp xếp một ngày thành **timeline** trực quan, hoàn thành việc để chăm **chú mèo tròn màu kem**
-và trang trí góc phòng nhỏ. Native Swift + SwiftUI + SwiftData, chạy **offline**, không tài khoản, không máy chủ,
+App iPhone dùng cá nhân: sắp xếp một ngày thành **timeline** trực quan, hoàn thành việc để chăm **thú cưng tròn xinh**
+(11 loài, 80+ món trang phục) và trang trí 5 không gian nhỏ. Native Swift + SwiftUI + SwiftData, chạy **offline**, không tài khoản, không máy chủ,
 không quảng cáo, không mua hàng trong app.
 
 > Lấy cảm hứng về *cách giải quyết nhu cầu* từ các app lập lịch và app thú cưng tự chăm sóc, nhưng tên, bố cục, mèo,
@@ -11,8 +11,8 @@ không quảng cáo, không mua hàng trong app.
 
 | Tab | Nội dung |
 |---|---|
-| **Hôm nay** | Đầu trang gọn (ngày, lời chào, mèo nhỏ, tiến độ) · thanh chọn ngày theo tuần + nút về hôm nay · nhóm việc chưa xếp giờ · timeline dọc với đường "bây giờ", việc trùng giờ chia cột không đè chữ · chế độ Danh sách (tự bật khi cỡ chữ rất lớn) · Hộp chờ · **Sắp xếp lại** việc trễ (xem trước, có Hủy) · nút + thêm việc · mở **Tập trung** |
-| **Góc nhỏ** | Thú cưng **5 hình dạng** (mèo, thỏ, hamster, gấu nhỏ, cáo), **8 màu lông**, **trang phục** (mũ, kính, đồ ở cổ, áo — 34 món, một số mở khóa theo cấp) · **lớn dần** theo cấp (Nhóc con → Đang lớn → Trưởng thành) · **animation**: thở, chớp mắt, vẫy đuôi, giật tai, nhảy, đi lại trong phòng; chạm để vuốt ve (tim bay, rung nhẹ, nói một câu theo ngữ cảnh) · **Tủ đồ** mặc thử miễn phí trước khi mua · **Chuyến đi mỗi ngày**: đủ năng lượng thì đi chơi và về kể chuyện, lưu trong **Sổ ký ức** · phòng 5 vị trí + cửa hàng 15 món |
+| **Hôm nay** | Đầu trang gọn (ngày, lời chào, thú cưng nói chuyện trong bong bóng + tiến độ) · thanh chọn ngày theo tuần + nút về hôm nay · nhóm việc chưa xếp giờ · timeline dọc với đường "bây giờ", việc trùng giờ chia cột không đè chữ · chế độ Danh sách (tự bật khi cỡ chữ rất lớn) · Hộp chờ · **Sắp xếp lại** việc trễ (xem trước, có Hủy) · nút + thêm việc · mở **Tập trung** |
+| **Góc nhỏ** | Thú cưng **11 loài** (mèo, thỏ, hamster, gấu nhỏ, cáo, cún, vịt, ếch, capybara, gấu trúc, chim cánh cụt), **11 màu lông**, **trang phục & phụ kiện** (mũ, kính, đồ ở cổ, áo, cánh/ba lô/bóng bay… — 80+ món, một số mở khóa theo cấp) · **lớn dần** theo cấp · **animation**: thở, chớp mắt, vẫy đuôi, giật tai, nhảy, đi lại trong phòng; chạm để vuốt ve, **vuốt qua lại để nựng** (mắt híp, tim bay), **giữ rồi kéo để mang sang chỗ khác** · **Tủ đồ** mặc thử miễn phí · **Bộ sưu tập**: lưới các loài và 40 bộ phối sẵn, mua & mặc cả bộ bằng một chạm · **5 không gian**: phòng học, phòng ngủ, bếp & bàn ăn, phòng tắm, khu vườn (mở theo cấp), mỗi nơi có tường & sàn/bầu trời đổi được và 5–6 vị trí đồ (120+ món trang trí) · **Chuyến đi mỗi ngày** với nhiều câu chuyện theo loài và mùa, lưu trong **Sổ ký ức** · "Tuần này của thú cưng" |
 | **Nhật ký** | Mood 1–5 có nhãn chữ + ghi chú · **câu gợi ý viết** · lịch tháng tô màu theo mood · **bài thở có hướng dẫn** (3 nhịp, 1–5 phút) |
 | **Tiến bộ** | Việc đã xong, phút tập trung, số ngày có hoạt động, chuỗi ngày · biểu đồ 7/30 ngày · **phân bố tâm trạng** · lịch sử xu & vật phẩm. Chỉ dữ liệu thật. |
 | **Cài đặt** (nút bánh răng) | Tên, khung giờ trong ngày, rung, thông báo, **hiện sự kiện từ app Lịch** (chỉ đọc), **Xuất / Khôi phục sao lưu**, quy tắc phần thưởng, quyền riêng tư |

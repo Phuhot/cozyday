@@ -40,6 +40,42 @@ extension AppStore {
         }
     }
 
+    /// Mặc cả bộ phối sẵn: mua mọi món còn thiếu (tất cả hoặc không món nào) rồi thay toàn bộ ngoại hình.
+    /// Trả về số xu đã tiêu.
+    @discardableResult
+    func wearLook(_ look: PetLook) throws -> Int {
+        let missing = look.missing(owned: ownedIDs)
+        let cost = missing.reduce(0) { $0 + $1.price }
+        let level = wallet.level
+        if look.requiredLevel > level {
+            throw StoreError.invalid("Bộ này mở khóa ở cấp \(look.requiredLevel) (hiện đang cấp \(level)).")
+        }
+        if cost > wallet.coins {
+            throw StoreError.invalid("Cần \(cost) xu để mua đủ bộ, bạn đang có \(wallet.coins) xu.")
+        }
+        try commit {
+            for item in missing {
+                let decision = PurchasePolicy.decide(itemID: item.id, owned: self.ownedIDs, ledger: self.ledger, now: self.now)
+                guard case .approved(let entry) = decision else {
+                    throw StoreError.invalid(decision.message ?? "Không mua được \(item.name).")
+                }
+                let record = OwnedItemRecord(itemID: item.id, acquiredAt: self.now, transactionID: entry.id)
+                self.insertLedger(entry)
+                self.context.insert(OwnedItemModel(record: record))
+                self.owned.append(record)
+            }
+            let ids = Dictionary(look.itemIDs.compactMap { id in Catalog.item(id).map { ($0.slot, id) } }, uniquingKeysWith: { a, _ in a })
+            for slot in ItemSlot.pet {
+                if let id = ids[slot], let item = Catalog.item(id), !item.isDefault {
+                    try self.setEquipped(slot: slot, itemID: id)
+                } else {
+                    try self.removeEquipped(slot: slot)
+                }
+            }
+        }
+        return cost
+    }
+
     func unequip(slot: ItemSlot) throws {
         try commit {
             try self.removeEquipped(slot: slot)

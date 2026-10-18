@@ -30,6 +30,42 @@ final class PetStoreTests: XCTestCase {
         }
     }
 
+    func testWearLookBuysMissingAllOrNothingAndReplacesOutfit() throws {
+        let (store, container) = try makeStore()
+        try completeTasks(store, count: 10) // cấp 2, 50 xu
+        let look = PetLook(id: "t", name: "Thử", species: .cat, fur: .ginger, items: ["hat.sprout", "neck.bowtie"])
+        // 30 (ginger) + 0 (sprout) + 20 (bowtie) = 50 xu, vừa đủ.
+        try store.buy(itemID: "glasses.round") // 30 xu → còn 20, không đủ mua cả bộ
+        try store.equip(itemID: "glasses.round")
+        XCTAssertThrowsError(try store.wearLook(look))
+        XCTAssertFalse(store.ownedIDs.contains("fur.ginger"), "thiếu xu thì không mua món nào")
+        XCTAssertEqual(store.wallet.coins, 20)
+
+        try completeTasks(store, count: 6) // +30 xu → 50
+        let spent = try store.wearLook(look)
+        XCTAssertEqual(spent, 50)
+        XCTAssertEqual(store.wallet.coins, 0)
+        XCTAssertEqual(store.petAppearance.fur, .ginger)
+        XCTAssertEqual(store.petAppearance.hat, "hat.sprout")
+        XCTAssertNil(store.petAppearance.glasses, "món không thuộc bộ được tháo ra")
+        XCTAssertTrue(store.ownedIDs.contains("glasses.round"))
+
+        // Bộ cần cấp cao hơn → báo lỗi, không đổi gì.
+        XCTAssertThrowsError(try store.wearLook(PetLooks.look("look.penguinspace")!))
+        let (relaunched, _) = try makeStore(container)
+        XCTAssertEqual(relaunched.petAppearance.neck, "neck.bowtie")
+        XCTAssertEqual(relaunched.wallet.coins, 0)
+    }
+
+    func testRoomItemsNeedRoomLevelAndThemeDefaults() throws {
+        let (store, _) = try makeStore()
+        XCTAssertEqual(store.equippedItem(in: .bedroomTheme), nil)
+        XCTAssertTrue(Catalog.isOwned("bedroomTheme.lilac", owned: store.ownedIDs))
+        try store.buy(itemID: "bed.mat") // phòng ngủ mở từ cấp 1, đồ miễn phí
+        XCTAssertEqual(store.equippedItem(in: .bed)?.id, "bed.mat")
+        XCTAssertThrowsError(try store.buy(itemID: "stove.basic"), "bếp mở ở cấp 2")
+    }
+
     func testWardrobeDefaultsLevelLockAndEquipSurviveRelaunch() throws {
         let (store, container) = try makeStore()
         XCTAssertEqual(store.petAppearance.species, .cat)
