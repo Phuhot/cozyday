@@ -540,9 +540,9 @@ struct PetPainter {
             }
         case .capybara:
             let nostril = rgb(0x4A3530)
-            ctx.strokePath(nostril, width: 1.4) { p in
-                p.move(to: CGPoint(x: 45.8, y: 52.3)); p.addLine(to: CGPoint(x: 47.4, y: 54.3))
-                p.move(to: CGPoint(x: 54.2, y: 52.3)); p.addLine(to: CGPoint(x: 52.6, y: 54.3))
+            ctx.strokePath(nostril, width: 1.3) { p in
+                p.move(to: CGPoint(x: 47, y: 52.4)); p.addLine(to: CGPoint(x: 46.2, y: 54.4))
+                p.move(to: CGPoint(x: 53, y: 52.4)); p.addLine(to: CGPoint(x: 53.8, y: 54.4))
             }
             if pose.lifted {
                 ctx.ellipse(48, 57.5, 4, 3.8, nostril)

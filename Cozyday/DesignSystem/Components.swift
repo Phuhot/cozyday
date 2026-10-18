@@ -142,27 +142,6 @@ struct ErrorBanner: View {
     }
 }
 
-/// Thông báo thưởng ngắn (tự ẩn) — không chặn thao tác.
-struct RewardToast: View {
-    let text: String
-
-    var body: some View {
-        HStack(spacing: Spacing.s) {
-            Image(systemName: "sparkles")
-                .foregroundStyle(Palette.honey)
-                .accessibilityHidden(true)
-            Text(text)
-                .font(Typography.callout.weight(.semibold))
-                .foregroundStyle(Palette.ink)
-        }
-        .padding(.horizontal, Spacing.l)
-        .padding(.vertical, Spacing.s + 2)
-        .background(Palette.surface, in: Capsule())
-        .overlay(Capsule().strokeBorder(Palette.line))
-        .shadow(color: .black.opacity(0.08), radius: 8, y: 2)
-    }
-}
-
 /// Popup thưởng kiểu "boing": thú cưng của bạn bật lên cùng bong bóng lời thoại, tự ẩn, không chặn thao tác.
 struct PetRewardPopup: View {
     let text: String
