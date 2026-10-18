@@ -1,38 +1,79 @@
 import SwiftUI
 import SwiftData
 
-/// Mốc A: app tối giản để kiểm chứng đường build → IPA → Sideloadly → iPhone.
-/// Một màn hình, một ghi chú lưu bền vững bằng SwiftData (CloudKit tắt tường minh).
 @main
 struct CozydayApp: App {
-    private let container: ModelContainer?
-    private let loadError: String?
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+    @State private var boot: AppBoot
 
     init() {
-        do {
-            container = try PathCheckStore.makeContainer()
-            loadError = nil
-        } catch {
-            container = nil
-            loadError = String(describing: error)
-        }
+        _boot = State(initialValue: AppBoot.start())
     }
 
     var body: some Scene {
         WindowGroup {
-            if let container {
-                PathCheckView()
-                    .modelContainer(container)
-            } else {
-                VStack(spacing: 12) {
-                    Text("Không mở được dữ liệu")
-                        .font(.headline)
-                    Text(loadError ?? "")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-                .padding()
+            switch boot {
+            case .ready(let env):
+                RootView()
+                    .environment(env.store)
+                    .environment(env.ui)
+                    .environment(env.dayClock)
+                    .environment(env.notifications)
+                    .environment(AppRouter.shared)
+                    .tint(Palette.lavender)
+            case .failed(let message):
+                StorageErrorView(message: message)
             }
         }
+    }
+}
+
+struct AppEnvironment {
+    let store: AppStore
+    let ui: UIState
+    let dayClock: DayClock
+    let notifications: NotificationService
+}
+
+enum AppBoot {
+    case ready(AppEnvironment)
+    case failed(String)
+
+    @MainActor
+    static func start() -> AppBoot {
+        do {
+            let container = try PersistenceController.makeContainer()
+            let store = try AppStore(container: container)
+            return .ready(AppEnvironment(store: store, ui: UIState(), dayClock: DayClock(), notifications: NotificationService()))
+        } catch {
+            return .failed((error as? LocalizedError)?.errorDescription ?? String(describing: error))
+        }
+    }
+}
+
+/// Màn hình khi không mở được dữ liệu. Không xóa hay ghi đè database.
+struct StorageErrorView: View {
+    let message: String
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: Spacing.l) {
+                PetArt(mood: .rest)
+                    .frame(width: 120, height: 120)
+                    .frame(maxWidth: .infinity)
+                Text("Không mở được dữ liệu")
+                    .font(Typography.title)
+                Text("Cozyday không đọc được kho dữ liệu trên máy. App KHÔNG xóa hay tạo lại dữ liệu để tránh mất những gì bạn đã lưu.")
+                Text("Hãy thử: tắt hẳn app rồi mở lại; kiểm tra iPhone còn dung lượng trống. Nếu vẫn lỗi, gửi nội dung bên dưới khi nhờ hỗ trợ (không chứa nội dung nhật ký).")
+                    .foregroundStyle(Palette.inkMuted)
+                Text(message)
+                    .font(.footnote.monospaced())
+                    .textSelection(.enabled)
+                    .padding(Spacing.m)
+                    .background(Palette.surfaceMuted, in: RoundedRectangle(cornerRadius: Radius.m))
+            }
+            .padding(Spacing.xl)
+        }
+        .cozyBackground()
     }
 }

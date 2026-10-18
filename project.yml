@@ -48,6 +48,7 @@ targets:
     platform: iOS
     sources:
       - path: Tests/AppTests
+      - path: Tests/CoreTests
     dependencies:
       - target: Cozyday
     settings:

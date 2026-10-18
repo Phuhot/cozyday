@@ -1,0 +1,261 @@
+import Foundation
+
+/// Toàn bộ dữ liệu có thể khôi phục của Cozyday, dạng JSON có phiên bản.
+/// File ở dạng đọc được (KHÔNG mã hóa) — chứa nội dung riêng tư như tên việc và nhật ký.
+struct BackupDocument: Codable, Equatable {
+    static let formatID = "cozyday.backup"
+    static let currentSchemaVersion = 1
+
+    var format: String
+    var schemaVersion: Int
+    var exportedAt: Date
+    var appVersion: String
+    var profile: ProfileRecord
+    var templates: [TaskTemplateRecord]
+    var occurrences: [TaskOccurrenceRecord]
+    var ledger: [LedgerEntry]
+    var ownedItems: [OwnedItemRecord]
+    var equipped: [EquippedRecord]
+    var focusSessions: [FocusSessionRecord]
+    var journal: [JournalRecord]
+
+    var counts: BackupCounts {
+        BackupCounts(
+            templates: templates.count,
+            occurrences: occurrences.filter { !$0.isRemoved }.count,
+            ledger: ledger.count,
+            ownedItems: ownedItems.count,
+            focusSessions: focusSessions.count,
+            journal: journal.count,
+            coins: Wallet(entries: ledger).coins,
+            xp: Wallet(entries: ledger).xp
+        )
+    }
+}
+
+struct BackupCounts: Equatable {
+    var templates: Int
+    var occurrences: Int
+    var ledger: Int
+    var ownedItems: Int
+    var focusSessions: Int
+    var journal: Int
+    var coins: Int
+    var xp: Int
+}
+
+enum BackupError: Error, Equatable {
+    case tooLarge(bytes: Int, limit: Int)
+    case notJSON
+    case wrongFormat
+    case unsupportedVersion(found: Int, supported: Int)
+    case corrupted(String)
+    case duplicateID(String)
+    case brokenReference(String)
+    case invalidValue(String)
+
+    var message: String {
+        switch self {
+        case .tooLarge(let bytes, let limit):
+            return "File quá lớn (\(bytes / 1_000_000) MB, giới hạn \(limit / 1_000_000) MB)."
+        case .notJSON:
+            return "File không phải JSON hợp lệ."
+        case .wrongFormat:
+            return "Đây không phải file sao lưu của Cozyday."
+        case .unsupportedVersion(let found, let supported):
+            return "File sao lưu dùng phiên bản dữ liệu \(found), app này chỉ đọc được tới \(supported). Hãy cập nhật Cozyday trước khi khôi phục."
+        case .corrupted(let detail):
+            return "File sao lưu bị hỏng hoặc thiếu dữ liệu: \(detail)"
+        case .duplicateID(let what):
+            return "File sao lưu có ID bị trùng (\(what))."
+        case .brokenReference(let what):
+            return "File sao lưu có tham chiếu không hợp lệ (\(what))."
+        case .invalidValue(let what):
+            return "File sao lưu có giá trị không hợp lệ (\(what))."
+        }
+    }
+}
+
+enum BackupCodec {
+    static let maxBytes = 25_000_000
+
+    static func makeEncoder() -> JSONEncoder {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        encoder.dateEncodingStrategy = .custom { date, encoder in
+            var c = encoder.singleValueContainer()
+            try c.encode(isoFormatter().string(from: date))
+        }
+        return encoder
+    }
+
+    static func makeDecoder() -> JSONDecoder {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let c = try decoder.singleValueContainer()
+            let raw = try c.decode(String.self)
+            if let d = isoFormatter().date(from: raw) { return d }
+            let plain = ISO8601DateFormatter()
+            if let d = plain.date(from: raw) { return d }
+            throw DecodingError.dataCorruptedError(in: c, debugDescription: "Thời điểm không hợp lệ: \(raw)")
+        }
+        return decoder
+    }
+
+    private static func isoFormatter() -> ISO8601DateFormatter {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f
+    }
+
+    static func encode(_ document: BackupDocument) throws -> Data {
+        try makeEncoder().encode(document)
+    }
+
+    private struct Header: Decodable {
+        var format: String?
+        var schemaVersion: Int?
+    }
+
+    /// Đọc + kiểm tra đầy đủ. Không ghi gì vào dữ liệu đang có.
+    static func decodeAndValidate(_ data: Data) throws -> BackupDocument {
+        guard data.count <= maxBytes else { throw BackupError.tooLarge(bytes: data.count, limit: maxBytes) }
+        guard (try? JSONSerialization.jsonObject(with: data)) != nil else { throw BackupError.notJSON }
+        let header: Header
+        do {
+            header = try JSONDecoder().decode(Header.self, from: data)
+        } catch {
+            throw BackupError.wrongFormat
+        }
+        guard header.format == BackupDocument.formatID, let version = header.schemaVersion else {
+            throw BackupError.wrongFormat
+        }
+        guard version >= 1, version <= BackupDocument.currentSchemaVersion else {
+            throw BackupError.unsupportedVersion(found: version, supported: BackupDocument.currentSchemaVersion)
+        }
+        let document: BackupDocument
+        do {
+            document = try makeDecoder().decode(BackupDocument.self, from: data)
+        } catch let error as DecodingError {
+            throw BackupError.corrupted(describe(error))
+        }
+        try BackupValidator.validate(document)
+        return document
+    }
+
+    private static func describe(_ error: DecodingError) -> String {
+        func path(_ ctx: DecodingError.Context) -> String {
+            ctx.codingPath.map { $0.intValue.map(String.init) ?? $0.stringValue }.joined(separator: ".")
+        }
+        switch error {
+        case .keyNotFound(let key, let ctx): return "thiếu trường \(key.stringValue) tại \(path(ctx))"
+        case .typeMismatch(_, let ctx): return "sai kiểu dữ liệu tại \(path(ctx))"
+        case .valueNotFound(_, let ctx): return "thiếu giá trị tại \(path(ctx))"
+        case .dataCorrupted(let ctx): return "dữ liệu hỏng tại \(path(ctx))"
+        @unknown default: return "lỗi không xác định"
+        }
+    }
+}
+
+enum BackupValidator {
+    static func validate(_ d: BackupDocument) throws {
+        func unique<T: Hashable>(_ values: [T], _ what: String) throws {
+            if Set(values).count != values.count { throw BackupError.duplicateID(what) }
+        }
+        try unique(d.templates.map(\.id), "mẫu việc lặp")
+        try unique(d.occurrences.map(\.id), "việc")
+        try unique(d.occurrences.map(\.occurrenceKey), "khóa việc")
+        try unique(d.ledger.map(\.id), "sổ cái")
+        try unique(d.ledger.map(\.key), "khóa sổ cái")
+        try unique(d.ownedItems.map(\.itemID), "đồ đã sở hữu")
+        try unique(d.equipped.map(\.slot), "vị trí trong phòng")
+        try unique(d.focusSessions.map(\.id), "phiên tập trung")
+        try unique(d.journal.map(\.id), "nhật ký")
+        try unique(d.journal.map(\.day), "ngày nhật ký")
+
+        let p = d.profile
+        guard validMinute(p.activeStartMinute), (1...TimeOfDay.minutesPerDay).contains(p.activeEndMinute),
+              p.activeStartMinute < p.activeEndMinute, validMinute(p.journalReminderMinute) else {
+            throw BackupError.invalidValue("giờ trong hồ sơ")
+        }
+
+        let templateIDs = Set(d.templates.map(\.id))
+        for t in d.templates {
+            try checkTiming(start: t.startMinute, duration: t.durationMinutes, what: "mẫu \"\(t.title.prefix(20))\"")
+            if t.recurrence.frequency == .weekly && t.recurrence.weekdays.isEmpty {
+                throw BackupError.invalidValue("lịch lặp theo thứ không có thứ nào")
+            }
+            if let end = t.recurrence.endDay, end < t.recurrence.startDay {
+                throw BackupError.invalidValue("ngày kết thúc lặp trước ngày bắt đầu")
+            }
+            try checkOffset(t.reminderOffsetMinutes)
+        }
+        for o in d.occurrences {
+            if let tid = o.templateID, !templateIDs.contains(tid) {
+                // Mẫu có thể đã bị xóa "lần này trở đi" — chỉ chấp nhận cho lần đã xong/bỏ qua.
+                if o.status == .open && !o.isRemoved {
+                    throw BackupError.brokenReference("việc trỏ tới mẫu lặp không tồn tại")
+                }
+            }
+            if o.startMinute != nil && o.day == nil {
+                throw BackupError.invalidValue("việc có giờ nhưng không có ngày")
+            }
+            try checkTiming(start: o.startMinute, duration: o.durationMinutes, what: "việc \"\(o.title.prefix(20))\"")
+            try checkOffset(o.reminderOffsetMinutes)
+            if o.status == .done && o.completedAt == nil {
+                throw BackupError.invalidValue("việc đã xong nhưng thiếu thời điểm hoàn thành")
+            }
+        }
+        let wallet = Wallet(entries: d.ledger)
+        if wallet.coins < 0 { throw BackupError.invalidValue("số xu âm") }
+        for e in d.ledger {
+            switch e.kind {
+            case .purchase:
+                guard e.coins <= 0, e.xp == 0 else { throw BackupError.invalidValue("dòng mua đồ") }
+            default:
+                guard e.coins >= 0, e.xp >= 0 else { throw BackupError.invalidValue("dòng thưởng âm") }
+            }
+        }
+        let owned = Set(d.ownedItems.map(\.itemID))
+        for item in d.ownedItems where Catalog.item(item.itemID) == nil {
+            throw BackupError.brokenReference("món đồ không có trong danh mục: \(item.itemID)")
+        }
+        for eq in d.equipped {
+            guard let item = Catalog.item(eq.itemID), item.slot == eq.slot else {
+                throw BackupError.brokenReference("món đồ trang bị sai vị trí: \(eq.itemID)")
+            }
+            guard owned.contains(eq.itemID) else {
+                throw BackupError.brokenReference("trang bị món chưa sở hữu: \(eq.itemID)")
+            }
+        }
+        if d.focusSessions.filter(\.isActive).count > 1 {
+            throw BackupError.invalidValue("nhiều hơn một phiên tập trung đang chạy")
+        }
+        for s in d.focusSessions {
+            guard s.plannedSeconds >= 60, s.plannedSeconds <= 4 * 3600,
+                  s.accumulatedSeconds >= 0, s.focusedSeconds >= 0,
+                  s.focusedSeconds <= Double(s.plannedSeconds) + 1 else {
+                throw BackupError.invalidValue("phiên tập trung")
+            }
+        }
+        for j in d.journal {
+            guard Mood(rawValue: j.mood) != nil else { throw BackupError.invalidValue("mood ngoài khoảng 1–5") }
+            guard j.note.count <= JournalRecord.maxNoteLength else { throw BackupError.invalidValue("nhật ký quá dài") }
+        }
+    }
+
+    private static func validMinute(_ m: Int) -> Bool { (0..<TimeOfDay.minutesPerDay).contains(m) }
+
+    private static func checkTiming(start: Int?, duration: Int, what: String) throws {
+        guard duration >= 1, duration <= 24 * 60 else { throw BackupError.invalidValue("thời lượng của \(what)") }
+        if let start {
+            guard validMinute(start), start + duration <= TimeOfDay.minutesPerDay else {
+                throw BackupError.invalidValue("giờ của \(what)")
+            }
+        }
+    }
+
+    private static func checkOffset(_ offset: Int?) throws {
+        if let offset, offset < 0 || offset > 24 * 60 { throw BackupError.invalidValue("thời gian nhắc trước") }
+    }
+}
