@@ -1,0 +1,124 @@
+# Build IPA chưa ký cho iPhone thật trên runner macOS của GitHub.
+#
+# Cách chạy chủ động: tab Actions → "iOS unsigned IPA" → Run workflow.
+# Push lên nhánh main KHÔNG tự chạy (tiết kiệm phút macOS). Riêng nhánh claude/** (nhánh
+# Claude dùng để phát triển) tự chạy khi đổi code/cấu hình build — không chạy khi chỉ sửa docs.
+name: iOS unsigned IPA
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_tests:
+        description: "Chạy thêm unit test trên iOS Simulator (tốn thêm phút macOS)"
+        type: boolean
+        default: false
+  push:
+    branches:
+      - "claude/**"
+    paths:
+      - "Cozyday/**"
+      - "Tests/**"
+      - "project.yml"
+      - "scripts/ci/**"
+      - ".github/workflows/ios-unsigned.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-unsigned-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Đã đối chiếu actions/runner-images (macos-26-arm64, image 20260907): có Xcode 26.6 + iOS SDK 26.5.
+  XCODE_VERSION: "26.6"
+  XCODEGEN_VERSION: "2.46.0"
+  # SHA-256 của xcodegen.zip bản 2.46.0 tải từ GitHub Releases chính thức.
+  XCODEGEN_SHA256: "4d9e34b62172d645eed6457cac13fc222569974098ef4ee9c3368bedf0196806"
+
+jobs:
+  device-ipa:
+    name: Build IPA (iphoneos arm64, chưa ký)
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - name: Lấy source
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Chọn Xcode ${{ env.XCODE_VERSION }}
+        run: scripts/ci/select_xcode.sh
+
+      - name: Cài XcodeGen ${{ env.XCODEGEN_VERSION }} (kiểm SHA-256)
+        run: scripts/ci/install_xcodegen.sh
+
+      - name: In phiên bản công cụ
+        run: scripts/ci/print_toolchain.sh
+
+      - name: Tạo Xcode project từ project.yml
+        run: scripts/ci/generate_project.sh
+
+      - name: Build Release cho thiết bị + đóng gói IPA
+        run: scripts/ci/build_unsigned_ipa.sh
+
+      - name: Kiểm tra cấu trúc IPA
+        run: scripts/ci/verify_ipa.sh
+
+      - name: Upload IPA + checksum + thông tin build
+        uses: actions/upload-artifact@v7
+        with:
+          name: Cozyday-unsigned-ipa-run${{ github.run_number }}
+          path: |
+            build/output/Cozyday-unsigned.ipa
+            build/output/Cozyday-unsigned.ipa.sha256
+            build/output/build-info.txt
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+
+      - name: Upload log build
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-logs-device-run${{ github.run_number }}
+          path: |
+            build/logs/
+            build/toolchain.txt
+          if-no-files-found: ignore
+          retention-days: 7
+
+  simulator-tests:
+    name: Unit test trên iOS Simulator
+    if: github.event_name == 'push' || inputs.run_tests
+    runs-on: macos-26
+    timeout-minutes: 40
+    steps:
+      - name: Lấy source
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Chọn Xcode ${{ env.XCODE_VERSION }}
+        run: scripts/ci/select_xcode.sh
+
+      - name: Cài XcodeGen ${{ env.XCODEGEN_VERSION }} (kiểm SHA-256)
+        run: scripts/ci/install_xcodegen.sh
+
+      - name: In phiên bản công cụ
+        run: scripts/ci/print_toolchain.sh
+
+      - name: Tạo Xcode project từ project.yml
+        run: scripts/ci/generate_project.sh
+
+      - name: Chạy test
+        run: scripts/ci/run_simulator_tests.sh
+
+      - name: Upload log test
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-logs-tests-run${{ github.run_number }}
+          path: build/logs/
+          if-no-files-found: ignore
+          retention-days: 7
