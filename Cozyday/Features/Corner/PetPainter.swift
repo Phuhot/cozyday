@@ -431,6 +431,7 @@ struct PetPainter {
             ctx.ellipse(39.5, 52, 21, 13, fur.belly)
         case .capybara:
             ctx.fill(capybaraMuzzle, with: .color(fur.shade))
+            ctx.fill(capybaraMuzzle, with: .color(rgb(0x6B4A3A).opacity(0.2)))
             ctx.ellipse(44, 50.5, 7, 3, Color.white.opacity(0.18))
         case .panda:
             let dark = pandaDark
@@ -539,8 +540,10 @@ struct PetPainter {
             }
         case .capybara:
             let nostril = rgb(0x4A3530)
-            ctx.rotated(-25, around: CGPoint(x: 46.5, y: 53.5)) { c in c.ellipse(45.4, 52.7, 2.2, 1.6, nostril) }
-            ctx.rotated(25, around: CGPoint(x: 53.5, y: 53.5)) { c in c.ellipse(52.4, 52.7, 2.2, 1.6, nostril) }
+            ctx.strokePath(nostril, width: 1.4) { p in
+                p.move(to: CGPoint(x: 45.8, y: 52.3)); p.addLine(to: CGPoint(x: 47.4, y: 54.3))
+                p.move(to: CGPoint(x: 54.2, y: 52.3)); p.addLine(to: CGPoint(x: 52.6, y: 54.3))
+            }
             if pose.lifted {
                 ctx.ellipse(48, 57.5, 4, 3.8, nostril)
             } else {
