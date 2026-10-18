@@ -183,6 +183,17 @@ extension AppStore {
 
     // MARK: Trạng thái + thưởng
 
+    /// Đánh dấu / bỏ đánh dấu một việc con. Không có thưởng riêng.
+    func toggleSubtask(occurrenceID: UUID, subtaskID: UUID) throws {
+        guard var occ = occurrence(occurrenceID) else { throw StoreError.notFound }
+        var list = occ.checklist
+        guard let i = list.firstIndex(where: { $0.id == subtaskID }) else { throw StoreError.notFound }
+        list[i].isDone.toggle()
+        occ.checklist = list
+        occ.updatedAt = now
+        try saveOccurrence(occ)
+    }
+
     /// Đổi trạng thái. Lần đầu hoàn thành → ghi một dòng thưởng (cùng một lần save).
     /// Trả về dòng thưởng nếu vừa được nhận (để UI chạy hiệu ứng).
     @discardableResult
@@ -206,15 +217,20 @@ extension AppStore {
 
     // MARK: Replan
 
-    func replanPlan(for day: DayKey, includeUnscheduled: Bool) -> Replanner.Plan {
+    /// `busy`: khoảng thời gian bận khác (ví dụ sự kiện từ app Lịch) — coi như việc cố định, không bao giờ bị dời.
+    func replanPlan(for day: DayKey, includeUnscheduled: Bool, busy: [(start: Int, duration: Int)] = []) -> Replanner.Plan {
         let items = tasks(on: day)
         let isToday = day == today
         let nowMinute = isToday ? calendar.minuteOfDay(now) : (day < today ? TimeOfDay.minutesPerDay : 0)
-        let tasks = items.enumerated().map { index, o in
+        var tasks = items.enumerated().map { index, o in
             Replanner.Task(
                 id: o.id, start: o.startMinute, duration: o.durationMinutes, isFixed: o.isFixed,
                 isFinished: o.status != .open, priority: o.priority, order: index
             )
+        }
+        for (i, b) in busy.enumerated() {
+            tasks.append(Replanner.Task(id: UUID(), start: b.start, duration: b.duration, isFixed: true,
+                                        isFinished: false, priority: .normal, order: items.count + i))
         }
         return Replanner.plan(
             tasks: tasks, nowMinute: nowMinute,

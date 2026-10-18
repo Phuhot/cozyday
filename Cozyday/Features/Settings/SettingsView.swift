@@ -6,6 +6,7 @@ struct SettingsView: View {
     @Environment(AppStore.self) private var store
     @Environment(UIState.self) private var ui
     @Environment(NotificationService.self) private var notifications
+    @Environment(CalendarService.self) private var calendarService
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
 
@@ -53,6 +54,7 @@ struct SettingsView: View {
                 }
 
                 notificationSection
+                calendarSection
                 backupSection
 
                 Section("Thông tin") {
@@ -96,6 +98,35 @@ struct SettingsView: View {
                 }
                 .presentationDetents([.medium, .large])
             }
+        }
+    }
+
+    // MARK: Lịch iPhone
+
+    private var calendarSection: some View {
+        Section {
+            Toggle("Hiện sự kiện từ app Lịch", isOn: Binding(
+                get: { calendarService.isActive },
+                set: { value in
+                    if value {
+                        Task { _ = await calendarService.enable() }
+                    } else {
+                        calendarService.isEnabled = false
+                    }
+                }
+            ))
+            if calendarService.access == .denied {
+                Text("Cozyday chưa được phép đọc lịch. Bật lại trong Cài đặt iPhone → Cozyday → Lịch → Toàn quyền truy cập.")
+                    .font(Typography.caption)
+                    .foregroundStyle(Palette.inkMuted)
+                Button("Mở Cài đặt iPhone") {
+                    if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
+                }
+            }
+        } header: {
+            Text("Lịch iPhone")
+        } footer: {
+            Text("Chỉ đọc để hiện cạnh việc trên timeline và để \"Sắp xếp lại\" tránh giờ bận. Sự kiện không được lưu vào Cozyday và không có trong bản sao lưu.")
         }
     }
 

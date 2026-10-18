@@ -6,6 +6,7 @@ struct RootView: View {
     @Environment(UIState.self) private var ui
     @Environment(DayClock.self) private var dayClock
     @Environment(NotificationService.self) private var notifications
+    @Environment(CalendarService.self) private var calendarService
     @Environment(AppRouter.self) private var router
     @Environment(\.scenePhase) private var scenePhase
 
@@ -47,6 +48,7 @@ struct RootView: View {
 
     private func appBecameActive() {
         dayClock.refresh()
+        calendarService.refreshAccess()
         // Phiên tập trung đã hết giờ khi app ở nền/đóng → chốt đúng một lần.
         var reward: LedgerEntry?
         ui.run { reward = try store.reconcileFocus() }

@@ -107,3 +107,27 @@ final class PetTests: XCTestCase {
         XCTAssertTrue(PetDialogue.lines(for: night).allSatisfy { !$0.isEmpty })
     }
 }
+
+final class BreathingTests: XCTestCase {
+    func testPhaseAndExpansionFollowPattern() {
+        let box = BreathingPattern.box
+        XCTAssertEqual(box.cycleSeconds, 16)
+        XCTAssertEqual(box.phase(at: 1).phase.kind, .inhale)
+        XCTAssertEqual(box.phase(at: 5).phase.kind, .hold)
+        XCTAssertEqual(box.phase(at: 9).phase.kind, .exhale)
+        XCTAssertEqual(box.phase(at: 13).phase.kind, .rest)
+        XCTAssertEqual(box.phase(at: 17).phase.kind, .inhale, "lặp lại sau mỗi chu kỳ")
+        XCTAssertEqual(box.expansion(at: 2), 0.5, accuracy: 0.001)
+        XCTAssertEqual(box.expansion(at: 6), 1)
+        XCTAssertEqual(box.expansion(at: 10), 0.5, accuracy: 0.001)
+        XCTAssertEqual(BreathingPattern.sleepy.phase(at: 10).phase.kind, .hold)
+        XCTAssertEqual(BreathingPattern.calm.expansion(at: -3), 0)
+    }
+
+    func testJournalPromptStablePerDayAndShifts() {
+        let d = day("2026-10-18")
+        XCTAssertEqual(JournalPrompts.prompt(for: d), JournalPrompts.prompt(for: d))
+        XCTAssertNotEqual(JournalPrompts.prompt(for: d), JournalPrompts.prompt(for: d, shift: 1))
+        XCTAssertEqual(JournalPrompts.prompt(for: d, shift: JournalPrompts.all.count), JournalPrompts.prompt(for: d))
+    }
+}

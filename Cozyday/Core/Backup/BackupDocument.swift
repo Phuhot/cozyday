@@ -190,6 +190,12 @@ enum BackupValidator {
             }
             try checkOffset(t.reminderOffsetMinutes)
         }
+        for list in d.occurrences.map(\.checklist) + d.templates.map(\.checklist) {
+            if list.count > Subtasks.maxCount || list.contains(where: { $0.title.isEmpty || $0.title.count > Subtasks.maxTitleLength }) {
+                throw BackupError.invalidValue("việc con")
+            }
+            try unique(list.map(\.id), "việc con")
+        }
         for o in d.occurrences {
             if let tid = o.templateID, !templateIDs.contains(tid) {
                 // Mẫu có thể đã bị xóa "lần này trở đi" — chỉ chấp nhận cho lần đã xong/bỏ qua.

@@ -37,6 +37,7 @@ struct CozydayApp: App {
             .environment(env.ui)
             .environment(env.dayClock)
             .environment(env.notifications)
+            .environment(env.calendar)
             .environment(AppRouter.shared)
             .tint(Palette.lavender)
     }
@@ -47,6 +48,7 @@ struct AppEnvironment {
     let ui: UIState
     let dayClock: DayClock
     let notifications: NotificationService
+    let calendar: CalendarService
 }
 
 enum AppBoot {
@@ -73,7 +75,7 @@ enum AppBoot {
         do {
             let container = try PersistenceController.makeContainer()
             let store = try AppStore(container: container)
-            return .ready(AppEnvironment(store: store, ui: UIState(), dayClock: DayClock(), notifications: NotificationService()))
+            return .ready(AppEnvironment(store: store, ui: UIState(), dayClock: DayClock(), notifications: NotificationService(), calendar: CalendarService()))
         } catch {
             return .failed((error as? LocalizedError)?.errorDescription ?? String(describing: error))
         }

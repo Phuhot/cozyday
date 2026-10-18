@@ -175,7 +175,11 @@ struct PetArt: View {
         drawFace(ctx, fur)
         if let glasses = appearance.glasses { drawGlasses(ctx, glasses) }
         if let neck = appearance.neck { drawNeck(ctx, neck) }
-        if let hat = appearance.hat { drawHat(ctx, hat) }
+        if let hat = appearance.hat {
+            drawHat(ctx, hat)
+            // Tai thỏ dài: thò ra ngoài mũ len / mũ cói thay vì bị che mất.
+            if appearance.species == .bunny && (hat == "hat.beanie" || hat == "hat.straw") { drawEars(ctx, fur) }
+        }
         drawPaws(ctx, fur)
         drawMoodExtras(ctx)
         drawHearts(base)

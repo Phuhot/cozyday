@@ -23,10 +23,13 @@ enum PersistenceController {
         return folder.appendingPathComponent(storeFileName)
     }
 
-    static func makeContainer(inMemory: Bool = false) throws -> ModelContainer {
-        let schema = Schema(versionedSchema: CozySchemaV1.self)
+    /// `url`: chỉ dùng trong test (mở một file store cụ thể, ví dụ để thử migration).
+    static func makeContainer(inMemory: Bool = false, url: URL? = nil) throws -> ModelContainer {
+        let schema = Schema(versionedSchema: CozySchemaV2.self)
         let configuration: ModelConfiguration
-        if inMemory {
+        if let url {
+            configuration = ModelConfiguration(schema: schema, url: url, cloudKitDatabase: .none)
+        } else if inMemory {
             // Tên riêng cho mỗi container trong bộ nhớ (dùng trong test) để không dùng chung dữ liệu.
             configuration = ModelConfiguration(UUID().uuidString, schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         } else {

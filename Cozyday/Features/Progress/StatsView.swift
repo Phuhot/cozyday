@@ -78,6 +78,8 @@ struct StatsView: View {
                         }
                     }
 
+                    moodCard(days: days)
+
                     Text("\"Việc đã xong\" phản ánh trạng thái hiện tại: bỏ đánh dấu hoàn thành thì thống kê giảm, nhưng xu/XP đã nhận được giữ nguyên.")
                         .font(Typography.caption)
                         .foregroundStyle(Palette.inkMuted)
@@ -130,6 +132,54 @@ struct StatsView: View {
                 .padding(Spacing.m)
                 .background(Palette.surface, in: RoundedRectangle(cornerRadius: Radius.m))
                 .accessibilityElement(children: .combine)
+            }
+        }
+    }
+
+    /// Số ngày theo từng mức tâm trạng trong khoảng đang xem — chỉ đếm, không suy diễn.
+    private func moodCard(days: [DayKey]) -> some View {
+        let range = Set(days)
+        let entries = store.journal.filter { range.contains($0.day) }
+        let counts = Dictionary(grouping: entries, by: \.mood).mapValues(\.count)
+        return CozyCard {
+            VStack(alignment: .leading, spacing: Spacing.s) {
+                HStack {
+                    Text("Tâm trạng")
+                        .font(Typography.headline)
+                        .foregroundStyle(Palette.ink)
+                    Spacer()
+                    Text("\(entries.count)/\(days.count) ngày có nhật ký")
+                        .font(Typography.caption)
+                        .foregroundStyle(Palette.inkMuted)
+                }
+                if entries.isEmpty {
+                    Text("Viết nhật ký để thấy tâm trạng của bạn theo thời gian.")
+                        .font(Typography.callout)
+                        .foregroundStyle(Palette.inkMuted)
+                } else {
+                    ForEach(Mood.allCases) { mood in
+                        let count = counts[mood.rawValue] ?? 0
+                        HStack(spacing: Spacing.s) {
+                            MoodFace(mood: mood).frame(width: 24, height: 24)
+                            Text(mood.label)
+                                .font(Typography.caption)
+                                .foregroundStyle(Palette.ink)
+                                .frame(width: 90, alignment: .leading)
+                            GeometryReader { geo in
+                                Capsule()
+                                    .fill(MoodFace.color(mood))
+                                    .frame(width: max(4, geo.size.width * CGFloat(count) / CGFloat(max(1, entries.count))))
+                            }
+                            .frame(height: 10)
+                            Text("\(count)")
+                                .font(Typography.caption.monospacedDigit())
+                                .foregroundStyle(Palette.inkMuted)
+                                .frame(width: 24, alignment: .trailing)
+                        }
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel("\(mood.label): \(count) ngày")
+                    }
+                }
             }
         }
     }

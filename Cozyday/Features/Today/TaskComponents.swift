@@ -55,6 +55,9 @@ struct TaskRow: View {
                     }
                     Text("·")
                     Text(task.category.label)
+                    if let progress = Subtasks.progressLabel(task.checklist) {
+                        Label(progress, systemImage: "checklist").labelStyle(.titleAndIcon).monospacedDigit()
+                    }
                     if task.isRecurring { Image(systemName: "repeat").accessibilityHidden(true) }
                     if task.priority == .high { Image(systemName: "flag.fill").foregroundStyle(Palette.peach).accessibilityHidden(true) }
                 }
@@ -93,6 +96,9 @@ enum TaskAccessibility {
         case .done: parts.append("đã hoàn thành")
         case .skipped: parts.append("đã bỏ qua")
         case .open: break
+        }
+        if !t.checklist.isEmpty {
+            parts.append("\(t.checklist.filter(\.isDone).count) trên \(t.checklist.count) việc con xong")
         }
         if overlaps { parts.append("trùng giờ với việc khác") }
         if t.isRecurring { parts.append("lặp lại") }
@@ -221,6 +227,43 @@ struct TaskDetailSheet: View {
                 }
                 if !task.notes.isEmpty {
                     CozyCard { Text(task.notes).font(Typography.body).foregroundStyle(Palette.ink) }
+                }
+                if !task.checklist.isEmpty {
+                    CozyCard {
+                        VStack(alignment: .leading, spacing: Spacing.xs) {
+                            HStack {
+                                Text("Việc con")
+                                    .font(Typography.headline)
+                                    .foregroundStyle(Palette.ink)
+                                Spacer()
+                                Text(Subtasks.progressLabel(task.checklist) ?? "")
+                                    .font(Typography.caption.weight(.semibold).monospacedDigit())
+                                    .foregroundStyle(Palette.inkMuted)
+                            }
+                            ForEach(task.checklist) { item in
+                                Button {
+                                    ui.run { try store.toggleSubtask(occurrenceID: task.id, subtaskID: item.id) }
+                                } label: {
+                                    HStack(alignment: .firstTextBaseline, spacing: Spacing.s) {
+                                        Image(systemName: item.isDone ? "checkmark.square.fill" : "square")
+                                            .foregroundStyle(item.isDone ? Palette.sage : Palette.inkMuted)
+                                        Text(item.title)
+                                            .font(Typography.body)
+                                            .foregroundStyle(item.isDone ? Palette.inkMuted : Palette.ink)
+                                            .strikethrough(item.isDone)
+                                            .multilineTextAlignment(.leading)
+                                        Spacer(minLength: 0)
+                                    }
+                                    .frame(minHeight: HitTarget.min)
+                                    .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel(item.title)
+                                .accessibilityValue(item.isDone ? "đã xong" : "chưa xong")
+                                .accessibilityHint("Chạm để đổi trạng thái")
+                            }
+                        }
+                    }
                 }
 
                 VStack(spacing: Spacing.s) {

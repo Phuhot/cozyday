@@ -44,6 +44,8 @@ struct TaskEditorView: View {
                         .lineLimit(2...6)
                 }
 
+                SubtaskEditorSection(subtasks: $draft.subtasks)
+
                 Section("Nhóm & ưu tiên") {
                     Picker("Nhóm", selection: $draft.category) {
                         ForEach(TaskCategory.allCases) { c in
@@ -271,5 +273,65 @@ struct WeekdayPicker: View {
                 .accessibilityAddTraits(on ? .isSelected : [])
             }
         }
+    }
+}
+
+/// Danh sách việc con trong form: thêm, sửa, xóa, đánh dấu, sắp xếp.
+struct SubtaskEditorSection: View {
+    @Binding var subtasks: [Subtask]
+    @State private var newTitle = ""
+    @FocusState private var addFocused: Bool
+
+    var body: some View {
+        Section {
+            ForEach($subtasks) { $item in
+                HStack(spacing: Spacing.s) {
+                    Button {
+                        item.isDone.toggle()
+                    } label: {
+                        Image(systemName: item.isDone ? "checkmark.square.fill" : "square")
+                            .foregroundStyle(item.isDone ? Palette.sage : Palette.inkMuted)
+                            .frame(minWidth: HitTarget.min, minHeight: HitTarget.min)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(item.isDone ? "Bỏ đánh dấu" : "Đánh dấu xong")
+                    TextField("Việc con", text: $item.title, axis: .vertical)
+                        .lineLimit(1...3)
+                        .strikethrough(item.isDone)
+                }
+            }
+            .onDelete { subtasks.remove(atOffsets: $0) }
+            .onMove { subtasks.move(fromOffsets: $0, toOffset: $1) }
+
+            if subtasks.count < Subtasks.maxCount {
+                HStack(spacing: Spacing.s) {
+                    Image(systemName: "plus.circle.fill")
+                        .foregroundStyle(Palette.lavender)
+                        .frame(minWidth: HitTarget.min, minHeight: HitTarget.min)
+                        .accessibilityHidden(true)
+                    TextField("Thêm việc con", text: $newTitle)
+                        .focused($addFocused)
+                        .submitLabel(.next)
+                        .onSubmit(add)
+                    if !newTitle.trimmingCharacters(in: .whitespaces).isEmpty {
+                        Button("Thêm", action: add)
+                    }
+                }
+            }
+        } header: {
+            Text("Việc con")
+        } footer: {
+            if !subtasks.isEmpty {
+                Text("Vuốt sang trái để xóa. Việc con không có thưởng riêng; thưởng tính khi hoàn thành việc chính.")
+            }
+        }
+    }
+
+    private func add() {
+        let title = newTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !title.isEmpty, subtasks.count < Subtasks.maxCount else { return }
+        subtasks.append(Subtask(title: String(title.prefix(Subtasks.maxTitleLength))))
+        newTitle = ""
+        addFocused = true
     }
 }

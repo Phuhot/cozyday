@@ -24,6 +24,10 @@
 	<array>
 		<string>vi</string>
 	</array>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Cozyday chỉ đọc sự kiện để hiện cạnh việc của bạn trên timeline. Không sửa, không lưu và không gửi đi đâu.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>Cozyday chỉ đọc sự kiện để hiện cạnh việc của bạn trên timeline. Không sửa, không lưu và không gửi đi đâu.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>LSRequiresIPhoneOS</key>

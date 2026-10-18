@@ -4,8 +4,8 @@ import SwiftData
 /// Lược đồ dữ liệu phiên bản 1. Không dùng quan hệ (relationship) giữa các bảng: tham chiếu bằng ID
 /// để quy tắc xóa rõ ràng, và xóa một việc không bao giờ cascade xóa sổ cái thưởng.
 ///
-/// Khi cần đổi lược đồ: tạo `CozySchemaV2` mới, thêm vào `CozyMigrationPlan.schemas` và một
-/// `MigrationStage`. Không sửa trực tiếp các model của V1 đã phát hành.
+/// Khi cần đổi lược đồ: tạo phiên bản mới (xem `CozySchemaV2`), thêm vào `CozyMigrationPlan.schemas`
+/// và một `MigrationStage`. Không sửa trực tiếp các model của phiên bản đã phát hành.
 enum CozySchemaV1: VersionedSchema {
     static let versionIdentifier = Schema.Version(1, 0, 0)
 
@@ -177,15 +177,18 @@ enum CozySchemaV1: VersionedSchema {
 }
 
 enum CozyMigrationPlan: SchemaMigrationPlan {
-    static var schemas: [any VersionedSchema.Type] { [CozySchemaV1.self] }
-    static var stages: [MigrationStage] { [] }
+    static var schemas: [any VersionedSchema.Type] { [CozySchemaV1.self, CozySchemaV2.self] }
+    static var stages: [MigrationStage] { [v1ToV2] }
+
+    /// V1 → V2: chỉ thêm cột `subtasksJSON` (mặc định rỗng) → migration nhẹ, không đụng dữ liệu cũ.
+    static let v1ToV2 = MigrationStage.lightweight(fromVersion: CozySchemaV1.self, toVersion: CozySchemaV2.self)
 }
 
-typealias ProfileModel = CozySchemaV1.ProfileModel
-typealias TaskTemplateModel = CozySchemaV1.TaskTemplateModel
-typealias TaskOccurrenceModel = CozySchemaV1.TaskOccurrenceModel
-typealias LedgerEntryModel = CozySchemaV1.LedgerEntryModel
-typealias OwnedItemModel = CozySchemaV1.OwnedItemModel
-typealias EquippedSlotModel = CozySchemaV1.EquippedSlotModel
-typealias FocusSessionModel = CozySchemaV1.FocusSessionModel
-typealias JournalEntryModel = CozySchemaV1.JournalEntryModel
+typealias ProfileModel = CozySchemaV2.ProfileModel
+typealias TaskTemplateModel = CozySchemaV2.TaskTemplateModel
+typealias TaskOccurrenceModel = CozySchemaV2.TaskOccurrenceModel
+typealias LedgerEntryModel = CozySchemaV2.LedgerEntryModel
+typealias OwnedItemModel = CozySchemaV2.OwnedItemModel
+typealias EquippedSlotModel = CozySchemaV2.EquippedSlotModel
+typealias FocusSessionModel = CozySchemaV2.FocusSessionModel
+typealias JournalEntryModel = CozySchemaV2.JournalEntryModel

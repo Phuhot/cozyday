@@ -60,7 +60,8 @@ extension TaskTemplateModel {
                 weekdays: weekdays, startDay: startDay,
                 endDay: endDayRaw.flatMap { DayKey(string: $0) }
             ),
-            createdAt: createdAt
+            createdAt: createdAt,
+            subtasks: subtasksJSON.isEmpty ? nil : Subtasks.decode(subtasksJSON)
         )
     }
 
@@ -78,6 +79,7 @@ extension TaskTemplateModel {
         startDayRaw = r.recurrence.startDay.string
         endDayRaw = r.recurrence.endDay?.string
         createdAt = r.createdAt
+        subtasksJSON = Subtasks.encode(r.checklist)
     }
 }
 
@@ -98,7 +100,8 @@ extension TaskOccurrenceModel {
             isFixed: isFixed, reminderOffsetMinutes: reminderOffsetMinutes,
             status: TaskStatus(rawValue: statusRaw) ?? .open,
             completedAt: completedAt, isDetached: isDetached, isRemoved: isRemoved,
-            createdAt: createdAt, updatedAt: updatedAt
+            createdAt: createdAt, updatedAt: updatedAt,
+            subtasks: subtasksJSON.isEmpty ? nil : Subtasks.decode(subtasksJSON)
         )
     }
 
@@ -120,6 +123,7 @@ extension TaskOccurrenceModel {
         isRemoved = r.isRemoved
         createdAt = r.createdAt
         updatedAt = r.updatedAt
+        subtasksJSON = Subtasks.encode(r.checklist)
     }
 }
 

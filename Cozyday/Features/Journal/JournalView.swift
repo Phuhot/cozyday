@@ -38,6 +38,7 @@ struct JournalView: View {
     @Environment(DayClock.self) private var dayClock
     @State private var month: (year: Int, month: Int)?
     @State private var editingDay: DayKey?
+    @State private var showBreathing = false
 
     private var shown: (year: Int, month: Int) { month ?? (dayClock.today.year, dayClock.today.month) }
 
@@ -46,6 +47,7 @@ struct JournalView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: Spacing.l) {
                     todayCard
+                    breathingCard
                     monthHeader
                     calendarGrid
                     legend
@@ -56,9 +58,48 @@ struct JournalView: View {
             .cozyBackground()
             .navigationTitle("Nhật ký")
             .toolbar { ToolbarItem(placement: .topBarTrailing) { SettingsButton() } }
+            .sheet(isPresented: $showBreathing) { BreathingView() }
             .sheet(item: Binding(get: { editingDay.map(IdentifiedDay.init) }, set: { editingDay = $0?.day })) { item in
                 JournalEditor(day: item.day)
                     .presentationDetents([.large])
+            }
+        }
+    }
+
+    private var breathingCard: some View {
+        let doneToday = store.ledgerKeys.contains(LedgerKeys.breathing(dayClock.today))
+        return Button {
+            showBreathing = true
+        } label: {
+            HStack(spacing: Spacing.m) {
+                Image(systemName: "wind")
+                    .font(.title2)
+                    .foregroundStyle(Palette.sage)
+                    .frame(width: 44, height: 44)
+                    .background(Palette.sage.opacity(0.15), in: Circle())
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Thở chậm một chút")
+                        .font(Typography.headline)
+                        .foregroundStyle(Palette.ink)
+                    Text(doneToday ? "Hôm nay bạn đã thở cùng \(store.profile.displayPetName) rồi." : "1–5 phút, có hướng dẫn. +\(RewardConfig.breathingCoins) xu mỗi ngày.")
+                        .font(Typography.caption)
+                        .foregroundStyle(Palette.inkMuted)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right").foregroundStyle(Palette.inkMuted).accessibilityHidden(true)
+            }
+            .padding(Spacing.m)
+            .background(Palette.surface, in: RoundedRectangle(cornerRadius: Radius.l))
+            .overlay(RoundedRectangle(cornerRadius: Radius.l).strokeBorder(Palette.line))
+        }
+        .buttonStyle(.plain)
+        .task {
+            if PreviewMode.current == .breathing {
+                try? await Task.sleep(nanoseconds: 600_000_000)
+                showBreathing = true
+            } else if PreviewMode.current == .journalEditor {
+                try? await Task.sleep(nanoseconds: 600_000_000)
+                editingDay = dayClock.today
             }
         }
     }
@@ -231,10 +272,38 @@ struct JournalEditor: View {
     @State private var note = ""
     @State private var loaded = false
     @State private var confirmDelete = false
+    @State private var promptShift = 0
 
     var body: some View {
         NavigationStack {
             Form {
+                Section {
+                    let prompt = JournalPrompts.prompt(for: day, shift: promptShift)
+                    Text(prompt)
+                        .font(Typography.body.italic())
+                        .foregroundStyle(Palette.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                    HStack {
+                        Button {
+                            note = note.isEmpty ? prompt + "\n" : note + (note.hasSuffix("\n") ? "" : "\n") + prompt + "\n"
+                        } label: {
+                            Label("Dùng câu này", systemImage: "text.insert")
+                        }
+                        .buttonStyle(.borderless)
+                        Spacer()
+                        Button {
+                            promptShift += 1
+                        } label: {
+                            Label("Câu khác", systemImage: "shuffle")
+                        }
+                        .buttonStyle(.borderless)
+                    }
+                    .font(Typography.callout)
+                } header: {
+                    Text("Gợi ý viết")
+                } footer: {
+                    Text("Không bắt buộc — viết gì cũng được, một chữ cũng được.")
+                }
                 Section("Tâm trạng") {
                     HStack(spacing: Spacing.xs) {
                         ForEach(Mood.allCases) { m in

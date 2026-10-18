@@ -9,6 +9,7 @@ enum TaskValidationError: Error, Equatable {
     case weeklyWithoutWeekdays
     case repeatNeedsDay
     case endBeforeStart
+    case tooManySubtasks(max: Int)
 
     var message: String {
         switch self {
@@ -28,6 +29,8 @@ enum TaskValidationError: Error, Equatable {
             return "Việc lặp lại cần có ngày bắt đầu."
         case .endBeforeStart:
             return "Ngày kết thúc lặp phải sau ngày bắt đầu."
+        case .tooManySubtasks(let max):
+            return "Mỗi việc có tối đa \(max) việc con."
         }
     }
 }
@@ -48,6 +51,9 @@ enum TaskValidation {
             if start < 0 || start >= TimeOfDay.minutesPerDay { return .invalidStart }
             let end = start + draft.durationMinutes
             if end > TimeOfDay.minutesPerDay { return .crossesMidnight(endMinute: end - TimeOfDay.minutesPerDay) }
+        }
+        if Subtasks.normalized(draft.subtasks).count < draft.subtasks.filter({ !$0.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }).count {
+            return .tooManySubtasks(max: Subtasks.maxCount)
         }
         if let frequency = draft.repeatFrequency {
             guard let day = draft.day else { return .repeatNeedsDay }

@@ -29,7 +29,8 @@ enum OccurrenceFactory {
             isDetached: false,
             isRemoved: false,
             createdAt: now,
-            updatedAt: now
+            updatedAt: now,
+            subtasks: template.subtasks.map(Subtasks.fresh)
         )
     }
 
@@ -75,9 +76,12 @@ enum OccurrenceFactory {
             isDetached: false,
             isRemoved: false,
             createdAt: now,
-            updatedAt: now
+            updatedAt: now,
+            subtasks: nilIfEmpty(Subtasks.normalized(draft.subtasks))
         )
     }
+
+    private static func nilIfEmpty(_ list: [Subtask]) -> [Subtask]? { list.isEmpty ? nil : list }
 
     static func makeTemplate(from draft: TaskDraft, startDay: DayKey, now: Date) -> TaskTemplateRecord? {
         guard let frequency = draft.repeatFrequency else { return nil }
@@ -97,7 +101,8 @@ enum OccurrenceFactory {
                 startDay: startDay,
                 endDay: draft.repeatEndDay
             ),
-            createdAt: now
+            createdAt: now,
+            subtasks: nilIfEmpty(Subtasks.fresh(Subtasks.normalized(draft.subtasks)))
         )
     }
 }
@@ -114,6 +119,7 @@ extension TaskOccurrenceRecord {
         durationMinutes = draft.durationMinutes
         isFixed = draft.isFixed
         reminderOffsetMinutes = startMinute == nil ? nil : draft.reminderOffsetMinutes
+        checklist = Subtasks.normalized(draft.subtasks)
         updatedAt = now
     }
 
@@ -127,6 +133,7 @@ extension TaskOccurrenceRecord {
         durationMinutes = template.durationMinutes
         isFixed = template.isFixed
         reminderOffsetMinutes = template.reminderOffsetMinutes
+        checklist = Subtasks.merge(template: template.checklist, keepingStateFrom: checklist)
         updatedAt = now
     }
 }
@@ -141,6 +148,7 @@ extension TaskTemplateRecord {
         durationMinutes = draft.durationMinutes
         isFixed = draft.isFixed
         reminderOffsetMinutes = draft.startMinute == nil ? nil : draft.reminderOffsetMinutes
+        checklist = Subtasks.fresh(Subtasks.normalized(draft.subtasks))
         if let frequency = draft.repeatFrequency {
             recurrence = RecurrenceRule(
                 frequency: frequency,

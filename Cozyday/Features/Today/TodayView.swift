@@ -36,6 +36,7 @@ struct TodayView: View {
     @Environment(UIState.self) private var ui
     @Environment(DayClock.self) private var dayClock
     @Environment(AppRouter.self) private var router
+    @Environment(CalendarService.self) private var calendarService
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     @State private var selectedDay: DayKey?
@@ -53,7 +54,12 @@ struct TodayView: View {
         let timed = tasks.filter { $0.startMinute != nil }
         let untimed = tasks.filter { $0.startMinute == nil }
         let isToday = day == dayClock.today
-        let plan = isToday ? store.replanPlan(for: day, includeUnscheduled: false) : nil
+        let _ = calendarService.revision
+        let events = calendarService.events(on: day, calendar: store.calendar)
+        let timedEvents = events.filter { !$0.isAllDay }
+        let allDayEvents = events.filter(\.isAllDay)
+        let busy = timedEvents.map { (start: $0.startMinute, duration: $0.durationMinutes) }
+        let plan = isToday ? store.replanPlan(for: day, includeUnscheduled: false, busy: busy) : nil
 
         NavigationStack {
             ScrollViewReader { proxy in
@@ -113,6 +119,17 @@ struct TodayView: View {
                             }
                         }
 
+                        if !allDayEvents.isEmpty {
+                            VStack(alignment: .leading, spacing: Spacing.xs) {
+                                ForEach(allDayEvents) { e in
+                                    Label("Cả ngày: \(e.title)", systemImage: "calendar")
+                                        .font(Typography.callout)
+                                        .foregroundStyle(Palette.inkMuted)
+                                        .accessibilityLabel("Sự kiện cả ngày trong app Lịch: \(e.title)")
+                                }
+                            }
+                        }
+
                         if !timed.isEmpty || isToday {
                             HStack {
                                 Text("Lịch trong ngày")
@@ -130,6 +147,7 @@ struct TodayView: View {
                                     tasks: timed, isToday: isToday,
                                     activeStart: store.profile.activeStartMinute,
                                     activeEnd: store.profile.activeEndMinute,
+                                    events: timedEvents,
                                     sheet: $sheet
                                 )
                             } else if timed.isEmpty {
@@ -139,6 +157,7 @@ struct TodayView: View {
                             } else {
                                 VStack(spacing: Spacing.s) {
                                     ForEach(timed) { TaskRow(task: $0, sheet: $sheet) }
+                                    ForEach(timedEvents) { EventBlock(event: $0).frame(minHeight: 56) }
                                 }
                             }
                         }
@@ -241,10 +260,14 @@ struct TodayView: View {
         case .editor:
             sheet = .newTask(day: day, startMinute: min(TimeOfDay.roundUp(store.calendar.minuteOfDay(store.now) + 5, step: 30), 23 * 60))
         case .replan:
-            let plan = store.replanPlan(for: day, includeUnscheduled: false)
+            let busy = calendarService.events(on: day, calendar: store.calendar).filter { !$0.isAllDay }
+                .map { (start: $0.startMinute, duration: $0.durationMinutes) }
+            let plan = store.replanPlan(for: day, includeUnscheduled: false, busy: busy)
             if !plan.isEmpty { sheet = .replan(plan, day) }
         case .inbox:
             sheet = .inbox
+        case .taskDetail:
+            if let task = store.tasks(on: day).first(where: { !$0.checklist.isEmpty }) { sheet = .detail(task.id) }
         default:
             break
         }

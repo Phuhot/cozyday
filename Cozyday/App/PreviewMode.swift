@@ -18,6 +18,9 @@ enum PreviewScreen: String, CaseIterable {
     case adventure
     case memories
     case gallery
+    case breathing
+    case taskDetail
+    case journalEditor
 }
 
 /// Chế độ xem trước chỉ có trong bản Debug: dữ liệu mẫu nằm trong bộ nhớ, không đụng tới kho dữ liệu thật.
@@ -54,13 +57,13 @@ extension PreviewMode {
         let router = AppRouter.shared
         switch screen {
         case .corner, .shop, .wardrobe, .adventure, .memories: router.selectedTab = .corner
-        case .journal: router.selectedTab = .journal
+        case .journal, .breathing, .journalEditor: router.selectedTab = .journal
         case .progress: router.selectedTab = .progress
         case .focus: router.showFocus = true
         case .settings: ui.showSettings = true
         default: router.selectedTab = .today
         }
-        return AppEnvironment(store: store, ui: ui, dayClock: DayClock(), notifications: NotificationService())
+        return AppEnvironment(store: store, ui: ui, dayClock: DayClock(), notifications: NotificationService(), calendar: CalendarService())
     }
 
     /// Hai tuần dữ liệu mẫu: việc đã xong, phiên tập trung, nhật ký, đồ đã mua; hôm nay có việc xong,
@@ -141,6 +144,10 @@ extension PreviewMode {
             draft.durationMinutes = item.3
             draft.priority = item.5
             draft.isFixed = item.0 == "Nấu bữa tối"
+            if item.0.hasPrefix("Học Swift") {
+                draft.subtasks = [Subtask(title: "Đọc phần NavigationStack", isDone: true),
+                                  Subtask(title: "Làm bài tập danh sách"), Subtask(title: "Ghi chú 3 điều học được")]
+            }
             guard let id = try store.createTask(draft) else { continue }
             if item.4 != .open { _ = try store.setStatus(id: id, to: item.4) }
             if item.4 == .open, item.2 != nil, firstOpen == nil { firstOpen = id }

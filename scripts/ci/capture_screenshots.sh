@@ -60,6 +60,9 @@ shot 12-wardrobe wardrobe
 shot 13-adventure adventure
 shot 14-memories memories
 shot 15-pet-gallery gallery
+shot 16-breathing breathing
+shot 17-task-detail taskDetail
+shot 18-journal-editor journalEditor
 
 log "Giao diện tối"
 xcrun simctl ui "$SIM_ID" appearance dark

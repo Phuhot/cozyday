@@ -56,6 +56,13 @@ struct TaskTemplateRecord: Codable, Equatable, Identifiable {
     var reminderOffsetMinutes: Int?
     var recurrence: RecurrenceRule
     var createdAt: Date
+    /// Việc con mẫu (nil = không có; vắng trong sao lưu cũ cũng là nil).
+    var subtasks: [Subtask]? = nil
+
+    var checklist: [Subtask] {
+        get { subtasks ?? [] }
+        set { subtasks = newValue.isEmpty ? nil : newValue }
+    }
 }
 
 /// Bản ghi một lần xuất hiện cụ thể của việc (occurrence). Việc một lần cũng là occurrence
@@ -82,6 +89,13 @@ struct TaskOccurrenceRecord: Codable, Equatable, Identifiable {
     var isRemoved: Bool
     var createdAt: Date
     var updatedAt: Date
+    /// Việc con của lần này (nil = không có; vắng trong sao lưu cũ cũng là nil).
+    var subtasks: [Subtask]? = nil
+
+    var checklist: [Subtask] {
+        get { subtasks ?? [] }
+        set { subtasks = newValue.isEmpty ? nil : newValue }
+    }
 
     var isScheduled: Bool { day != nil && startMinute != nil }
     var endMinute: Int? { startMinute.map { $0 + durationMinutes } }
@@ -102,6 +116,7 @@ struct TaskDraft: Equatable {
     var repeatFrequency: RecurrenceFrequency?
     var repeatWeekdays: Set<Int> = []
     var repeatEndDay: DayKey?
+    var subtasks: [Subtask] = []
 
     var trimmedTitle: String { title.trimmingCharacters(in: .whitespacesAndNewlines) }
 }
@@ -114,7 +129,8 @@ extension TaskDraft {
             isFixed: o.isFixed, reminderOffsetMinutes: o.reminderOffsetMinutes,
             repeatFrequency: template?.recurrence.frequency,
             repeatWeekdays: Set(template?.recurrence.weekdays ?? []),
-            repeatEndDay: template?.recurrence.endDay
+            repeatEndDay: template?.recurrence.endDay,
+            subtasks: o.checklist
         )
     }
 }

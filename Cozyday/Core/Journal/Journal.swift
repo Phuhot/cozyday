@@ -101,3 +101,34 @@ struct HabitSuggestion: Identifiable, Equatable {
         HabitSuggestion(id: "read", title: "Đọc sách trước khi ngủ", category: .personal, startMinute: 21 * 60 + 30, duration: 20)
     ]
 }
+
+/// Câu gợi ý viết nhật ký — chọn cố định theo ngày, có thể đổi câu khác. Không bắt buộc dùng.
+enum JournalPrompts {
+    static let all: [String] = [
+        "Điều nhỏ nào hôm nay làm bạn mỉm cười?",
+        "Hôm nay bạn đã làm tốt điều gì, dù rất nhỏ?",
+        "Có ai bạn muốn cảm ơn hôm nay không?",
+        "Việc gì đang chiếm nhiều suy nghĩ của bạn nhất?",
+        "Nếu ngày mai chỉ làm được một việc, bạn chọn việc nào?",
+        "Bạn đã nghỉ ngơi đủ chưa? Cơ thể bạn đang cần gì?",
+        "Một khoảnh khắc yên bình trong ngày hôm nay là gì?",
+        "Điều gì khiến bạn thấy khó khăn hôm nay, và bạn đã vượt qua thế nào?",
+        "Bạn học được điều gì mới hôm nay?",
+        "Ba điều bạn biết ơn lúc này là gì?",
+        "Hôm nay bạn đã tử tế với chính mình ở điểm nào?",
+        "Có điều gì bạn muốn buông bỏ trước khi ngủ?",
+        "Bài hát, món ăn hay câu nói nào hợp với tâm trạng hôm nay?",
+        "Nếu kể ngày hôm nay bằng một câu, bạn sẽ viết gì?",
+        "Điều gì bạn đang mong chờ trong tuần này?",
+        "Bạn đã dành thời gian cho người mình thương chưa?",
+        "Một việc bạn đã trì hoãn — bước đầu tiên nhỏ nhất là gì?",
+        "Lúc nào trong ngày bạn thấy có năng lượng nhất?",
+        "Hôm nay có điều gì bất ngờ không?",
+        "Bạn muốn nói gì với chính mình của một năm trước?"
+    ]
+
+    static func prompt(for day: DayKey, shift: Int = 0) -> String {
+        let base = Int(Adventure.stableHash("prompt|" + day.string) % UInt64(all.count))
+        return all[((base + shift) % all.count + all.count) % all.count]
+    }
+}
