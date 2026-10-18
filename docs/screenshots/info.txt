@@ -1,4 +1,4 @@
 Ảnh chụp trên: iPhone 17 Pro (E839A11B-51B4-4AD3-ACF4-A53B95B7C957) (Booted) 
-Giờ trong ảnh: 2026-10-18 20:00 (Asia/Ho_Chi_Minh)
-Commit: c48d7b9b302fa8d4739dbfb3dcd41d12b75899f7
+Giờ trong ảnh: 2026-10-18 20:16 (Asia/Ho_Chi_Minh)
+Commit: 882099a15bc80419884498dba865d63a10037df7
 Bản build: Debug cho simulator, dữ liệu mẫu trong bộ nhớ.
