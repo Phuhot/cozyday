@@ -34,14 +34,16 @@ final class AppStore {
     let clock: AppClock
     let calendar: Calendar
 
-    private(set) var profile: ProfileRecord
-    private(set) var templates: [TaskTemplateRecord] = []
-    private(set) var occurrences: [TaskOccurrenceRecord] = []
-    private(set) var ledger: [LedgerEntry] = []
-    private(set) var owned: [OwnedItemRecord] = []
-    private(set) var equipped: [EquippedRecord] = []
-    private(set) var focusSessions: [FocusSessionRecord] = []
-    private(set) var journal: [JournalRecord] = []
+    // Bộ đệm bản ghi đã lưu. Chỉ các phương thức của AppStore (kể cả extension ở file khác)
+    // được ghi vào đây, và luôn cùng lúc với việc ghi model trong `commit`. View chỉ đọc.
+    var profile: ProfileRecord
+    var templates: [TaskTemplateRecord] = []
+    var occurrences: [TaskOccurrenceRecord] = []
+    var ledger: [LedgerEntry] = []
+    var owned: [OwnedItemRecord] = []
+    var equipped: [EquippedRecord] = []
+    var focusSessions: [FocusSessionRecord] = []
+    var journal: [JournalRecord] = []
 
     /// Tăng sau mỗi lần ghi thành công — dùng để đồng bộ lại thông báo.
     private(set) var changeCounter = 0
