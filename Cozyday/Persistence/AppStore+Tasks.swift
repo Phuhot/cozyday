@@ -87,6 +87,41 @@ extension AppStore {
         if let error = TaskValidation.validate(draft) { throw StoreError.invalid(error.message) }
         guard let current = occurrence(id) else { throw StoreError.notFound }
 
+        // Việc một lần được bật "lặp lại": tạo mẫu lặp bắt đầu từ ngày của việc; chính việc này trở thành
+        // lần đầu tiên (giữ id, trạng thái và thưởng đã nhận).
+        if current.templateID == nil, draft.repeatFrequency != nil, let startDay = draft.day {
+            guard let template = OccurrenceFactory.makeTemplate(from: draft, startDay: startDay, now: now) else { return }
+            var updated = current
+            updated.apply(draft, now: now)
+            updated.templateID = template.id
+            updated.occurrenceKey = OccurrenceFactory.key(templateID: template.id, day: startDay)
+            try commit {
+                self.context.insert(TaskTemplateModel(record: template))
+                self.templates.append(template)
+                try self.occurrenceModel(updated.id).apply(updated)
+                self.replaceCached(updated)
+            }
+            try ensureOccurrences(for: startDay.through(max(startDay, today).adding(days: ReminderPlanner.horizonDays, calendar: calendar), calendar: calendar))
+            return
+        }
+
+        // Tắt lặp từ lần này: chuỗi kết thúc hôm trước, lần này thành việc một lần.
+        if scope == .thisAndFuture, draft.repeatFrequency == nil, let template = template(current.templateID),
+           let originalDay = RecurringEdit.originalDay(of: current) {
+            var changes = RecurringEdit.deleteThisAndFuture(
+                template: template, from: originalDay,
+                occurrences: occurrences.filter { $0.id != current.id }, calendar: calendar
+            )
+            var single = current
+            single.apply(draft, now: now)
+            single.templateID = nil
+            single.isDetached = false
+            single.occurrenceKey = OccurrenceFactory.oneOffKey(id: single.id)
+            changes.upsertOccurrences.append(single)
+            try apply(changes)
+            return
+        }
+
         // Việc một lần, hoặc chỉ sửa lần này của việc lặp.
         guard scope == .thisAndFuture, let template = template(current.templateID),
               let originalDay = RecurringEdit.originalDay(of: current) else {

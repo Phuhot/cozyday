@@ -180,3 +180,40 @@ final class AppStoreTests: XCTestCase {
         XCTAssertTrue(store.occurrences.isEmpty)
     }
 }
+
+@MainActor
+final class AppStoreRecurringConversionTests: XCTestCase {
+    func testOneOffBecomesRecurringKeepingReward() throws {
+        let calendar = Calendar.gregorian(timeZone: TimeZone(identifier: "Asia/Ho_Chi_Minh")!)
+        let clock = ManualClock(calendar.date(from: DateComponents(year: 2026, month: 10, day: 18, hour: 9))!)
+        let store = try AppStore(container: PersistenceController.makeContainer(inMemory: true), clock: clock, calendar: calendar)
+        var d = TaskDraft()
+        d.title = "Thiền"
+        d.day = store.today
+        d.startMinute = 6 * 60
+        let id = try XCTUnwrap(store.createTask(d))
+        XCTAssertNotNil(try store.setStatus(id: id, to: .done))
+
+        d.repeatFrequency = .daily
+        try store.updateTask(id: id, draft: d, scope: .thisOnly)
+        let converted = try XCTUnwrap(store.occurrence(id))
+        XCTAssertNotNil(converted.templateID)
+        XCTAssertEqual(converted.status, .done)
+        XCTAssertEqual(store.tasks(on: store.today).count, 1)
+        XCTAssertEqual(store.tasks(on: store.today.adding(days: 1, calendar: calendar)).count, 1)
+        // Không nhận lại thưởng
+        try store.setStatus(id: id, to: .open)
+        XCTAssertNil(try store.setStatus(id: id, to: .done))
+
+        // Tắt lặp từ ngày mai: ngày mai thành việc một lần, các ngày sau biến mất
+        let tomorrow = try XCTUnwrap(store.tasks(on: store.today.adding(days: 1, calendar: calendar)).first)
+        var stop = TaskDraft(occurrence: tomorrow, template: store.template(tomorrow.templateID))
+        stop.repeatFrequency = nil
+        try store.updateTask(id: tomorrow.id, draft: stop, scope: .thisAndFuture)
+        XCTAssertNil(store.occurrence(tomorrow.id)?.templateID)
+        XCTAssertTrue(store.tasks(on: store.today.adding(days: 2, calendar: calendar)).isEmpty)
+        XCTAssertEqual(store.tasks(on: store.today).first?.status, .done)
+        try store.ensureUpcomingOccurrences()
+        XCTAssertTrue(store.tasks(on: store.today.adding(days: 3, calendar: calendar)).isEmpty)
+    }
+}
