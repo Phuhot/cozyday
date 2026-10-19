@@ -154,7 +154,7 @@ struct DustLayer: View {
         if count > 0 {
             Canvas { ctx, size in
                 for s in CleanPlan.spots(count: count, seed: 7) {
-                    DustArt.spot(ctx, kind: s.kind, center: CGPoint(x: s.x * size.width, y: s.y * size.height), size: size.width * 0.07)
+                    DustArt.dirt(ctx, kind: s.kind, center: CGPoint(x: s.x * size.width, y: s.y * size.height), size: size.width * 0.07)
                 }
             }
             .allowsHitTesting(false)
@@ -163,50 +163,243 @@ struct DustLayer: View {
     }
 }
 
-/// Lớp dọn nhà phủ lên căn phòng: chạm hoặc vuốt qua các đốm bụi. Mỗi đốm cũng là một nút cho VoiceOver.
-struct CleanModeLayer: View {
-    let spots: [(x: Double, y: Double, kind: Int)]
-    @Binding var cleared: Set<Int>
+/// Dọn nhà toàn màn hình: cầm chổi lông gà hoặc khăn lau, chà qua lại lên mạng nhện, bụi, lá khô và vết bẩn.
+/// Vết bẩn mờ dần theo quãng chà; dùng sai dụng cụ vẫn sạch, chỉ chậm hơn. Mỗi vết cũng là một nút cho VoiceOver.
+/// Xong hết → lưu một lần với mã hành động cố định của lượt (`onFinish`); lỗi lưu → thử lại cùng mã.
+struct CleanRoomView: View {
+    let room: RoomKind
+    let equipped: [ItemSlot: String]
+    let appearance: PetAppearance
+    let petName: String
     var haptics = true
+    let actionID: UUID
+    @State var work: CleanWork
+    /// Lưu kết quả; trả về true nếu đã lưu.
+    let onFinish: (UUID) -> Bool
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var tool: CleanTool = .broom
+    @State private var finger: CGPoint?
+    @State private var last: (x: Double, y: Double)?
+    @State private var tilt: Double = -12
+    @State private var bursts: [Burst] = []
+    @State private var rubTicks = 0
+    @State private var lastTick: TimeInterval = 0
+    @State private var hint: String?
+    @State private var saveFailed = false
+    @State private var finished = false
+    /// Chỉ cho ảnh chụp giao diện: vị trí dụng cụ (tỉ lệ căn phòng) khi chưa có ngón tay.
+    @State private var previewTool: (x: Double, y: Double)?
+
+    struct Burst: Identifiable {
+        let id = UUID()
+        let point: CGPoint
+        let start: Date
+    }
 
     var body: some View {
+        VStack(spacing: Spacing.l) {
+            header
+            roomArea
+            Text(hint ?? (finished ? "Sạch bong rồi! \(petName) vui lắm." : "Kéo dụng cụ qua lại trên vết bẩn. Mạng nhện, bụi, lá khô: chổi lông gà. Vết bẩn: khăn lau."))
+                .font(Typography.callout)
+                .foregroundStyle(hint == nil ? Palette.inkMuted : Palette.ink)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(minHeight: 44)
+                .animation(Motion.quick, value: hint)
+            toolPicker
+            if saveFailed {
+                Button("Thử lưu lại") { save() }
+                    .buttonStyle(PrimaryButtonStyle(color: Palette.sage))
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(Spacing.l)
+        .cozyBackground()
+        .sensoryFeedback(trigger: rubTicks) { _, _ in haptics ? .impact(weight: .light, intensity: 0.45) : nil }
+        .sensoryFeedback(trigger: work.cleanedCount) { old, new in haptics && new > old ? .impact(weight: .medium, intensity: 0.8) : nil }
+        .sensoryFeedback(trigger: finished) { _, done in haptics && done ? .success : nil }
+        .onChange(of: work.isDone) { _, done in if done { save() } }
+        .onAppear {
+            // Ảnh chụp giao diện (Debug): lau dở vài vết, đặt sẵn khăn lau trên một vết bẩn.
+            guard PreviewMode.current == .clean else { return }
+            for i in 0..<min(2, work.spots.count) where work.spots[i].kind != .stain { work.clear(i) }
+            if let i = work.spots.firstIndex(where: { $0.kind == .stain }) {
+                tool = .cloth
+                let s = work.spots[i]
+                previewTool = (s.x, s.y)
+                for k in 0..<5 {
+                    let a = (x: s.x - 0.04, y: s.y), b = (x: s.x + 0.04, y: s.y)
+                    work.rub(from: k % 2 == 0 ? a : b, to: k % 2 == 0 ? b : a, tool: .cloth)
+                }
+            }
+        }
+    }
+
+    private var header: some View {
+        HStack(spacing: Spacing.m) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Dọn nhà")
+                    .font(Typography.title)
+                    .foregroundStyle(Palette.ink)
+                Text("Đã sạch \(work.cleanedCount)/\(work.spots.count)")
+                    .font(Typography.callout.weight(.semibold))
+                    .foregroundStyle(Palette.sage)
+                    .contentTransition(.numericText())
+            }
+            Spacer()
+            ProgressView(value: work.fraction)
+                .tint(Palette.sage)
+                .frame(maxWidth: 120)
+                .accessibilityLabel("Tiến độ dọn")
+                .accessibilityValue("\(Int(work.fraction * 100)) phần trăm")
+            Button {
+                dismiss()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.headline)
+                    .frame(width: HitTarget.min, height: HitTarget.min)
+                    .background(Palette.surface, in: Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Thôi, để sau")
+            .accessibilityHint("Thoát chế độ dọn, chưa lưu")
+        }
+    }
+
+    private var roomArea: some View {
         GeometryReader { geo in
             let size = geo.size
             ZStack(alignment: .topLeading) {
-                Color.white.opacity(0.06)
-                ForEach(Array(spots.enumerated()), id: \.offset) { i, s in
-                    let d = size.width * 0.13
-                    Button { clear(i) } label: {
-                        Canvas { ctx, sz in
-                            DustArt.spot(ctx, kind: s.kind, center: CGPoint(x: sz.width / 2, y: sz.height / 2), size: sz.width * 0.8)
+                RoomView(room: room, equipped: equipped, appearance: appearance, petMood: finished ? .happy : .idle,
+                         petName: petName, bounceTrigger: finished ? 1 : 0, haptics: false)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+                TimelineView(.animation(minimumInterval: 1.0 / 30, paused: bursts.isEmpty && finger == nil)) { timeline in
+                    Canvas { ctx, sz in
+                        for s in work.spots where !s.isClean {
+                            DustArt.dirt(ctx, kind: s.kind, center: CGPoint(x: s.x * sz.width, y: s.y * sz.height),
+                                         size: sz.width * 0.11, remaining: s.remaining)
                         }
-                        .frame(width: d, height: d)
-                        .opacity(cleared.contains(i) ? 0 : 1)
-                        .scaleEffect(cleared.contains(i) ? 1.6 : 1)
-                        .animation(Motion.quick, value: cleared)
+                        for b in bursts {
+                            let t = timeline.date.timeIntervalSince(b.start)
+                            guard t < 0.7 else { continue }
+                            GameArt.sparkle(ctx, at: b.point, progress: CGFloat(t / 0.7), color: rgb(0xFFE08A))
+                        }
+                        if let finger {
+                            DustArt.tool(ctx, tool, at: finger, size: sz.width * 0.14, tilt: tilt)
+                        } else if let p = previewTool {
+                            DustArt.tool(ctx, tool, at: CGPoint(x: p.x * sz.width + sz.width * 0.03, y: p.y * sz.height),
+                                         size: sz.width * 0.14, tilt: 10)
+                        }
                     }
-                    .buttonStyle(.plain)
-                    .disabled(cleared.contains(i))
-                    .accessibilityLabel(cleared.contains(i) ? "Đã dọn" : "Đốm bụi \(i + 1)")
-                    .accessibilityHint("Chạm để dọn")
-                    .position(x: s.x * size.width, y: s.y * size.height)
+                }
+                .allowsHitTesting(false)
+                // Mỗi vết bẩn là một nút cho VoiceOver / Điều khiển bằng giọng nói.
+                ForEach(Array(work.spots.enumerated()), id: \.offset) { i, s in
+                    if !s.isClean {
+                        Color.clear
+                            .frame(width: size.width * 0.14, height: size.width * 0.14)
+                            .position(x: s.x * size.width, y: s.y * size.height)
+                            .accessibilityElement()
+                            .accessibilityLabel("\(s.kind.name), cần \(s.kind.tool.name.lowercased())")
+                            .accessibilityAddTraits(.isButton)
+                            .accessibilityHint("Chạm hai lần để lau sạch")
+                            .accessibilityAction { work.clear(i) }
+                    }
                 }
             }
+            .frame(width: size.width, height: size.height)
             .contentShape(Rectangle())
-            .gesture(DragGesture(minimumDistance: 0).onChanged { value in
-                // Vuốt qua đốm nào thì đốm đó sạch.
-                for (i, s) in spots.enumerated() where !cleared.contains(i) {
-                    let dx = value.location.x - s.x * size.width, dy = value.location.y - s.y * size.height
-                    if hypot(dx, dy) < size.width * 0.085 { clear(i) }
-                }
-            })
+            .gesture(DragGesture(minimumDistance: 0).onChanged { value in scrub(at: value.location, size: size) }
+                .onEnded { _ in
+                    last = nil
+                    withAnimation(Motion.quick) { finger = nil }
+                })
+            .accessibilityElement(children: .contain)
+            .accessibilityAction(named: "Dọn hết") { work.clearAll() }
         }
-        .sensoryFeedback(trigger: cleared.count) { _, _ in haptics ? .impact(weight: .light, intensity: 0.6) : nil }
+        .aspectRatio(RoomLayout.aspect, contentMode: .fit)
+        .clipShape(RoundedRectangle(cornerRadius: Radius.xl, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: Radius.xl, style: .continuous).strokeBorder(Palette.line))
+        .disabled(finished)
     }
 
-    private func clear(_ i: Int) {
-        guard !cleared.contains(i) else { return }
-        cleared.insert(i)
+    private var toolPicker: some View {
+        HStack(spacing: Spacing.m) {
+            ForEach(CleanTool.allCases) { t in
+                Button {
+                    tool = t
+                    hint = nil
+                } label: {
+                    VStack(spacing: Spacing.xs) {
+                        Canvas { ctx, sz in
+                            DustArt.tool(ctx, t, at: CGPoint(x: sz.width * 0.5, y: sz.height * (t == .broom ? 0.78 : 0.55)),
+                                         size: sz.width * 0.55, tilt: t == .broom ? -20 : 0)
+                        }
+                        .frame(width: 56, height: 56)
+                        Text(t.name)
+                            .font(Typography.callout.weight(.semibold))
+                            .foregroundStyle(Palette.ink)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, Spacing.s)
+                    .background(tool == t ? Palette.sageSoft : Palette.surface, in: RoundedRectangle(cornerRadius: Radius.l, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: Radius.l, style: .continuous)
+                        .strokeBorder(tool == t ? Palette.sage : Palette.line, lineWidth: tool == t ? 2 : 1))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(t.name)
+                .accessibilityAddTraits(tool == t ? .isSelected : [])
+            }
+        }
+    }
+
+    private func scrub(at p: CGPoint, size: CGSize) {
+        guard !finished, size.width > 0, size.height > 0 else { return }
+        let point = (x: Double(p.x / size.width), y: Double(p.y / size.height))
+        if let prev = finger {
+            let dx = p.x - prev.x
+            if abs(dx) > 0.5 { tilt = max(-30, min(30, tilt * 0.7 + Double(dx) * 1.2)) }
+        }
+        finger = p
+        if let last {
+            let before = work.fraction
+            let cleared = work.rub(from: last, to: point, tool: tool)
+            for i in cleared {
+                let s = work.spots[i]
+                bursts.append(Burst(point: CGPoint(x: s.x * size.width, y: s.y * size.height), start: Date()))
+            }
+            bursts.removeAll { Date().timeIntervalSince($0.start) > 0.8 }
+            if work.fraction > before {
+                let now = ProcessInfo.processInfo.systemUptime
+                if now - lastTick > 0.12 { lastTick = now; rubTicks += 1 }
+            }
+        }
+        self.last = point
+        // Gợi ý nhẹ khi đang dùng dụng cụ chậm hơn.
+        if let near = work.spot(near: point), near.kind.tool != tool {
+            hint = "\(near.kind.name) dễ sạch hơn với \(near.kind.tool.name.lowercased()) — đổi dụng cụ ở dưới nhé."
+        } else if hint != nil, work.spot(near: point) != nil {
+            hint = nil
+        }
+    }
+
+    private func save() {
+        guard work.isDone, !finished else { return }
+        if onFinish(actionID) {
+            saveFailed = false
+            hint = nil
+            withAnimation(Motion.gentle) { finished = true }
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 1_300_000_000)
+                dismiss()
+            }
+        } else {
+            saveFailed = true
+            hint = "Chưa lưu được. Thử lưu lại nhé — không bị tính hai lần."
+        }
     }
 }
 

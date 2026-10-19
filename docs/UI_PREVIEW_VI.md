@@ -45,7 +45,7 @@ GitHub Actions mở app trên **iPhone ảo (iOS Simulator)** của máy macOS, 
 | | | |
 |---|---|---|
 | ![Cần chăm](screenshots/25-care.jpg) Góc nhỏ khi đói, buồn chán, nhà hơi bẩn | ![Mua đồ ăn](screenshots/26-food.jpg) Cửa hàng đồ ăn | ![Cho ăn](screenshots/27-feed.jpg) Cho ăn — có thưởng |
-| ![Dọn nhà](screenshots/28-clean.jpg) Chế độ dọn nhà | ![Hết hạn mức](screenshots/29-care-capped.jpg) Cho ăn khi đã đủ thưởng hôm nay | |
+| ![Dọn nhà](screenshots/28-clean.jpg) Dọn nhà: chổi lông gà & khăn lau | ![Hết hạn mức](screenshots/29-care-capped.jpg) Cho ăn khi đã đủ thưởng hôm nay | |
 
 ## Sân chơi
 
@@ -106,3 +106,14 @@ nhưng giới hạn số phút mỗi tháng. Lưu ý:
   nếu bạn chấp nhận điều đó.
 - Mở theo cách này, app hiện **dữ liệu trống** (bắt đầu từ onboarding). Dữ liệu mẫu chỉ bật khi CI mở app kèm tham số
   `-CozyPreview`.
+
+## Ảnh đại diện (phiên 6)
+
+| | |
+|---|---|
+| ![Ảnh đại diện](screenshots/41-avatar.jpg) Trình tạo ảnh đại diện: nền, phong cảnh, hiệu ứng, biểu cảm | ![Trang phục riêng](screenshots/42-avatar-outfit.jpg) Trang phục riêng cho ảnh (chỉ đồ đã có) |
+| ![Ảnh đại diện — tối](screenshots/dark-41-avatar.jpg) Chế độ tối | ![Ảnh đại diện — chữ lớn](screenshots/large-41-avatar.jpg) Chữ lớn |
+| ![Dọn nhà — tối](screenshots/dark-28-clean.jpg) Dọn nhà, chế độ tối | ![Dọn nhà — chữ lớn](screenshots/large-28-clean.jpg) Dọn nhà, chữ lớn |
+
+Các ảnh trên do CI chụp ở lần chạy có `[ui-preview]` kế tiếp; nếu job lưu ảnh không chạy được (giới hạn chi tiêu GitHub Actions) thì ảnh chỉ nằm trong artifact.
+

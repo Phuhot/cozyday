@@ -390,32 +390,164 @@ struct PetCareRecord: Codable, Equatable {
 // MARK: Dọn nhà & nựng
 
 enum CleanPlan {
-    /// Số đốm bụi vẽ trong phòng theo mức sạch (không che kín đồ đạc).
+    /// Số vết bẩn vẽ trong phòng theo mức sạch (không che kín đồ đạc).
     static func visibleDust(cleanliness: Double) -> Int {
         if cleanliness >= CareConfig.goodFrom { return 0 }
         if cleanliness >= CareConfig.needsCareBelow { return 2 }
         return cleanliness < 27 ? 6 : 4
     }
 
-    /// Số đốm cần dọn trong chế độ dọn nhà (5–8).
+    /// Số vết bẩn cần lau trong chế độ dọn nhà.
     static func spotCount(cleanliness: Double) -> Int {
-        cleanliness < CareConfig.needsCareBelow ? 7 : 5
+        cleanliness < CareConfig.needsCareBelow ? 8 : 6
     }
 
-    /// Vị trí đốm bụi (tỉ lệ 0…1 của căn phòng), cố định theo `seed`, nằm ở vùng sàn và chân tường.
-    static func spots(count: Int, seed: UInt64) -> [(x: Double, y: Double, kind: Int)] {
+    /// Bố cục vết bẩn (tỉ lệ 0…1 của căn phòng), cố định theo `seed`: mạng nhện ở góc trên,
+    /// vết bẩn trên tường/sàn, bụi – lá khô – giấy vụn trên sàn. Không chồng lên nhau để dễ lau.
+    static func spots(count: Int, seed: UInt64) -> [DirtSpot] {
         var rng = SeededRandom(seed: seed)
-        var result: [(x: Double, y: Double, kind: Int)] = []
-        var attempts = 0
-        while result.count < count && attempts < 200 {
-            attempts += 1
-            let x = Double.random(in: 0.08...0.92, using: &rng)
-            let y = Double.random(in: 0.66...0.93, using: &rng)
-            // Không chồng lên nhau để dễ chạm.
-            if result.contains(where: { abs($0.x - x) < 0.11 && abs($0.y - y) < 0.09 }) { continue }
-            result.append((x, y, Int.random(in: 0..<3, using: &rng)))
+        var result: [DirtSpot] = []
+        func free(_ x: Double, _ y: Double) -> Bool {
+            !result.contains { abs($0.x - x) < 0.12 && abs($0.y - y) < 0.1 }
+        }
+        // Có ít nhất một mạng nhện và một vết bẩn khi đủ chỗ.
+        var kinds: [DirtKind] = []
+        if count >= 3 { kinds += [.cobweb, .stain] }
+        if count >= 6 { kinds += [Bool.random(using: &rng) ? .cobweb : .stain] }
+        while kinds.count < count { kinds.append([.dust, .leaf, .paper][Int.random(in: 0..<3, using: &rng)]) }
+        for kind in kinds.prefix(count) {
+            for _ in 0..<60 {
+                let x: Double, y: Double
+                switch kind {
+                case .cobweb:
+                    let left = Bool.random(using: &rng)
+                    x = left ? Double.random(in: 0.05...0.2, using: &rng) : Double.random(in: 0.8...0.95, using: &rng)
+                    y = Double.random(in: 0.06...0.22, using: &rng)
+                case .stain:
+                    x = Double.random(in: 0.1...0.9, using: &rng)
+                    y = Double.random(in: 0.45...0.9, using: &rng)
+                default:
+                    x = Double.random(in: 0.08...0.92, using: &rng)
+                    y = Double.random(in: 0.66...0.93, using: &rng)
+                }
+                if free(x, y) {
+                    result.append(DirtSpot(x: x, y: y, kind: kind))
+                    break
+                }
+            }
         }
         return result
+    }
+}
+
+/// Dụng cụ dọn nhà. Dùng sai dụng cụ vẫn sạch, chỉ chậm hơn (không phạt).
+enum CleanTool: String, CaseIterable, Identifiable {
+    case broom, cloth
+
+    var id: String { rawValue }
+
+    var name: String {
+        switch self {
+        case .broom: return "Chổi lông gà"
+        case .cloth: return "Khăn lau"
+        }
+    }
+
+    static let wrongToolFactor = 0.35
+}
+
+enum DirtKind: Int, CaseIterable {
+    case dust, leaf, paper, cobweb, stain
+
+    var name: String {
+        switch self {
+        case .dust: return "Cụm bụi"
+        case .leaf: return "Lá khô"
+        case .paper: return "Giấy vụn"
+        case .cobweb: return "Mạng nhện"
+        case .stain: return "Vết bẩn"
+        }
+    }
+
+    var tool: CleanTool { self == .stain ? .cloth : .broom }
+
+    /// Quãng chà cần thiết (tính theo bề ngang căn phòng = 1) khi dùng đúng dụng cụ.
+    var effort: Double {
+        switch self {
+        case .dust: return 0.55
+        case .leaf, .paper: return 0.45
+        case .cobweb: return 0.8
+        case .stain: return 1.1
+        }
+    }
+}
+
+struct DirtSpot: Equatable {
+    let x: Double
+    let y: Double
+    let kind: DirtKind
+    /// 1 = còn nguyên, 0 = sạch.
+    var remaining: Double = 1
+
+    var isClean: Bool { remaining <= 0 }
+}
+
+/// Một lượt lau dọn thủ công: kéo dụng cụ qua lại trên vết bẩn, vết bẩn mờ dần theo quãng chà.
+struct CleanWork: Equatable {
+    /// Bán kính đầu chổi / khăn (theo bề ngang căn phòng).
+    static let reach = 0.09
+    /// Một lần di tay tính tối đa chừng này (tránh "dịch chuyển" nhảy cóc làm sạch tức thì).
+    static let maxStep = 0.12
+
+    private(set) var spots: [DirtSpot]
+    /// Chiều cao / chiều rộng căn phòng.
+    let aspect: Double
+
+    init(spots: [DirtSpot], aspect: Double = 0.8) {
+        self.spots = spots
+        self.aspect = aspect
+    }
+
+    var cleanedCount: Int { spots.filter(\.isClean).count }
+    var isDone: Bool { spots.allSatisfy(\.isClean) }
+    var fraction: Double {
+        guard !spots.isEmpty else { return 1 }
+        return spots.reduce(0) { $0 + (1 - max(0, $1.remaining)) } / Double(spots.count)
+    }
+
+    /// Kéo dụng cụ từ `from` tới `to` (tỉ lệ 0…1 của căn phòng). Trả về chỉ số các vết vừa sạch hẳn.
+    @discardableResult
+    mutating func rub(from: (x: Double, y: Double), to: (x: Double, y: Double), tool: CleanTool) -> [Int] {
+        let dx = to.x - from.x, dy = (to.y - from.y) * aspect
+        let distance = min(Self.maxStep, (dx * dx + dy * dy).squareRoot())
+        guard distance > 0 else { return [] }
+        var cleared: [Int] = []
+        for i in spots.indices where !spots[i].isClean {
+            let s = spots[i]
+            let ex = to.x - s.x, ey = (to.y - s.y) * aspect
+            guard (ex * ex + ey * ey).squareRoot() <= Self.reach else { continue }
+            let factor = s.kind.tool == tool ? 1 : CleanTool.wrongToolFactor
+            spots[i].remaining = max(0, s.remaining - distance * factor / s.kind.effort)
+            if spots[i].isClean { cleared.append(i) }
+        }
+        return cleared
+    }
+
+    /// Lau sạch một vết ngay (thao tác trợ năng / VoiceOver).
+    mutating func clear(_ index: Int) {
+        guard spots.indices.contains(index) else { return }
+        spots[index].remaining = 0
+    }
+
+    mutating func clearAll() {
+        for i in spots.indices { spots[i].remaining = 0 }
+    }
+
+    /// Vết gần điểm chạm nhất còn bẩn (để gợi ý dụng cụ).
+    func spot(near p: (x: Double, y: Double)) -> DirtSpot? {
+        spots.filter { !$0.isClean }.min { a, b in
+            hypot(a.x - p.x, (a.y - p.y) * aspect) < hypot(b.x - p.x, (b.y - p.y) * aspect)
+        }.flatMap { s in hypot(s.x - p.x, (s.y - p.y) * aspect) <= Self.reach * 1.3 ? s : nil }
     }
 }
 

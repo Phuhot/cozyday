@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import UniformTypeIdentifiers
 
 /// Ảnh đại diện vẽ bằng `AvatarPainter`. `animated`: lấp lánh / rơi / bay nhẹ (tắt khi bật Giảm chuyển động).

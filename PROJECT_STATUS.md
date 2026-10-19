@@ -1,6 +1,6 @@
-# PROJECT_STATUS — Cozyday
+# PROJECT_STATUS — CozyDay
 
-Cập nhật: 2026-10-19 (phiên 5) · Nhánh: `claude/ios-project-section-12-4bpxn7` · Repo: `Phuhot/cozyday` (private)
+Cập nhật: 2026-10-19 (phiên 6) · Nhánh: `claude/ios-project-section-12-4bpxn7` · Repo: `Phuhot/cozyday` (private)
 
 ## Mốc hiện tại
 
@@ -12,6 +12,7 @@ Cập nhật: 2026-10-19 (phiên 5) · Nhánh: `claude/ios-project-section-12-4b
 | **E — chiều sâu (sau phản hồi cài thử)** | Thú cưng: 5 hình dạng, 8 màu lông, 34 món trang phục, 3 giai đoạn lớn, animation, vuốt ve + lời thoại, tủ đồ mặc thử, chuyến đi mỗi ngày + Sổ ký ức. Lập kế hoạch: việc con, kéo đổi giờ, sự kiện app Lịch (chỉ đọc), gợi ý nhật ký, bài thở, thống kê tâm trạng. Build + test simulator: **đạt** (run #12). Trên máy thật: **chưa xác minh**. |
 | **F — phòng, bộ sưu tập, giao diện dễ thương (phiên 4)** | 5 không gian (phòng học, phòng ngủ, bếp, phòng tắm, vườn) mở theo cấp, 120+ đồ trang trí, tường & sàn/bầu trời đổi được · 11 loài, 11 màu lông, 80+ trang phục & phụ kiện (vị trí mới `back`) · Bộ sưu tập: 40 bộ phối sẵn, mua & mặc cả bộ · vuốt để nựng, giữ để nhấc & thả · 18 khuôn truyện theo loài/mùa, lời thoại theo loài · giao diện: thú cưng nói chuyện ở Hôm nay, popup thưởng có thú cưng, tuần của thú cưng, nút/thẻ mềm, nền họa tiết. Kiểm tra: run #14 (commit `7625744`) build Release + kiểm tra IPA **đạt**, **77/77 test** trên iOS Simulator **đạt**, 35 ảnh giao diện. Run #13 lỗi biên dịch (trùng tên `FlowChips`) → sửa ở run #14. Trên máy thật: **chưa xác minh**. |
 | **G — chăm thú cưng + Sân chơi (phiên 5)** | Nhu cầu No bụng/Nhà sạch/Vui vẻ (suy giảm theo mốc thời gian, sàn 20, tối đa 24 giờ, không hình phạt) · khay & cửa hàng đồ ăn (6 món, `food-purchase:<id>`), bữa cơ bản miễn phí, dọn nhà (chạm/vuốt hoặc Dọn nhanh), nựng (vuốt thật ~3,5 s hoặc nút); thưởng nhỏ `care:<id>` có hạn mức · Sân chơi: Nhảy Mây, Giỏ Quà, Lật Thẻ Bạn Nhỏ — chơi bằng thú cưng đang có (đổi loài đã sở hữu chỉ trong Sân chơi), kỷ lục, xu phụ ≤ 6/lượt, ≤ 20/ngày (`minigame:<sessionID>`), tạm dừng tự động, đếm ngược khi tiếp tục, lưu một lần + thử lại cùng sessionID · lược đồ **V3** (chỉ thêm bảng), sao lưu **bản 2** (đọc được bản 1). Kiểm tra: **run #16** (commit `366305c`) build Release + kiểm tra IPA **đạt**, **122/122 test** trên iOS Simulator **đạt**, 92 test Core trên Linux (CI) **đạt**, chụp 65 ảnh + 3 video **đạt** (không crash). Ảnh trong repo là của run #15; ảnh run #16 (sau khi sửa bố cục chữ lớn) chỉ nằm trong artifact vì job lưu ảnh không chạy được — xem "Vấn đề còn mở". Trên máy thật: **chưa xác minh**. |
+| **H — ảnh đại diện, icon, phản hồi cài thử (phiên 6)** | Tên hiển thị **CozyDay** (bundle ID `com.phuhot.cozyday`, kho `Cozyday.store` giữ nguyên → cài đè không mất dữ liệu) · icon mới: vịt con vàng đội mây (`AvatarPainter.appIcon`) · **Ảnh đại diện**: 10 nền, 8 phong cảnh, 9 hiệu ứng, 4 biểu cảm, trang phục riêng từ đồ đã có, mở theo cấp, lưu PNG qua bảng chia sẻ, thẻ ở Góc nhỏ + Tiến bộ, có trong sao lưu (trường tùy chọn) · Phản hồi cài thử: **Dọn nhà** bị kẹt cuộn → thành màn toàn màn hình, chà bằng chổi lông gà/khăn lau (mạng nhện, vết bùn, bụi, lá, giấy) · **Nhảy Mây** dễ quá → độ khó tối đa ở 160 m (trước 400 m), mây giông, chim, mây mỏng; vẫn luôn leo được (test 30 seed). Kiểm tra: 100 test Core trên Linux (máy Claude) **đạt**; build iOS + test simulator + ảnh: xem bảng kết quả bên dưới. Trên máy thật: **chưa xác minh**. |
 | **D — bàn giao** | Tài liệu cài đặt, xử lý sự cố, dữ liệu/quy tắc, checklist đã có. **Ảnh giao diện** chụp tự động trên iOS Simulator: [`docs/UI_PREVIEW_VI.md`](docs/UI_PREVIEW_VI.md). Còn chờ: kết quả cài thử trên iPhone. |
 
 ## Quyết định kỹ thuật
@@ -106,6 +107,7 @@ Cập nhật: 2026-10-19 (phiên 5) · Nhánh: `claude/ios-project-section-12-4b
 3. Workflow nằm trên nhánh `claude/…`; cần **merge vào `main`** để có nút Run workflow (hoặc nhờ Claude mở Pull Request).
 4. Trang sideloadly.io không truy cập được từ môi trường của Claude → yêu cầu Windows/iTunes/auto-refresh trong tài liệu cần bạn đối chiếu trang chính thức.
 5. Cử chỉ nhấc/nựng thú cưng nằm trong ScrollView của Góc nhỏ: cần thử trên máy thật xem có tranh chấp với cuộn trang không.
+   (Dọn nhà đã chuyển sang màn riêng toàn màn hình ở phiên 6 — không còn khóa cuộn trang.)
 6. Ảnh giao diện chỉ chụp trên iOS 26 (runner không có sẵn simulator iOS 17/18). Giao diện iOS 17–18 (không có Liquid Glass) chưa được xem.
 7. Sân chơi chưa được chơi bằng tay trên máy thật: cảm giác kéo, độ khó, tốc độ khung hình (simulator CI không có GPU thật),
    âm thanh, rung, VoiceOver trong 2 game hành động (vuốt lên/xuống để di chuyển) đều **chưa xác minh**.
@@ -120,6 +122,7 @@ Cập nhật: 2026-10-19 (phiên 5) · Nhánh: `claude/ios-project-section-12-4b
 2. Bạn: tải artifact IPA mới nhất → cài bằng Sideloadly → chạy checklist `docs/TEST_CHECKLIST_VI.md` → gửi kết quả/ảnh lỗi.
 3. Bạn: thử các mục "Chăm thú cưng" và "Sân chơi" trong checklist (nhất là kéo một tay, tạm dừng khi vuốt về màn hình chính, hạn mức 20 xu).
 4. Claude: sửa lỗi theo phản hồi thiết bị; chỉnh độ khó/độ nhạy kéo của minigame theo cảm nhận của bạn.
+5. Bạn: thử Dọn nhà mới (chổi/khăn), Nhảy Mây có chướng ngại, Ảnh đại diện → báo độ khó và cảm giác chà có vừa không.
 
 ## Backlog sau 1.0 (không làm trong bản này)
 

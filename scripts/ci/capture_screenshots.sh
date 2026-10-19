@@ -127,6 +127,8 @@ shot 37-result result 17
 shot 38-result-capped resultCapped 17
 burst 39-jump-frames jump 7 4 0.7
 burst 40-basket-frames basket 7 4 0.7
+shot 41-avatar avatar 5
+shot 42-avatar-outfit avatarOutfit 5
 
 log "Quay video gameplay"
 record video-jump jump 18
@@ -148,6 +150,8 @@ shot dark-26-food food
 shot dark-30-playground playground 5
 shot dark-35-memory memory 12
 shot dark-37-result result 17
+shot dark-41-avatar avatar 5
+shot dark-28-clean clean
 xcrun simctl ui "$SIM_ID" appearance light
 
 log "Cỡ chữ rất lớn (Trợ năng)"
@@ -158,6 +162,8 @@ shot large-25-care care
 shot large-26-food food
 shot large-30-playground playground 5
 shot large-37-result result 17
+shot large-41-avatar avatar 5
+shot large-28-clean clean
 xcrun simctl ui "$SIM_ID" content_size large
 
 xcrun simctl terminate "$SIM_ID" "$EXPECTED_BUNDLE_ID" 2>/dev/null || true

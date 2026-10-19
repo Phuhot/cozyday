@@ -93,6 +93,73 @@ enum GameArt {
         }
     }
 
+    /// Mây mỏng: trong suốt hơn, viền nét đứt, có vết nứt — nảy một lần là tan.
+    static func thinCloud(_ ctx: GraphicsContext, rect r: CGRect) {
+        let h = r.height
+        var shape = Path(roundedRect: CGRect(x: r.minX, y: r.minY + h * 0.1, width: r.width, height: h * 0.8), cornerRadius: h * 0.4)
+        let bumps = max(2, Int(r.width / (h * 1.1)))
+        for i in 0..<bumps {
+            let cx = r.minX + r.width * (CGFloat(i) + 0.5) / CGFloat(bumps)
+            let rad = h * (i % 2 == 0 ? 0.38 : 0.3)
+            shape.addEllipse(in: CGRect(x: cx - rad, y: r.minY + h * 0.22 - rad, width: rad * 2, height: rad * 2))
+        }
+        ctx.fill(shape, with: .color(Color.white.opacity(0.55)))
+        ctx.stroke(Path(roundedRect: CGRect(x: r.minX, y: r.minY + h * 0.1, width: r.width, height: h * 0.8), cornerRadius: h * 0.4),
+                   with: .color(rgb(0xB7A6F0).opacity(0.9)), style: StrokeStyle(lineWidth: max(1, h * 0.12), lineCap: .round, dash: [h * 0.35, h * 0.3]))
+        ctx.strokePath(rgb(0xB7A6F0).opacity(0.9), width: max(0.8, h * 0.08)) { p in
+            p.move(to: CGPoint(x: r.midX - h * 0.3, y: r.minY + h * 0.2))
+            p.addLine(to: CGPoint(x: r.midX, y: r.minY + h * 0.5))
+            p.addLine(to: CGPoint(x: r.midX - h * 0.15, y: r.minY + h * 0.8))
+        }
+    }
+
+    /// Mây giông mặt cau có, có tia chớp nhỏ.
+    static func stormCloud(_ ctx: GraphicsContext, center c: CGPoint, radius r: CGFloat, time t: Double) {
+        let wobble = CGFloat(sin(t * 2)) * r * 0.05
+        let body = rgb(0x8E87A8), shade = rgb(0x6F6889)
+        let bolt = [CGPoint(x: c.x + r * 0.1, y: c.y + r * 0.45), CGPoint(x: c.x - r * 0.2, y: c.y + r * 0.95),
+                    CGPoint(x: c.x + r * 0.05, y: c.y + r * 0.9), CGPoint(x: c.x - r * 0.12, y: c.y + r * 1.35),
+                    CGPoint(x: c.x + r * 0.35, y: c.y + r * 0.75), CGPoint(x: c.x + r * 0.1, y: c.y + r * 0.8),
+                    CGPoint(x: c.x + r * 0.3, y: c.y + r * 0.45)]
+        if t == 0 || sin(t * 5) > -0.3 { ctx.polygon(bolt, rgb(0xFFD45E)) }
+        ctx.ellipse(c.x - r * 1.1, c.y - r * 0.2 + wobble, r * 2.2, r * 0.9, shade)
+        ctx.circle(c.x - r * 0.45, c.y - r * 0.2 + wobble, r * 0.55, body)
+        ctx.circle(c.x + r * 0.2, c.y - r * 0.4 + wobble, r * 0.7, body)
+        ctx.circle(c.x + r * 0.7, c.y - r * 0.05 + wobble, r * 0.42, body)
+        ctx.ellipse(c.x - r * 1.0, c.y - r * 0.25 + wobble, r * 2.0, r * 0.7, body)
+        // Mặt cau có
+        let ink = rgb(0x3E3550)
+        ctx.strokePath(ink, width: max(0.8, r * 0.09)) { p in
+            p.move(to: CGPoint(x: c.x - r * 0.42, y: c.y - r * 0.32 + wobble)); p.addLine(to: CGPoint(x: c.x - r * 0.18, y: c.y - r * 0.22 + wobble))
+            p.move(to: CGPoint(x: c.x + r * 0.42, y: c.y - r * 0.32 + wobble)); p.addLine(to: CGPoint(x: c.x + r * 0.18, y: c.y - r * 0.22 + wobble))
+            p.move(to: CGPoint(x: c.x - r * 0.15, y: c.y + r * 0.08 + wobble))
+            p.addQuadCurve(to: CGPoint(x: c.x + r * 0.15, y: c.y + r * 0.08 + wobble), control: CGPoint(x: c.x, y: c.y - r * 0.05 + wobble))
+        }
+        ctx.circle(c.x - r * 0.3, c.y - r * 0.1 + wobble, r * 0.07, ink)
+        ctx.circle(c.x + r * 0.3, c.y - r * 0.1 + wobble, r * 0.07, ink)
+    }
+
+    /// Chim tròn vỗ cánh, quay đầu theo hướng bay.
+    static func bird(_ ctx: GraphicsContext, center c: CGPoint, radius r: CGFloat, time t: Double, facingLeft: Bool) {
+        var l = ctx
+        if facingLeft {
+            l.translateBy(x: c.x * 2, y: 0)
+            l.scaleBy(x: -1, y: 1)
+        }
+        let flap = CGFloat(sin(t * 14))
+        let body = rgb(0x8EC5FF), belly = rgb(0xDDEEFF), wing = rgb(0x5FA3E8)
+        // Đuôi
+        l.polygon([CGPoint(x: c.x - r * 0.8, y: c.y), CGPoint(x: c.x - r * 1.5, y: c.y - r * 0.4), CGPoint(x: c.x - r * 1.4, y: c.y + r * 0.35)], wing)
+        l.circle(c.x, c.y, r, body)
+        l.ellipse(c.x - r * 0.4, c.y, r * 1.0, r * 0.75, belly)
+        // Cánh vỗ
+        l.ellipse(c.x - r * 0.55, c.y - r * (0.35 + 0.55 * flap), r * 1.0, r * (0.5 + 0.35 * abs(flap)), wing)
+        // Mỏ + mắt + má
+        l.polygon([CGPoint(x: c.x + r * 0.9, y: c.y - r * 0.1), CGPoint(x: c.x + r * 1.45, y: c.y + r * 0.05), CGPoint(x: c.x + r * 0.9, y: c.y + r * 0.22)], rgb(0xF6A04D))
+        l.circle(c.x + r * 0.45, c.y - r * 0.25, r * 0.13, rgb(0x3E3550))
+        l.circle(c.x + r * 0.42, c.y + r * 0.15, r * 0.14, rgb(0xF4B0B0).opacity(0.9))
+    }
+
     static func star(_ ctx: GraphicsContext, center c: CGPoint, radius r: CGFloat, color: Color = rgb(0xF6C445), glow: Bool = true) {
         if glow { ctx.circle(c.x, c.y, r * 1.45, rgb(0xFFF1B8).opacity(0.3)) }
         var p = Path()
@@ -366,6 +433,118 @@ enum FoodArt {
 // MARK: Bụi trong phòng
 
 enum DustArt {
+    /// Một vết bẩn trong chế độ dọn nhà: mờ dần và nhỏ lại khi `remaining` giảm.
+    static func dirt(_ ctx: GraphicsContext, kind: DirtKind, center c: CGPoint, size s: CGFloat, remaining: Double = 1) {
+        guard remaining > 0 else { return }
+        var l = ctx
+        l.opacity = 0.25 + 0.75 * remaining
+        let k = 0.75 + 0.25 * CGFloat(remaining)
+        switch kind {
+        case .dust: spot(l, kind: 0, center: c, size: s * k)
+        case .leaf: spot(l, kind: 1, center: c, size: s * k)
+        case .paper: spot(l, kind: 2, center: c, size: s * k)
+        case .cobweb: cobweb(l, center: c, size: s * 1.25 * k)
+        case .stain: stain(l, center: c, size: s * 1.1 * k)
+        }
+    }
+
+    /// Mạng nhện tròn + bé nhện cười treo bên dưới.
+    static func cobweb(_ ctx: GraphicsContext, center c: CGPoint, size s: CGFloat) {
+        let line = Color.white.opacity(0.9)
+        let shade = rgb(0x9C93A8).opacity(0.55)
+        let r = s * 0.5
+        for pass in 0..<2 {
+            let color = pass == 0 ? shade : line
+            let w = max(0.6, s * (pass == 0 ? 0.045 : 0.025))
+            ctx.strokePath(color, width: w) { p in
+                for i in 0..<8 {
+                    let a = Double(i) * .pi / 4
+                    p.move(to: c)
+                    p.addLine(to: CGPoint(x: c.x + r * CGFloat(cos(a)), y: c.y + r * CGFloat(sin(a))))
+                }
+                for ring in 1...3 {
+                    let rr = r * CGFloat(ring) / 3.2
+                    for i in 0..<8 {
+                        let a0 = Double(i) * .pi / 4, a1 = Double(i + 1) * .pi / 4
+                        let p0 = CGPoint(x: c.x + rr * CGFloat(cos(a0)), y: c.y + rr * CGFloat(sin(a0)))
+                        let p1 = CGPoint(x: c.x + rr * CGFloat(cos(a1)), y: c.y + rr * CGFloat(sin(a1)))
+                        let mid = CGPoint(x: c.x + rr * 0.8 * CGFloat(cos((a0 + a1) / 2)), y: c.y + rr * 0.8 * CGFloat(sin((a0 + a1) / 2)))
+                        p.move(to: p0)
+                        p.addQuadCurve(to: p1, control: mid)
+                    }
+                }
+            }
+        }
+        // Bé nhện
+        let spider = CGPoint(x: c.x + r * 0.35, y: c.y + r * 1.05)
+        ctx.strokePath(line, width: max(0.5, s * 0.02)) { p in
+            p.move(to: CGPoint(x: spider.x, y: c.y + r * 0.2)); p.addLine(to: spider)
+        }
+        let body = rgb(0x5A4E6B)
+        ctx.strokePath(body, width: max(0.6, s * 0.03)) { p in
+            for side in [-1.0, 1.0] {
+                for j in 0..<3 {
+                    let y = spider.y - s * 0.03 + CGFloat(j) * s * 0.05
+                    p.move(to: CGPoint(x: spider.x, y: y))
+                    p.addQuadCurve(to: CGPoint(x: spider.x + CGFloat(side) * s * 0.16, y: y + s * 0.06),
+                                   control: CGPoint(x: spider.x + CGFloat(side) * s * 0.12, y: y - s * 0.04))
+                }
+            }
+        }
+        ctx.circle(spider.x, spider.y, s * 0.085, body)
+        ctx.circle(spider.x - s * 0.03, spider.y - s * 0.01, s * 0.018, Color.white)
+        ctx.circle(spider.x + s * 0.03, spider.y - s * 0.01, s * 0.018, Color.white)
+    }
+
+    /// Vết bẩn: vệt bùn tròn méo + vài giọt bắn quanh.
+    static func stain(_ ctx: GraphicsContext, center c: CGPoint, size s: CGFloat) {
+        let mud = rgb(0x9B7B62).opacity(0.75)
+        var p = Path()
+        let n = 28
+        for i in 0...n {
+            let a = Double(i) / Double(n) * 2 * .pi
+            let wobble = 1 + 0.18 * CGFloat(sin(a * 3 + 0.7))
+            let pt = CGPoint(x: c.x + s * 0.42 * wobble * CGFloat(cos(a)), y: c.y + s * 0.3 * wobble * CGFloat(sin(a)))
+            if i == 0 { p.move(to: pt) } else { p.addLine(to: pt) }
+        }
+        p.closeSubpath()
+        ctx.fill(p, with: .color(mud))
+        ctx.ellipse(c.x - s * 0.18, c.y - s * 0.12, s * 0.2, s * 0.1, rgb(0xB79A82).opacity(0.7))
+        ctx.circle(c.x + s * 0.5, c.y - s * 0.18, s * 0.06, mud)
+        ctx.circle(c.x - s * 0.52, c.y + s * 0.16, s * 0.05, mud)
+        ctx.circle(c.x + s * 0.36, c.y + s * 0.34, s * 0.04, mud)
+    }
+
+    /// Dụng cụ dọn theo ngón tay: đầu dụng cụ nằm tại `c`, nghiêng `tilt` độ.
+    static func tool(_ ctx: GraphicsContext, _ tool: CleanTool, at c: CGPoint, size s: CGFloat, tilt: Double) {
+        ctx.rotated(tilt, around: c) { t in
+            switch tool {
+            case .broom:
+                // Chổi lông gà: cán gỗ + chùm lông nhiều màu.
+                t.rect(c.x - s * 0.06, c.y - s * 1.25, s * 0.12, s * 0.95, rgb(0xC89B6D), radius: s * 0.05)
+                t.rect(c.x - s * 0.1, c.y - s * 0.36, s * 0.2, s * 0.12, rgb(0xA07448), radius: s * 0.04)
+                let feathers: [(CGFloat, CGFloat, UInt32)] = [(-0.28, 0.02, 0xF7A8C0), (0.28, 0.02, 0xA9DDB8), (-0.14, 0.12, 0xFFE08A),
+                                                              (0.14, 0.12, 0xAFCFF2), (0, -0.04, 0xD3C1EE), (0, 0.2, 0xF8CBC4)]
+                for f in feathers {
+                    t.ellipse(c.x + f.0 * s - s * 0.2, c.y + f.1 * s - s * 0.2, s * 0.4, s * 0.46, rgb(f.2))
+                }
+            case .cloth:
+                // Khăn lau xanh gấp đôi + bọt xà phòng.
+                var p = Path(roundedRect: CGRect(x: c.x - s * 0.42, y: c.y - s * 0.3, width: s * 0.84, height: s * 0.6), cornerRadius: s * 0.14)
+                t.fill(p, with: .color(rgb(0x8EC5FF)))
+                p = Path(roundedRect: CGRect(x: c.x - s * 0.42, y: c.y - s * 0.3, width: s * 0.84, height: s * 0.22), cornerRadius: s * 0.1)
+                t.fill(p, with: .color(rgb(0xB8DBFF)))
+                t.strokePath(Color.white.opacity(0.8), width: max(0.6, s * 0.03)) { v in
+                    v.move(to: CGPoint(x: c.x - s * 0.3, y: c.y + s * 0.08)); v.addLine(to: CGPoint(x: c.x + s * 0.3, y: c.y + s * 0.08))
+                    v.move(to: CGPoint(x: c.x - s * 0.3, y: c.y + s * 0.18)); v.addLine(to: CGPoint(x: c.x + s * 0.3, y: c.y + s * 0.18))
+                }
+                for b in [(-0.4, -0.38, 0.1), (0.36, -0.42, 0.08), (0.48, 0.2, 0.06)] {
+                    t.circle(c.x + CGFloat(b.0) * s, c.y + CGFloat(b.1) * s, CGFloat(b.2) * s, Color.white.opacity(0.85))
+                }
+            }
+        }
+    }
+
     /// Một đốm bụi / lá khô / giấy vụn, tâm tại `c`, cỡ `s` (điểm).
     static func spot(_ ctx: GraphicsContext, kind: Int, center c: CGPoint, size s: CGFloat) {
         switch kind % 3 {

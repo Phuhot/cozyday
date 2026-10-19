@@ -16,6 +16,7 @@ final class JumpController {
     private(set) var engine: CloudJumpEngine
     private(set) var effects: [GameEffect] = []
     private(set) var lastBounceAt: TimeInterval = -10
+    private(set) var lastHitAt: TimeInterval = -10
     @ObservationIgnored private var dragStart: (finger: Double, pet: Double)?
     @ObservationIgnored private var effectID = 0
     let pointsPerUnit: Double
@@ -56,6 +57,13 @@ final class JumpController {
                 effectID += 1
                 effects.append(GameEffect(id: effectID, kind: .plus(CloudJumpEngine.pointsPerStar), x: engine.petX, y: engine.petY + 16, start: engine.time))
                 feedback(GameFeedbackEvent(cue: .star, haptic: .tap))
+            case .broke:
+                effectID += 1
+                effects.append(GameEffect(id: effectID, kind: .sparkle, x: engine.petX, y: engine.petY - 1, start: engine.time))
+                feedback(GameFeedbackEvent(cue: .flip, haptic: nil))
+            case .hit:
+                lastHitAt = engine.time
+                feedback(GameFeedbackEvent(cue: .bad, haptic: .bump))
             case .fell:
                 feedback(GameFeedbackEvent(cue: .fall, haptic: .oops))
             }
@@ -66,6 +74,12 @@ final class JumpController {
 
     private func drivePreviewBot() {
         if engine.velY > CloudJumpEngine.jumpSpeed - 5 { botStanding = engine.petY }
+        // Bị chặn: lái về mây bên dưới.
+        if engine.velY < 0, engine.petY < botStanding + 1,
+           let below = engine.platforms.filter({ $0.y <= engine.petY }).max(by: { $0.y < $1.y }) {
+            engine.setTarget(x: below.x(at: engine.time))
+            return
+        }
         if let next = engine.platforms.filter({ $0.y > botStanding + 1 }).min(by: { $0.y < $1.y }) {
             engine.setTarget(x: next.x(at: engine.time))
         }

@@ -155,16 +155,58 @@ final class CareTests: XCTestCase {
         XCTAssertFalse(p.stroke(at: t + 0.1), "chỉ báo hoàn thành một lần")
     }
 
-    func testDustSpotsDeterministicAndSeparated() {
-        let a = CleanPlan.spots(count: 7, seed: 42)
-        XCTAssertEqual(a.count, 7)
-        XCTAssertEqual(a.map(\.x), CleanPlan.spots(count: 7, seed: 42).map(\.x))
+    func testDirtSpotsDeterministicSeparatedAndVaried() {
+        let a = CleanPlan.spots(count: 8, seed: 42)
+        XCTAssertEqual(a.count, 8)
+        XCTAssertEqual(a, CleanPlan.spots(count: 8, seed: 42))
+        XCTAssertTrue(a.contains { $0.kind == .cobweb }, "có mạng nhện")
+        XCTAssertTrue(a.contains { $0.kind == .stain }, "có vết bẩn")
         for (i, s) in a.enumerated() {
-            XCTAssertTrue((0.66...0.93).contains(s.y))
-            for t in a[(i + 1)...] { XCTAssertFalse(abs(s.x - t.x) < 0.11 && abs(s.y - t.y) < 0.09) }
+            if s.kind == .cobweb { XCTAssertLessThan(s.y, 0.25, "mạng nhện ở trên cao") }
+            for t in a[(i + 1)...] { XCTAssertFalse(abs(s.x - t.x) < 0.12 && abs(s.y - t.y) < 0.1) }
+        }
+        for seed in UInt64(1)...50 {
+            XCTAssertEqual(CleanPlan.spots(count: 6, seed: seed).count, 6, "seed \(seed)")
         }
         XCTAssertEqual(CleanPlan.visibleDust(cleanliness: 90), 0)
         XCTAssertGreaterThan(CleanPlan.visibleDust(cleanliness: 25), CleanPlan.visibleDust(cleanliness: 50))
+    }
+
+    /// Chà qua lại: đúng dụng cụ sạch sau vài lượt; sai dụng cụ chậm hơn; nhấc tay nhảy cóc không tính quãng lớn.
+    func testRubbingCleansGraduallyWithRightToolFaster() {
+        func scrub(_ work: inout CleanWork, tool: CleanTool, strokes: Int) {
+            let s = work.spots[0]
+            for k in 0..<strokes {
+                let from = (x: s.x - 0.05, y: s.y), to = (x: s.x + 0.05, y: s.y)
+                if k % 2 == 0 { work.rub(from: from, to: to, tool: tool) } else { work.rub(from: to, to: from, tool: tool) }
+            }
+        }
+        let stain = DirtSpot(x: 0.5, y: 0.6, kind: .stain)
+        var right = CleanWork(spots: [stain])
+        scrub(&right, tool: .cloth, strokes: 4)
+        XCTAssertFalse(right.isDone, "một hai lần chà chưa sạch ngay")
+        XCTAssertGreaterThan(right.fraction, 0.2)
+        scrub(&right, tool: .cloth, strokes: 8)
+        XCTAssertTrue(right.isDone)
+
+        var wrong = CleanWork(spots: [stain])
+        scrub(&wrong, tool: .broom, strokes: 12)
+        XCTAssertFalse(wrong.isDone, "dùng chổi lau vết bẩn vẫn được nhưng chậm hơn")
+        XCTAssertGreaterThan(wrong.fraction, 0)
+
+        var jump = CleanWork(spots: [DirtSpot(x: 0.5, y: 0.5, kind: .dust)])
+        jump.rub(from: (x: 0, y: 0), to: (x: 0.5, y: 0.5), tool: .broom)
+        XCTAssertFalse(jump.isDone, "kéo một phát từ xa không làm sạch ngay")
+
+        var far = CleanWork(spots: [DirtSpot(x: 0.2, y: 0.2, kind: .dust)])
+        far.rub(from: (x: 0.7, y: 0.8), to: (x: 0.8, y: 0.8), tool: .broom)
+        XCTAssertEqual(far.fraction, 0, "chà chỗ khác không ảnh hưởng")
+
+        var a11y = CleanWork(spots: CleanPlan.spots(count: 6, seed: 3))
+        a11y.clear(0)
+        XCTAssertEqual(a11y.cleanedCount, 1)
+        a11y.clearAll()
+        XCTAssertTrue(a11y.isDone)
     }
 }
 
@@ -328,12 +370,15 @@ final class MinigameEngineTests: XCTestCase {
         for seed in UInt64(1)...30 {
             var e = CloudJumpEngine(seed: seed)
             var all: [Int: JumpPlatform] = [:]
+            var hazards: [Int: JumpHazard] = [:]
             // Đẩy camera lên bằng một bot (xem test bên dưới) không cần thiết: chỉ kiểm tra bộ sinh.
             var bot = JumpBot()
             for _ in 0..<(60 * 240) where !e.isOver {
                 bot.drive(&e)
                 e.step(1.0 / 60)
                 for p in e.platforms { all[p.id] = p }
+                for h in e.hazards { hazards[h.id] = h }
+                XCTAssertLessThanOrEqual(e.hazards.count, CloudJumpEngine.maxHazards)
                 XCTAssertLessThanOrEqual(e.platforms.count, CloudJumpEngine.maxPlatforms)
                 XCTAssertLessThanOrEqual(e.stars.count, CloudJumpEngine.maxStars)
             }
@@ -347,8 +392,36 @@ final class MinigameEngineTests: XCTestCase {
                                          "seed \(seed): bệ \(b.id) quá xa")
                 XCTAssertGreaterThanOrEqual(b.baseX - b.amplitude - b.width / 2, 0)
                 XCTAssertLessThanOrEqual(b.baseX + b.amplitude + b.width / 2, CloudJumpEngine.worldWidth)
+                XCTAssertFalse(a.fragile && b.fragile, "seed \(seed): hai mây mỏng liền nhau")
+            }
+            // Chướng ngại không bao giờ chạm vùng của mây ngay bên dưới (đứng nảy tại chỗ luôn an toàn).
+            XCTAssertFalse(hazards.isEmpty, "seed \(seed): phải có chướng ngại")
+            for h in hazards.values {
+                guard let i = sorted.lastIndex(where: { $0.y < h.y }), i > 0 else { continue }
+                for p in [sorted[i], sorted[i - 1]] {
+                    let half = p.width / 2 + p.amplitude
+                    let gap = abs(h.baseX - p.baseX) - half - h.amplitude - h.radius - CloudJumpEngine.footHalfWidth
+                    XCTAssertGreaterThan(gap, 0, "seed \(seed): \(h.kind) \(h.id) đè lên vùng bệ \(p.id)")
+                }
+                if h.kind == .bird { XCTAssertFalse(sorted[i].fragile, "seed \(seed): chim trên mây mỏng") }
+                XCTAssertGreaterThanOrEqual(h.baseX - h.amplitude, 0)
+                XCTAssertLessThanOrEqual(h.baseX + h.amplitude, CloudJumpEngine.worldWidth)
             }
         }
+    }
+
+    func testHazardKnocksDownOnceAndFragileCloudBreaks() {
+        let layout = [JumpPlatform(id: 0, x: 50, y: 0, width: 100), JumpPlatform(id: 1, x: 50, y: 25, width: 30, fragile: true)]
+        var e = CloudJumpEngine(seed: 1, layout: layout,
+                                hazards: [JumpHazard(id: 9, kind: .storm, baseX: 50, y: 30, amplitude: 0, speed: 0, phase: 0)])
+        var events: [JumpEvent] = []
+        for _ in 0..<(60 * 3) { events += e.step(1.0 / 60) }
+        XCTAssertEqual(events.filter { $0 == .hit(.storm) }.count, 1, "chạm một lần rồi mây giông bay đi")
+        XCTAssertEqual(e.hits, 1)
+        XCTAssertTrue(e.hazards.isEmpty)
+        XCTAssertTrue(events.contains(.broke(platformID: 1)), "mây mỏng tan sau một lần nảy")
+        XCTAssertFalse(e.platforms.contains { $0.id == 1 })
+        XCTAssertFalse(e.isOver, "bị chặn không mất lượt — rơi về mây bên dưới")
     }
 
     func testBotCanAlwaysClimb() {
@@ -510,13 +583,55 @@ final class MinigameEngineTests: XCTestCase {
     }
 }
 
-/// Người chơi máy cho Nhảy Mây: nhắm vào bệ thấp nhất cao hơn bệ vừa đáp.
+/// Người chơi máy cho Nhảy Mây: nhắm vào bệ thấp nhất cao hơn bệ vừa đáp. Mỗi lần nảy lên, đoán xem chim
+/// có cắt ngang đường bay không — nếu có thì nảy tại chỗ chờ lượt sau (như người chơi thật).
 struct JumpBot {
     private var standing = 0.0
+    private var waitingOn: Int?
 
     mutating func drive(_ e: inout CloudJumpEngine) {
-        if e.velY > CloudJumpEngine.jumpSpeed - 5 { standing = e.petY }
+        if e.velY > CloudJumpEngine.jumpSpeed - 5 {
+            standing = e.petY
+            let here = e.platforms.first { abs($0.y - standing) < 0.01 }
+            let next = e.platforms.filter { $0.y > standing + 1 }.min { $0.y < $1.y }
+            if let next, let here, !here.fragile, Self.birdInTheWay(e, from: e.petX, to: next, standing: standing) {
+                waitingOn = here.id
+            } else {
+                waitingOn = nil
+            }
+        }
+        if let id = waitingOn, let p = e.platforms.first(where: { $0.id == id }) {
+            e.setTarget(x: p.x(at: e.time))
+            return
+        }
+        // Đang rơi dưới mức bệ vừa đáp (bị chim / mây giông chặn): lái về mây cao nhất bên dưới chân.
+        if e.velY < 0, e.petY < standing + 1,
+           let below = e.platforms.filter({ $0.y <= e.petY }).max(by: { $0.y < $1.y }) {
+            e.setTarget(x: below.x(at: e.time))
+            return
+        }
         let next = e.platforms.filter { $0.y > standing + 1 }.min { $0.y < $1.y }
         if let next { e.setTarget(x: next.x(at: e.time)) }
+    }
+
+    /// Mô phỏng đường bay tới bệ kế tiếp và kiểm tra khoảng cách tới mọi con chim theo thời gian.
+    static func birdInTheWay(_ e: CloudJumpEngine, from x0: Double, to next: JumpPlatform, standing: Double) -> Bool {
+        let birds = e.hazards.filter { $0.kind == .bird && $0.y > standing - 2 && $0.y < next.y + CloudJumpEngine.bodyHeight + 6 }
+        guard !birds.isEmpty else { return false }
+        var x = x0, y = standing, v = CloudJumpEngine.jumpSpeed, t = 0.0
+        let dt = 1.0 / 60
+        while t < 2.5 {
+            t += dt
+            let target = next.x(at: e.time + t)
+            x += max(-CloudJumpEngine.maxSpeedX * dt, min(CloudJumpEngine.maxSpeedX * dt, target - x))
+            v -= CloudJumpEngine.gravity * dt
+            y += v * dt
+            for b in birds {
+                let dx = x - b.x(at: e.time + t), dy = y + CloudJumpEngine.bodyHeight / 2 - b.y
+                if (dx * dx + dy * dy).squareRoot() < b.radius + CloudJumpEngine.footHalfWidth + 4 { return true }
+            }
+            if v < 0 && y <= next.y { break }
+        }
+        return false
     }
 }

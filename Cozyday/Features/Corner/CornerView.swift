@@ -23,14 +23,10 @@ struct CornerView: View {
     @State private var cuddleDoneAt: TimeInterval = 0
 
     /// Một lượt dọn nhà: mã hành động cố định cho cả lượt (thử lại sau lỗi lưu không làm hai lần).
-    struct CleanSession: Equatable {
+    struct CleanSession: Identifiable {
         let id = UUID()
-        let spots: [(x: Double, y: Double, kind: Int)]
-        var cleared: Set<Int> = []
-        var saveFailed = false
-
-        static func == (a: CleanSession, b: CleanSession) -> Bool { a.id == b.id && a.cleared == b.cleared && a.saveFailed == b.saveFailed }
-        var isDone: Bool { cleared.count >= spots.count }
+        let room: RoomKind
+        let work: CleanWork
     }
 
     private var room: RoomKind { RoomKind(rawValue: roomRaw) ?? .study }
@@ -44,13 +40,9 @@ struct CornerView: View {
 
                     roomArea
 
-                    if let cleaning {
-                        cleanBar(cleaning)
-                    } else {
-                        Text("Chạm để vuốt ve, vuốt qua lại để nựng, giữ rồi kéo để đưa \(store.profile.displayPetName) sang chỗ khác. Chạm một ô trong phòng để chọn đồ.")
-                            .font(Typography.caption)
-                            .foregroundStyle(Palette.inkMuted)
-                    }
+                    Text("Chạm để vuốt ve, vuốt qua lại để nựng, giữ rồi kéo để đưa \(store.profile.displayPetName) sang chỗ khác. Chạm một ô trong phòng để chọn đồ.")
+                        .font(Typography.caption)
+                        .foregroundStyle(Palette.inkMuted)
 
                     PlaygroundEntryCard { showPlayground = true }
                     AvatarEntryCard { showAvatar = true }
@@ -89,7 +81,6 @@ struct CornerView: View {
                 }
                 .padding(Spacing.l)
             }
-            .scrollDisabled(cleaning != nil)
             .task {
                 // Ảnh xem trước (Debug): cuộn tới thẻ chăm sóc.
                 guard PreviewMode.current == .care else { return }
@@ -109,6 +100,11 @@ struct CornerView: View {
             }
             .sheet(item: $shopTarget) { target in
                 ShopView(initialRoom: target.room, initialSlot: target.slot)
+            }
+            .fullScreenCover(item: $cleaning) { session in
+                CleanRoomView(room: session.room, equipped: store.equippedMap, appearance: store.petAppearance,
+                              petName: store.profile.displayPetName, haptics: store.profile.hapticsEnabled,
+                              actionID: session.id, work: session.work) { id in finishCare(.clean, id: id) }
             }
             .sheet(isPresented: $showAvatar) {
                 AvatarStudioView()
@@ -142,7 +138,6 @@ struct CornerView: View {
                 case .feed, .careCapped: foodTab = .tray
                 case .clean:
                     startCleaning()
-                    cleaning?.cleared = [0, 2, 4]
                 case .playground, .pickPet, .tutorial, .jump, .basket, .memory, .pause, .result, .resultCapped: showPlayground = true
                 default: break
                 }
@@ -183,20 +178,8 @@ struct CornerView: View {
                 onTapSlot: { slot in shopTarget = ShopTarget(room: room, slot: slot) },
                 onStroke: stroked
             )
-            .allowsHitTesting(cleaning == nil)
-            .overlay {
-                if let session = cleaning {
-                    CleanModeLayer(spots: session.spots,
-                                   cleared: Binding(get: { cleaning?.cleared ?? [] }, set: { cleaning?.cleared = $0 }),
-                                   haptics: store.profile.hapticsEnabled)
-                } else {
-                    DustLayer(cleanliness: store.currentNeeds.cleanliness)
-                }
-            }
+            .overlay { DustLayer(cleanliness: store.currentNeeds.cleanliness) }
             .clipShape(RoundedRectangle(cornerRadius: Radius.xl, style: .continuous))
-            .onChange(of: cleaning?.cleared.count) { _, _ in
-                if let session = cleaning, session.isDone, !session.saveFailed { saveCleaning() }
-            }
         } else {
             RoomView(room: room, equipped: [:], appearance: store.petAppearance, petMood: .rest,
                      petName: store.profile.displayPetName, bounceTrigger: 0)
@@ -233,16 +216,8 @@ struct CornerView: View {
             return
         }
         let count = CleanPlan.spotCount(cleanliness: c)
-        cleaning = CleanSession(spots: CleanPlan.spots(count: count, seed: UInt64.random(in: 1...UInt64.max)))
-    }
-
-    private func saveCleaning() {
-        guard let session = cleaning else { return }
-        if finishCare(.clean, id: session.id) {
-            cleaning = nil
-        } else {
-            cleaning?.saveFailed = true
-        }
+        let spots = CleanPlan.spots(count: count, seed: UInt64.random(in: 1...UInt64.max))
+        cleaning = CleanSession(room: room, work: CleanWork(spots: spots, aspect: Double(1 / RoomLayout.aspect)))
     }
 
     /// Lưu một hành động chăm sóc; chỉ báo kết quả khi lưu thành công.
@@ -270,45 +245,6 @@ struct CornerView: View {
             cuddle.reset()
             cuddleDoneAt = now
             finishCare(.cuddle, id: UUID())
-        }
-    }
-
-    private func cleanBar(_ session: CleanSession) -> some View {
-        CozyCard(padding: Spacing.m) {
-            VStack(alignment: .leading, spacing: Spacing.s) {
-                HStack {
-                    Label("Dọn nhà: \(session.cleared.count)/\(session.spots.count)", systemImage: "sparkles")
-                        .font(Typography.headline)
-                        .foregroundStyle(Palette.ink)
-                    Spacer()
-                    ProgressView(value: Double(session.cleared.count), total: Double(max(1, session.spots.count)))
-                        .tint(Palette.sage)
-                        .frame(maxWidth: 110)
-                        .accessibilityHidden(true)
-                }
-                Text(session.saveFailed ? "Chưa lưu được. Thử lưu lại nhé — không bị tính hai lần."
-                     : "Chạm hoặc vuốt qua bụi, lá khô và giấy vụn. Dọn ở đây là dọn cả nhà.")
-                    .font(Typography.caption)
-                    .foregroundStyle(Palette.inkMuted)
-                    .fixedSize(horizontal: false, vertical: true)
-                HStack(spacing: Spacing.s) {
-                    if session.saveFailed {
-                        Button("Thử lưu lại") { saveCleaning() }
-                            .buttonStyle(PrimaryButtonStyle(color: Palette.sage))
-                    } else {
-                        Button {
-                            cleaning?.cleared = Set(session.spots.indices)
-                        } label: {
-                            Label("Dọn nhanh", systemImage: "wand.and.stars").frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(PrimaryButtonStyle(color: Palette.sage))
-                        .accessibilityHint("Dọn hết bụi một lần, nhận kết quả như khi tự tay dọn")
-                    }
-                    Button("Thôi") { cleaning = nil }
-                        .buttonStyle(SoftButtonStyle(tint: Palette.inkMuted))
-                        .accessibilityHint("Thoát chế độ dọn, không lưu")
-                }
-            }
         }
     }
 

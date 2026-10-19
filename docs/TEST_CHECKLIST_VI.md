@@ -75,7 +75,8 @@ iPhone: ________ · iOS: ________ · Bản build (Cài đặt → Thông tin →
 - [ ] Mua đồ ăn: trừ đúng giá, tăng đúng 1; thiếu xu → nút mờ, không trừ
 - [ ] Hôm sau (≈ 1 ngày không cho ăn) No bụng dưới 35: bong bóng chỉ nói một nhu cầu, nét mặt "mong được chăm" (không khóc/giận)
 - [ ] Bữa cơ bản miễn phí chỉ hiện khi đói; bấm xong No bụng lên 55, nút biến mất
-- [ ] Dọn nhà: bụi/lá/giấy vụn hiện ở sàn khi Nhà sạch thấp; chế độ dọn: chạm/vuốt sạch từng đốm; "Dọn nhanh" cho cùng kết quả; "Thôi" → không lưu gì; trang không bị cuộn khi đang vuốt bụi
+- [ ] Dọn nhà: bụi/lá/giấy vụn, mạng nhện, vết bùn hiện trong phòng khi Nhà sạch thấp; bấm *Dọn nhà* → mở màn dọn toàn màn hình (không còn bị kẹt cuộn); chổi lông gà/khăn lau đi theo ngón tay; chà qua lại thì vết bẩn mờ dần; dùng sai dụng cụ chậm hơn và có gợi ý; sạch hết → lưu, popup thưởng, tự đóng; nút ✕ → không lưu gì
+- [ ] Dọn nhà với VoiceOver: mỗi vết bẩn đọc tên + dụng cụ, chạm hai lần để lau; thao tác "Dọn hết" trên cả phòng
 - [ ] Nựng: vuốt qua lại trên thú cưng ~3–4 giây → thanh "Đang nựng…" đầy → popup; giữ rồi kéo thú cưng KHÔNG tính là nựng
 - [ ] Chăm khi đang ổn: không có XP/xu, có câu giải thích; quá 2 lần/loại trong ngày: báo đã đủ thưởng
 
@@ -126,3 +127,22 @@ iPhone: ________ · iOS: ________ · Bản build (Cài đặt → Thông tin →
 ## 3. Trạng thái xác minh hiện tại
 
 Xem `PROJECT_STATUS.md` — mục "Kết quả kiểm tra thực tế". Mục nào chưa được thử trên máy thật được ghi rõ **chưa xác minh**.
+
+## Ảnh đại diện, icon, tên app (phiên 6)
+
+- [ ] Màn hình chính hiện tên **CozyDay** và icon vịt con vàng đội mây
+- [ ] Cài đè lên bản cũ: dữ liệu còn nguyên (bundle ID và kho dữ liệu không đổi)
+- [ ] Góc nhỏ → *Ảnh đại diện*: xem trước có lấp lánh/rơi nhẹ (tắt khi bật Giảm chuyển động); đổi Nền / Phong cảnh / Hiệu ứng / Biểu cảm; lựa chọn chưa đủ cấp hiện khóa + "Cấp N"
+- [ ] Tab *Trang phục* chỉ hiện đồ đã có; đổi mũ trong ảnh không đổi mũ trong phòng; *Theo đồ đang mặc* trở lại như cũ
+- [ ] *Ngẫu nhiên*, bật *Hiện tên & cấp* → tên + cấp in trên ảnh; *Lưu* → thẻ ở Góc nhỏ và Tiến bộ đổi theo; *Hủy* → không đổi
+- [ ] *Lưu ảnh / chia sẻ* → bảng chia sẻ; *Lưu hình ảnh* hỏi quyền thêm ảnh (lần đầu) rồi lưu PNG vuông vào app Ảnh
+- [ ] Xuất sao lưu → khôi phục: ảnh đại diện giữ nguyên; khôi phục file cũ → ảnh mặc định
+
+## Nhảy Mây khó hơn (phiên 6)
+
+- [ ] 12 m đầu dễ; từ đó xuất hiện mây giông cau có, chim bay qua lại, mây mỏng viền nét đứt
+- [ ] Chạm mây giông/chim: bạn nhỏ ngạc nhiên, rơi nhẹ xuống, rung + tiếng "bóp"; lái về mây bên dưới thì chơi tiếp được
+- [ ] Mây mỏng tan sau một lần nảy
+- [ ] Đứng nảy tại chỗ chờ chim bay đi: không bị chạm
+- [ ] Cảm giác độ khó hợp lý sau ~50–150 m (ghi lại độ cao thường đạt được)
+

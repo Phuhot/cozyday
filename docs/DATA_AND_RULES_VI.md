@@ -128,8 +128,13 @@ Các con số nằm trong `Cozyday/Core/Care/PetCare.swift` (`CareConfig`).
   rồi cho ăn" để kiếm xu được.
 - **Cho ăn**: trừ đúng một món; chỉ số không vượt 100; đang no từ 95 trở lên thì không cho ăn (không mất món).
 - **Bữa cơ bản miễn phí**: chỉ khi No bụng dưới 35, đưa lên 55, không tạo vật phẩm, không có thưởng. Luôn dùng được kể cả khi hết xu.
-- **Dọn nhà**: chế độ dọn riêng (5–7 đốm bụi, chạm hoặc vuốt qua; hoặc nút *Dọn nhanh* cho VoiceOver/khó vuốt — cùng kết quả).
-  Thoát giữa chừng không lưu gì. Nhà sạch từ 95 thì không cần dọn.
+- **Dọn nhà** (toàn màn hình, không cuộn trang): 6–8 vết bẩn — mạng nhện ở góc trên, vết bùn trên tường/sàn, bụi, lá khô,
+  giấy vụn trên sàn. Cầm **chổi lông gà** (mạng nhện, bụi, lá, giấy) hoặc **khăn lau** (vết bùn) và chà qua lại: vết bẩn mờ dần
+  theo quãng chà (bụi ~0,55, lá/giấy ~0,45, mạng nhện ~0,8, vết bùn ~1,1 bề ngang phòng). Dùng sai dụng cụ vẫn sạch, chỉ
+  chậm hơn (35%) và có gợi ý đổi. Một lần di tay tính tối đa 0,12 bề ngang phòng (kéo nhảy cóc không làm sạch ngay).
+  VoiceOver: mỗi vết bẩn là một nút "lau sạch", cả phòng có thao tác "Dọn hết" — cùng kết quả.
+  Sạch hết → lưu một lần (`care:<actionID>` cố định cho cả lượt; lỗi lưu → *Thử lưu lại* cùng mã). Thoát giữa chừng không
+  lưu gì. Nhà sạch từ 95 thì không cần dọn.
 - **Nựng**: vuốt qua lại trên thú cưng tổng cộng ~3,5 giây (chỉ tính lúc ngón tay thật sự vuốt), hoặc nút *Nựng một chút*.
   Giữ rồi kéo vẫn là nhấc thú cưng, không tính là nựng. Chạm thường không có xu.
 - **Thưởng** chỉ khi chỉ số **trước** khi chăm dưới 35 (bữa cơ bản không bao giờ có thưởng):
@@ -155,7 +160,7 @@ tham khảo vì 60 xu sẽ vượt cả thu nhập từ hoạt động chính.
 
 | Game | Lượt hợp lệ (có xu) | Quy đổi |
 |---|---|---|
-| Nhảy Mây | rơi xuống (kết thúc đúng luật) và leo ≥ 15 m | điểm = mét + 3 × sao; 1 xu mỗi 15 điểm |
+| Nhảy Mây | rơi xuống (kết thúc đúng luật) và leo ≥ 15 m | điểm = mét + 3 × sao; 1 xu mỗi 15 điểm (độ khó mới không đổi cách quy đổi) |
 | Giỏ Quà | chơi **hết 60 giây** và ≥ 20 điểm | 1 xu mỗi 20 điểm |
 | Lật Thẻ | **ghép hết bàn** | Dễ 2 xu / Vừa 3 xu; +1 nếu lượt lật ≤ 2 × số cặp; +1 nếu ≤ số cặp + 3; +1 nếu nhanh (Dễ ≤ 40 s, Vừa ≤ 65 s) |
 
@@ -171,14 +176,39 @@ tham khảo vì 60 xu sẽ vượt cả thu nhập từ hoạt động chính.
   (không cần bấm "nhận"). Mở lại màn kết quả / bấm nhiều lần / mở lại app: không cộng thêm. Lỗi lưu: màn kết quả báo rõ và có
   nút *Thử lưu lại* — thử với **cùng** sessionID. Kết quả đã lưu vẫn thấy trong *Lượt gần đây* nếu app bị đóng trước màn kết quả.
 - Kỷ lục theo từng game, dùng chung cho mọi loài. Loài và trang phục không đổi hitbox hay độ khó.
+- **Nhảy Mây — độ khó** (`CloudJumpEngine`): 12 m đầu là vùng khởi động dễ; sau đó độ khó tăng dần tới tối đa ở **160 m**
+  (trước đây 400 m): khoảng cách giữa mây lớn dần (tối đa 38), mây hẹp dần (26 → 14), nhiều mây di chuyển hơn (20% → 50%).
+  Chướng ngại xuất hiện từ 12 m (18% → 50% khoảng trống giữa hai mây có một chướng ngại):
+  - **Mây giông** cau có: đứng yên sát hành lang bay giữa hai mây;
+  - **Chim nhỏ**: bay qua lại trong một khoảng trời, có thể cắt ngang đường lên mây kế — canh lúc chim bay đi rồi nhảy;
+  - **Mây mỏng** (viền nét đứt): nảy được một lần rồi tan; không có hai mây mỏng liền nhau.
+  Chạm chướng ngại: mất đà bay lên và rơi nhẹ xuống (không mất lượt ngay — lái về mây bên dưới là nảy tiếp được).
+  **Luôn chơi được**: mọi khoảng cách vẫn trong tầm nhảy; chướng ngại không bao giờ chạm vùng của mây ngay bên dưới và mây
+  trước đó, nên đứng nảy tại chỗ để chờ luôn an toàn; chim không bay trên mây mỏng. Có test với 30 seed: người chơi máy biết
+  chờ chim leo > 200 m không rơi; tốc độ leo tối đa theo vật lý vẫn < 4 m/giây.
 - **Giới hạn chống gian lận**: app hoàn toàn offline nên nếu bạn đổi ngày giờ của máy, hạn mức theo ngày (cả chăm sóc lẫn Sân
   chơi) đổi theo. Cozyday không hứa chống được kiểu gian lận này.
+
+## 3d. Ảnh đại diện
+
+`Cozyday/Core/Pet/Avatar.swift` (`AvatarConfig`, `AvatarCatalog`), vẽ bằng `AvatarPainter`.
+
+- Gồm **nền** (10), **phong cảnh** (8), **hiệu ứng** (9), **biểu cảm** (4) và **trang phục riêng** cho ảnh. Không tốn xu,
+  không có thưởng. Vài lựa chọn mở theo cấp như các phòng (Đêm tím 3, Biển xanh 4, Hoàng hôn 5, Thiên hà 8; Trăng khuyết 3,
+  Bãi biển 4, Cầu vồng 5, Đồi tuyết 6, Anh đào 7; Bong bóng 4, Tuyết rơi 6, Cánh hoa 7, Đom đóm 8, Pháo giấy 10).
+- Trang phục riêng chỉ chọn từ **đồ đã có**; mặc định là "theo đồ đang mặc". Đổi đồ trong ảnh không thay đồ trong phòng.
+  Giai đoạn lớn luôn theo cấp thật.
+- Lưu bằng `UserDefaults` (khóa `avatar.config`, không đổi lược đồ SwiftData) và có trong bản sao lưu (trường `avatar`,
+  tùy chọn). ID lạ hoặc chưa mở khóa → hiển thị lựa chọn mặc định, không lỗi.
+- *Lưu ảnh / chia sẻ*: tạo PNG 1024×1024 **trên máy** chỉ khi bạn bấm; không tải lên đâu. Lưu vào app Ảnh cần quyền "chỉ thêm
+  ảnh" (`NSPhotoLibraryAddUsageDescription`) — app không đọc ảnh có sẵn.
+- Icon của app là ảnh đại diện "Trời hồng + Đệm mây + Lấp lánh" với vịt con vàng đội mây (`AvatarPainter.appIcon`).
 
 ## 4. Sao lưu và khôi phục
 
 ### Xuất
 
-*Cài đặt → Xuất sao lưu…* → lưu vào app Tệp. File `Cozyday-backup-YYYY-MM-DD.json`:
+*Cài đặt → Xuất sao lưu…* → lưu vào app Tệp. File `CozyDay-backup-YYYY-MM-DD.json`:
 
 ```json
 {
@@ -197,7 +227,8 @@ tham khảo vì 60 xu sẽ vượt cả thu nhập từ hoạt động chính.
   "petCare": { … },              // từ bản 2: nhu cầu + mốc thời gian
   "foodStock": [ … ],            // khay đồ ăn
   "careActions": [ … ],          // lịch sử chăm sóc gần đây
-  "minigameResults": [ … ]       // kết quả Sân chơi
+  "minigameResults": [ … ],      // kết quả Sân chơi
+  "avatar": { … }                // ảnh đại diện (tùy chọn; file cũ không có → ảnh mặc định)
 }
 ```
 

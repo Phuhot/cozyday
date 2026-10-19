@@ -19,6 +19,7 @@ struct CloudJumpPainter {
     var effects: [GameEffect] = []
     var now: TimeInterval = 0
     var lastBounceAt: TimeInterval = -10
+    var lastHitAt: TimeInterval = -10
     var reduceMotion = false
 
     static let petWidth = 18.0
@@ -36,7 +37,20 @@ struct CloudJumpPainter {
             guard top > -30, top < size.height + 30 else { continue }
             let w = CGFloat(p.width) * k
             let x = CGFloat(p.x(at: t)) * k
-            GameArt.cloud(ctx, rect: CGRect(x: x - w / 2, y: top - 2 * k, width: w, height: 6 * k), moving: p.isMoving)
+            let rect = CGRect(x: x - w / 2, y: top - 2 * k, width: w, height: 6 * k)
+            if p.fragile {
+                GameArt.thinCloud(ctx, rect: rect)
+            } else {
+                GameArt.cloud(ctx, rect: rect, moving: p.isMoving)
+            }
+        }
+        for h in engine.hazards {
+            let c = CGPoint(x: CGFloat(h.x(at: t)) * k, y: sy(h.y))
+            guard c.y > -30, c.y < size.height + 30 else { continue }
+            switch h.kind {
+            case .storm: GameArt.stormCloud(ctx, center: c, radius: CGFloat(h.radius) * k, time: reduceMotion ? 0 : t)
+            case .bird: GameArt.bird(ctx, center: c, radius: CGFloat(h.radius) * k, time: reduceMotion ? 0 : t, facingLeft: h.movingLeft(at: t))
+            }
         }
         let bob = reduceMotion ? 0 : CGFloat(sin(t * 3)) * 1.2 * k
         for s in engine.stars {
@@ -45,7 +59,8 @@ struct CloudJumpPainter {
 
         let w = CGFloat(Self.petWidth) * k
         let feet = sy(engine.petY)
-        let kind: PetSpriteKind = engine.isOver ? .surprised : (now - lastBounceAt < 0.25 ? .cheer : (engine.velY > 0 ? .happy : .idle))
+        let kind: PetSpriteKind = engine.isOver || now - lastHitAt < 0.6 ? .surprised
+            : (now - lastBounceAt < 0.25 ? .cheer : (engine.velY > 0 ? .happy : .idle))
         // Hơi co giãn khi vừa nảy (không có khi bật Giảm chuyển động).
         let squash: CGFloat = reduceMotion ? 1 : (now - lastBounceAt < 0.12 ? 0.9 : 1)
         let h = w * squash

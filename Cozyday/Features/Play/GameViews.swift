@@ -197,7 +197,7 @@ struct JumpPlayArea: View {
 
     var body: some View {
         let painter = CloudJumpPainter(engine: controller.engine, effects: controller.effects, now: controller.engine.time,
-                                       lastBounceAt: controller.lastBounceAt, reduceMotion: reduceMotion)
+                                       lastBounceAt: controller.lastBounceAt, lastHitAt: controller.lastHitAt, reduceMotion: reduceMotion)
         Canvas { ctx, size in
             painter.draw(in: ctx, size: size, pet: spriteDrawer(sprites))
         }
