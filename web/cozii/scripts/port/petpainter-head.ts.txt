@@ -1,0 +1,40 @@
+// Chuyển tự động từ Swift (scripts/port/swift2ts.mjs) rồi sửa tay.
+import { GC, Color, rgb, pt, R, Path, deg, Rect } from '../gc'
+import { Palette } from '../palette'
+import type { FurColor, PetAppearance, PetMood, PetPose } from '../../content/pet'
+import { CostumeArt } from './CostumeArt'
+
+export interface FurPalette {
+  base: Color
+  shade: Color
+  belly: Color
+  inner: Color
+  eye: Color
+}
+
+function FP(base: Color, shade: Color, belly: Color, inner: Color, eye: Color): FurPalette {
+  return { base, shade, belly, inner, eye }
+}
+
+// Bảng màu của từng màu lông. Màu nhân vật cố định để giữ nhận diện.
+export const FUR_PALETTES: Record<FurColor, FurPalette> = {
+  cream: FP(Palette.catCream, Palette.catShade, Palette.catShade, Palette.blush, Palette.catInk),
+  snow: FP(rgb(0xFBFAF8), rgb(0xE4DFEA), rgb(0xEDE9F1), Palette.blush, Palette.catInk),
+  ginger: FP(rgb(0xF2B27A), rgb(0xE0925A), rgb(0xFBE3C8), rgb(0xF4A9A0), Palette.catInk),
+  smoke: FP(rgb(0xBDB9C8), rgb(0x9F9AAE), rgb(0xE0DDE7), rgb(0xF0B4BC), Palette.catInk),
+  cocoa: FP(rgb(0xB0805F), rgb(0x8E6247), rgb(0xDDBFA6), rgb(0xE9A9A0), rgb(0x2E2430)),
+  peach: FP(rgb(0xF8CBC4), rgb(0xEDA9A2), rgb(0xFCE5E1), rgb(0xF08C9A), Palette.catInk),
+  midnight: FP(rgb(0x433D50), rgb(0x302B3B), rgb(0x5C5669), rgb(0xC98A9A), rgb(0xF0C26A)),
+  lilac: FP(rgb(0xD3C1EE), rgb(0xB59FDB), rgb(0xEBE1F8), rgb(0xF2A9C4), Palette.catInk),
+  honey: FP(rgb(0xF7D27A), rgb(0xE8B44E), rgb(0xFCEBC0), rgb(0xF4A9A0), Palette.catInk),
+  mint: FP(rgb(0xA9DDB8), rgb(0x82C497), rgb(0xDDF3E2), rgb(0xF2A9B4), Palette.catInk),
+  sky: FP(rgb(0xAFCFF2), rgb(0x88B2E3), rgb(0xDDEBFA), rgb(0xF2A9C4), Palette.catInk),
+}
+
+export function furPalette(fur: FurColor): FurPalette {
+  return FUR_PALETTES[fur]
+}
+
+// Vẽ thú cưng trong hệ tọa độ 100×100, theo lớp:
+// đuôi → đồ sau lưng → áo choàng → tai → thân → áo → mặt → kính → cổ → mũ → chân → đồ cầm trước → hiệu ứng.
+export function drawPet(base0: GC, mood: PetMood, appearance: PetAppearance, pose: PetPose) {
