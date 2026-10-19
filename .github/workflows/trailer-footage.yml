@@ -45,6 +45,8 @@ jobs:
         run: scripts/ci/generate_project.sh
 
       - name: Build Debug + quay footage
+        env:
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
         run: scripts/ci/record_trailer_footage.sh
 
       - name: Upload footage gốc

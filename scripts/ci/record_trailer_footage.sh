@@ -9,7 +9,25 @@ source "$(dirname "$0")/common.sh"
 OUT="$BUILD_DIR/trailer-footage"
 rm -rf "$OUT"
 mkdir -p "$OUT"
-TZ_NAME="Asia/Ho_Chi_Minh"
+# Múi giờ đang là khoảng 10:15–11:15 sáng lúc quay, để màn Hôm nay có việc vừa trễ giờ và thú cưng không ngủ
+# (runner chạy theo giờ UTC, có thể đang là nửa đêm ở Việt Nam).
+TZ_NAME="$(/usr/bin/python3 -c '
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo, available_timezones
+now = datetime.now(timezone.utc)
+for z in sorted(available_timezones()):
+    if not z.startswith(("Asia/", "Europe/", "America/", "Pacific/", "Australia/", "Africa/")):
+        continue
+    t = now.astimezone(ZoneInfo(z))
+    if 10 * 60 + 15 <= t.hour * 60 + t.minute <= 11 * 60 + 15:
+        print(z)
+        break
+else:
+    print("Asia/Ho_Chi_Minh")
+')"
+log "Múi giờ khi quay: $TZ_NAME ($(TZ=$TZ_NAME date '+%H:%M'))"
+# Chỉ quay lại một số clip: commit message có "[clips: a b c]".
+ONLY="$(printf '%s' "${COMMIT_MSG:-}" | sed -n 's/.*\[clips: *\([^]]*\)\].*/\1/p' | head -n 1)"
 
 # Simulator: iPhone 17 Pro nếu có, không thì iPhone đầu tiên của runtime iOS mới nhất.
 SIM_ID="$(xcrun simctl list devices available --json | /usr/bin/python3 -c '
@@ -64,6 +82,7 @@ failures=0
 clip() {
   local file="$1" screen="$2" secs="$3"
   local rec output pid
+  if [[ -n "$ONLY" && " $ONLY " != *" $file "* ]]; then return; fi
   xcrun simctl terminate "$SIM_ID" "$EXPECTED_BUNDLE_ID" 2>/dev/null || true
   sleep 1
   xcrun simctl io "$SIM_ID" recordVideo --codec=h264 --force "$OUT/$file.mp4" >/dev/null 2>&1 &
@@ -86,7 +105,7 @@ log "Quay footage"
 clip today-tick trailerToday 7
 clip feed trailerFeed 7
 clip cuddle trailerCuddle 9
-clip clean trailerClean 12
+clip clean trailerClean 17
 clip wardrobe trailerWardrobe 10
 clip jump jump 16
 clip basket basket 14
@@ -101,6 +120,8 @@ xcrun simctl status_bar "$SIM_ID" clear || true
 {
   echo "Simulator: $(xcrun simctl list devices | grep "$SIM_ID" | sed 's/^ *//')"
   echo "Commit: ${GITHUB_SHA:-local}"
+  echo "Múi giờ: $TZ_NAME"
+  echo "Clip quay lần này: ${ONLY:-tất cả}"
   echo "Bản build: Debug cho simulator, dữ liệu mẫu trong bộ nhớ, -CozyTrailer 1."
 } > "$OUT/device.txt"
 cat "$OUT/device.txt"

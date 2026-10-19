@@ -416,10 +416,10 @@ struct CleanRoomView: View {
             }
             var phase = 0.0
             var frames = 0
-            while !work.spots[i].isClean && frames < 150 && !Task.isCancelled {
-                phase += 0.55
+            while !work.spots[i].isClean && frames < 240 && !Task.isCancelled {
+                phase += 0.7
                 frames += 1
-                pos = (x: s.x + 0.05 * sin(phase), y: s.y + 0.015 * cos(phase * 0.5))
+                pos = (x: s.x + 0.07 * sin(phase), y: s.y + 0.015 * cos(phase * 0.5))
                 scrub(at: CGPoint(x: pos.x * size.width, y: pos.y * size.height), size: size)
                 try? await Task.sleep(nanoseconds: frame)
             }

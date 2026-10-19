@@ -8,12 +8,14 @@ BRANCH="${BRANCH:?thiếu BRANCH}"
 
 ls "$SRC"/*.mp4 >/dev/null 2>&1 || { echo "::error::Không có clip trong $SRC"; exit 1; }
 command -v ffmpeg >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg >/dev/null; }
-rm -rf "$DEST"
+# Giữ clip cũ: lần quay chỉ một số clip sẽ ghi đè đúng những clip đó.
 mkdir -p "$DEST"
+[[ -f "$DEST/frames.txt" ]] || echo "# Thống kê khung hình bản gốc (simulator ghi theo khung hình thay đổi, không cố định fps)" > "$DEST/frames.txt"
 {
-  echo "# Thống kê khung hình bản gốc (simulator ghi theo khung hình thay đổi, không cố định fps)"
+  echo ""
+  echo "## Run ${GITHUB_RUN_NUMBER:-?}"
   echo "clip | kích thước | thời lượng (s) | số khung | fps trung bình | khoảng hở lớn nhất (s)"
-} > "$DEST/frames.txt"
+} >> "$DEST/frames.txt"
 for f in "$SRC"/*.mp4; do
   name="$(basename "$f" .mp4)"
   size="$(ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=p=0:s=x "$f")"
@@ -37,7 +39,7 @@ PY
   ffmpeg -v error -y -i "$f" -vf "scale=1080:-2:flags=lanczos" -fps_mode passthrough \
     -c:v libx264 -crf 22 -preset slow -pix_fmt yuv420p -an -movflags +faststart "$DEST/$name.mp4"
 done
-cp "$SRC/device.txt" "$DEST/" 2>/dev/null || true
+cat "$SRC/device.txt" >> "$DEST/device.txt" 2>/dev/null || true
 cat "$DEST/frames.txt"
 du -sh "$DEST"
 
