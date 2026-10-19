@@ -8,7 +8,7 @@
 - Bản kiểm chứng Mốc A dùng file riêng `PathCheck.store`; bản đầy đủ không đọc/ghi file này.
 - Mở store thất bại (ví dụ migration lỗi) → app hiện màn hình lỗi, **không xóa database** để "khởi tạo lại".
 
-### Các bảng (lược đồ hiện tại: phiên bản 2 — `CozySchemaV2`)
+### Các bảng (lược đồ hiện tại: phiên bản 3 — `CozySchemaV3`)
 
 | Bảng | Khóa / tham chiếu | Ghi chú |
 |---|---|---|
@@ -20,6 +20,10 @@
 | `EquippedSlotModel` | `slotRaw` | Món đang dùng ở mỗi vị trí: các vị trí của 5 không gian (phòng học, phòng ngủ, bếp, phòng tắm, vườn — mỗi nơi có một vị trí "tường & sàn"/"bầu trời") + 7 lớp thú cưng (`species`, `fur`, `hat`, `glasses`, `neck`, `outfit`, `back`). Thêm vị trí mới không cần đổi lược đồ: `slotRaw` là chuỗi. |
 | `FocusSessionModel` | `id` | Phiên tập trung/nghỉ, lưu mốc thời gian (không lưu "giây còn lại"). |
 | `JournalEntryModel` | `id`, `dayRaw` (một mục/ngày) | Mood 1–5 + ghi chú. |
+| `PetCareStateModel` (V3) | một dòng duy nhất | No bụng, Nhà sạch, Vui vẻ (0–100) + mốc `asOf` đã tính tới. Dùng chung cho thú cưng — đổi loài/ngoại hình không đổi. |
+| `FoodStockModel` (V3) | `foodID` | Số lượng mỗi món trong khay đồ ăn (0–99). |
+| `CareActionModel` (V3) | `id` = careActionID | Mỗi lần chăm: loại, ngày, chỉ số trước/sau, XP/xu đã nhận, lý do. Giữ 30 ngày gần nhất (đủ tính hạn mức). |
+| `MinigameResultModel` (V3) | `id` = sessionID | Kết quả một lượt Sân chơi: game, điểm, độ cao/số món/số lượt lật, thời gian chạy, ngày, xu nhận, lý do. Giữ 200 lượt mới nhất + mọi lượt 3 ngày gần đây + kỷ lục từng game. |
 
 Danh mục đồ (`Catalog`) nằm trong code với **ID cố định** (`desk.pine`, `species.fox`, `hat.crown`…) nên luôn idempotent:
 cập nhật app không reset xu hay đồ đạc. Đổi tên hiển thị được, nhưng **không bao giờ đổi ID**.
@@ -46,7 +50,12 @@ Không dùng relationship của SwiftData; tham chiếu bằng ID để quy tắ
 - Mỗi lần đổi lược đồ: thêm phiên bản mới (không sửa phiên bản đã phát hành), thêm vào `CozyMigrationPlan.schemas` và một `MigrationStage`
   (lightweight nếu chỉ thêm trường có giá trị mặc định; custom nếu cần chuyển dữ liệu). Tăng `BackupDocument.currentSchemaVersion`
   nếu định dạng sao lưu đổi, và giữ khả năng đọc bản cũ.
-- Test bắt buộc trước khi phát hành: mở store V1 có dữ liệu bằng bản mới, xác nhận hồ sơ/xu/đồ không bị reset.
+- **V2 → V3** (chăm thú cưng + Sân chơi): migration nhẹ, **chỉ thêm bảng mới**. Lần đầu mở bản mới, app tạo hồ sơ chăm sóc
+  với chỉ số dễ chịu (No bụng 80, Nhà sạch 85, Vui vẻ 80) và gói đồ ăn chào mừng (3 Táo giòn, 1 Cơm nắm) **trong cùng một lần
+  lưu** — mở lại app hay chạy lại migration không tặng thêm. Test `testV2StoreOpensWithV3KeepingDataAndGrantsWelcomeOnce`
+  tạo kho V2 thật trên đĩa (hồ sơ, việc có việc con, xu, đồ, trang bị, nhật ký) rồi mở bằng bản mới.
+- Test bắt buộc trước khi phát hành: mở store bản cũ có dữ liệu bằng bản mới, xác nhận hồ sơ/xu/đồ không bị reset.
+- App **không bao giờ** xóa hay tạo lại kho dữ liệu để "sửa" lỗi migration: nếu không mở được, app hiện màn báo lỗi.
 
 ## 2. Ngày, giờ và lịch lặp
 
@@ -79,6 +88,9 @@ Các con số nằm trong `Cozyday/Core/Rewards/RewardConfig.swift`.
 | Bài thở chạy hết giờ (một lần mỗi ngày) | +3 XP, +1 xu | `breathing:<yyyy-MM-dd>` |
 | Nghe thú cưng kể chuyến đi (đủ 100% năng lượng, một lần mỗi ngày) | +5 XP, +3 xu | `adventure:<yyyy-MM-dd>` |
 | Mua đồ | −giá (đồ miễn phí ghi 0 xu) | `purchase:<itemID>` |
+| Mua đồ ăn (mua lặp lại được) | −giá × số lượng | `food-purchase:<transactionID>` (mỗi lần mua một mã) |
+| Chăm thú cưng đúng lúc cần | xem mục 3b | `care:<careActionID>` |
+| Lượt Sân chơi hợp lệ | 1–6 xu, **không có XP** | `minigame:<sessionID>` |
 
 - Bỏ hoàn thành hoặc xóa việc **không thu hồi** thưởng đã nhận; hoàn thành lại cùng lần việc **không** nhận thêm.
 - Thống kê "việc đã xong" phản ánh **trạng thái hiện tại** (bỏ hoàn thành thì số giảm), độc lập với sổ cái.
@@ -96,6 +108,72 @@ Các con số nằm trong `Cozyday/Core/Rewards/RewardConfig.swift`.
 - Việc con không có thưởng riêng.
 - XP chỉ để vui (cấp = XP/100 + 1). Thú cưng không ốm, không bỏ đi, không mất đồ khi bạn nghỉ. Chuỗi ngày không có hình phạt.
 
+## 3b. Chăm thú cưng
+
+Các con số nằm trong `Cozyday/Core/Care/PetCare.swift` (`CareConfig`).
+
+- **Ba nhu cầu** (0–100, cao là tốt): No bụng, Nhà sạch (một chỉ số chung cho cả nhà), Vui vẻ. Dưới 35 = *Cần chăm*,
+  35–69 = *Bình thường*, từ 70 = *Ổn*. Góc nhỏ hiện cả ba bằng biểu tượng + nhãn + thanh + số + chữ (không chỉ dùng màu);
+  bong bóng lời thoại chỉ nói **một** nhu cầu thấp nhất.
+- **Suy giảm**: No bụng −3/giờ, Nhà sạch −2/giờ, Vui vẻ −2,5/giờ. Tính từ mốc thời gian đã lưu, không có timer chạy nền:
+  - vắng mặt lâu chỉ tính tối đa **24 giờ**; không bao giờ thấp hơn **20** (một tuần không mở app vẫn chỉ ~20);
+  - mở app/đọc lại nhiều lần không tính lặp (chỉ ghi khi có hành động chăm sóc);
+  - đồng hồ quay ngược: chỉ số đứng yên, không tăng; mốc thời gian không bao giờ lùi.
+  - Đã xuống dưới 35 thì giữ nguyên tới khi được chăm (chỉ tăng khi bạn chăm), nên luôn có thời gian để chăm.
+- **Không có hình phạt**: thú cưng không ốm, không bỏ đi, không mất cấp/đồ; không có thông báo nhắc chăm; lời thoại không trách móc.
+  Khi cần chăm, nét mặt thú cưng chỉ hơi "mong được chăm" (mắt tròn, mày hơi cụp).
+- **Đồ ăn** (đồ tưởng tượng trong game): Táo giòn 3 xu (+18), Cà rốt 3 xu (+15, +3 vui), Bánh yến mạch 6 xu (+25, +6 vui),
+  Cơm nắm 8 xu (+35, +4 vui), Súp rau 12 xu (+45, +8 vui), Hộp picnic 25 xu (+70, +20 vui). Mua một lần trừ xu một lần, tăng
+  đúng số lượng; thử lại cùng mã giao dịch không trừ lần hai. Món rẻ nhất (3 xu) đắt hơn thưởng cho ăn (1 xu) → không "mua
+  rồi cho ăn" để kiếm xu được.
+- **Cho ăn**: trừ đúng một món; chỉ số không vượt 100; đang no từ 95 trở lên thì không cho ăn (không mất món).
+- **Bữa cơ bản miễn phí**: chỉ khi No bụng dưới 35, đưa lên 55, không tạo vật phẩm, không có thưởng. Luôn dùng được kể cả khi hết xu.
+- **Dọn nhà**: chế độ dọn riêng (5–7 đốm bụi, chạm hoặc vuốt qua; hoặc nút *Dọn nhanh* cho VoiceOver/khó vuốt — cùng kết quả).
+  Thoát giữa chừng không lưu gì. Nhà sạch từ 95 thì không cần dọn.
+- **Nựng**: vuốt qua lại trên thú cưng tổng cộng ~3,5 giây (chỉ tính lúc ngón tay thật sự vuốt), hoặc nút *Nựng một chút*.
+  Giữ rồi kéo vẫn là nhấc thú cưng, không tính là nựng. Chạm thường không có xu.
+- **Thưởng** chỉ khi chỉ số **trước** khi chăm dưới 35 (bữa cơ bản không bao giờ có thưởng):
+
+  | Chăm | Thưởng |
+  |---|---|
+  | Cho ăn | +2 XP, +1 xu |
+  | Dọn nhà | +3 XP, +2 xu |
+  | Nựng | +2 XP, +1 xu |
+
+  Mỗi loại tối đa **2 lượt có thưởng/ngày**; tổng tối đa **12 XP và 6 xu/ngày** (tách riêng khỏi hạn mức Sân chơi).
+  Hết hạn mức vẫn chăm bình thường. Chăm sóc **không** nạp năng lượng chuyến đi. Ngày = ngày địa phương lúc chăm.
+- Mỗi hành động có mã `careActionID`; cập nhật chỉ số + trừ đồ ăn + lưu lịch sử + ghi thưởng trong **một lần lưu**. Bấm nhanh
+  hai lần / thử lại cùng mã: không làm lại. Lỗi lưu: rollback toàn bộ, không báo đã nhận.
+
+## 3c. Sân chơi (minigame)
+
+Các con số nằm trong `Cozyday/Core/Play/Minigame.swift` (`MinigameConfig`).
+
+**Cân bằng:** một ngày bình thường (5 việc + 50 phút tập trung + nhật ký + bài thở + chuyến đi) cho khoảng 30–45 xu và 70+ XP.
+Sân chơi chỉ là giờ nghỉ ngắn nên mỗi lượt 1–6 xu, **không có XP**, tối đa **20 xu/ngày** (≈ 4 việc) — thấp hơn mức 60 xu
+tham khảo vì 60 xu sẽ vượt cả thu nhập từ hoạt động chính.
+
+| Game | Lượt hợp lệ (có xu) | Quy đổi |
+|---|---|---|
+| Nhảy Mây | rơi xuống (kết thúc đúng luật) và leo ≥ 15 m | điểm = mét + 3 × sao; 1 xu mỗi 15 điểm |
+| Giỏ Quà | chơi **hết 60 giây** và ≥ 20 điểm | 1 xu mỗi 20 điểm |
+| Lật Thẻ | **ghép hết bàn** | Dễ 2 xu / Vừa 3 xu; +1 nếu lượt lật ≤ 2 × số cặp; +1 nếu ≤ số cặp + 3; +1 nếu nhanh (Dễ ≤ 40 s, Vừa ≤ 65 s) |
+
+- Tối đa 6 xu/lượt. Chỉ còn 4 xu trong hạn mức thì chỉ nhận 4 (*partialCap*). Hết hạn mức: vẫn chơi, vẫn lưu kết quả và
+  kỷ lục, màn kết quả ghi "Hôm nay đã nhận đủ xu sân chơi".
+- Thoát giữa lượt: không lưu, không xu. Thua không bao giờ mất xu. Không mua lượt, không quảng cáo.
+- **Kiểm tra hợp lý** trước khi trao xu (không tin hoàn toàn số liệu từ màn hình): Nhảy Mây ≤ 8 m/giây chơi và điểm phải khớp
+  độ cao + sao; Giỏ Quà ≤ 40 điểm/giây và ≤ 61 giây; Lật Thẻ số lượt ≥ số cặp, thời gian ≥ 0,6 giây/cặp. Sai → lưu kết quả,
+  0 xu (*implausible*).
+- **Ngày tính hạn mức** = ngày địa phương lúc lượt **kết thúc** (bắt đầu 23:59, xong 00:01 → tính ngày mới). Mốc kết thúc
+  ở tương lai bị kẹp về hiện tại. Hạn mức tính từ sổ cái nên khởi động lại app không đặt lại hạn mức.
+- Mỗi lượt có `sessionID` riêng. Kết quả + dòng `minigame:<sessionID>` lưu trong **một lần lưu**, tự động khi lượt kết thúc
+  (không cần bấm "nhận"). Mở lại màn kết quả / bấm nhiều lần / mở lại app: không cộng thêm. Lỗi lưu: màn kết quả báo rõ và có
+  nút *Thử lưu lại* — thử với **cùng** sessionID. Kết quả đã lưu vẫn thấy trong *Lượt gần đây* nếu app bị đóng trước màn kết quả.
+- Kỷ lục theo từng game, dùng chung cho mọi loài. Loài và trang phục không đổi hitbox hay độ khó.
+- **Giới hạn chống gian lận**: app hoàn toàn offline nên nếu bạn đổi ngày giờ của máy, hạn mức theo ngày (cả chăm sóc lẫn Sân
+  chơi) đổi theo. Cozyday không hứa chống được kiểu gian lận này.
+
 ## 4. Sao lưu và khôi phục
 
 ### Xuất
@@ -105,7 +183,7 @@ Các con số nằm trong `Cozyday/Core/Rewards/RewardConfig.swift`.
 ```json
 {
   "format": "cozyday.backup",
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "exportedAt": "2026-10-18T15:00:00.000Z",
   "appVersion": "0.1.0 (12)",
   "profile": { … },
@@ -115,11 +193,20 @@ Các con số nằm trong `Cozyday/Core/Rewards/RewardConfig.swift`.
   "ownedItems": [ … ],
   "equipped": [ … ],
   "focusSessions": [ … ],
-  "journal": [ … ]
+  "journal": [ … ],
+  "petCare": { … },              // từ bản 2: nhu cầu + mốc thời gian
+  "foodStock": [ … ],            // khay đồ ăn
+  "careActions": [ … ],          // lịch sử chăm sóc gần đây
+  "minigameResults": [ … ]       // kết quả Sân chơi
 }
 ```
 
 Đầy đủ mọi thứ cần để khôi phục, **kể cả sổ cái và đồ đạc**. File là chữ đọc được, **không mã hóa**.
+
+File sao lưu **bản 1** (trước khi có chăm thú cưng / Sân chơi) vẫn khôi phục được: chỉ số chăm sóc về mức dễ chịu, khay đồ ăn
+trống (không tặng lại gói chào mừng), chưa có kết quả Sân chơi. Bản 2 được kiểm tra thêm: chỉ số 0–100, số lượng đồ ăn 0–99,
+ID không trùng, món ăn có trong danh mục, dòng thưởng Sân chơi không có XP và ≤ 6 xu, và thưởng chăm sóc / Sân chơi trong
+2 ngày trước lúc xuất phải có lịch sử đi kèm (để sau khi khôi phục vẫn chống thưởng trùng và tính đúng hạn mức).
 
 ### Khôi phục (thay thế toàn bộ)
 

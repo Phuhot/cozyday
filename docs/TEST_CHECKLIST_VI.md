@@ -6,6 +6,7 @@
 |---|---|---|
 | `Tests/CoreTests` (54 test) | `swift test` trên Linux (workflow **Core logic tests**) và trong Xcode test target | Khóa ngày theo lịch địa phương, đổi giờ mùa hè, lịch lặp, không sinh trùng occurrence, sửa "lần này trở đi" không đổi quá khứ, xóa giữ lịch sử, timeline không đè chữ, replan (không đụng việc cố định/xong, không chồng lịch, báo việc không đủ chỗ), thưởng một lần, mua đồ (thiếu xu, mua 2 lần), timer (tạm dừng, mở lại sau nhiều giờ, kết thúc sớm), nhắc việc (cửa sổ 7 ngày, giới hạn 60), sao lưu (round-trip, bản mới hơn, file rác, file cụt, thiếu trường, ID trùng, tham chiếu sai, xu âm, qua nửa đêm), thống kê. |
 | `Tests/AppTests` | iOS Simulator (job **Unit test trên iOS Simulator**) | SwiftData thật (trong bộ nhớ): hồ sơ tạo một lần + không reset khi mở lại, hoàn thành 2 lần/mở lại không thưởng trùng, xóa việc giữ sổ cái, mua đồ không trừ 2 lần + bền sau mở lại, occurrence không trùng qua mở lại + đổi ngày, sửa tương lai không đổi quá khứ, thưởng focus một lần sau mở lại, sao lưu → khôi phục thay thế toàn bộ, sao lưu hỏng không đụng dữ liệu, từ chối việc qua nửa đêm. Thêm (phiên 3): mở kho dữ liệu V1 thật bằng bản V2 (migration), tủ đồ (mặc định, khóa theo cấp, trang bị sau khi mở lại), chuyến đi + bài thở thưởng một lần. Tổng 68 test cùng CoreTests. |
+| Chăm thú cưng & Sân chơi (phiên 5) | Core: Linux + Simulator · App: Simulator | Core (`PlayAndCareTests`): suy giảm chậm/sàn/24 giờ, đọc nhiều lần không giảm thêm, đồng hồ quay ngược, thưởng chỉ khi cần + hạn mức theo loại/tổng/qua nửa đêm, bữa miễn phí không farm, mua đồ ăn idempotent theo mã giao dịch, tiến độ nựng cần vuốt thật, máy trạng thái lượt chơi, đồng hồ lượt không tính lúc tạm dừng, quy đổi xu + hạn mức + phần còn lại, kết quả vô lý không có xu; Nhảy Mây chỉ đáp khi rơi qua mặt bệ, nảy tại chỗ không tăng điểm, bệ sinh ra luôn với tới được (31 seed + "người chơi máy" leo > 200 m), sao tính một lần; Giỏ Quà mỗi món tính một lần, bùn không làm điểm âm, kết thúc đúng 60 giây và không cộng sau đó; Lật Thẻ đủ cặp, có seed, không mở quá 2 thẻ, khóa khi cặp sai, lệnh úp trễ không phá lượt mới. App (`CareAndPlayStoreTests`, `MigrationTests`): gói chào mừng một lần, cho ăn/thử lại/lỗi lưu không nhân đôi, mua đồ ăn lỗi lưu rồi thử lại, lượt chơi lưu một lần qua mở lại app, hạn mức một phần/hết/qua nửa đêm, thoát sớm không xu, sao lưu round-trip và sao lưu bản 1, migration V2 → V3 trên kho thật. |
 | Ảnh giao diện | iOS Simulator (cùng job, bước **Chụp ảnh giao diện**) | App bản Debug mở 11 màn với dữ liệu mẫu (sáng), 5 màn tối, 2 màn cỡ chữ Trợ năng; fail nếu màn nào crash. Ảnh: [`UI_PREVIEW_VI.md`](UI_PREVIEW_VI.md). |
 
 **Lưu ý:** test simulator **không** chứng minh IPA cài được trên iPhone thật. Việc đó chỉ được xác nhận bằng checklist phần 2 trên máy của bạn.
@@ -66,6 +67,31 @@ iPhone: ________ · iOS: ________ · Bản build (Cài đặt → Thông tin →
 - [ ] Hoàn thành việc → thú cưng bật lên cùng bong bóng "+10 XP · +5 xu" rồi tự ẩn
 - [ ] Hôm nay: thú cưng nói một câu trong bong bóng nâu; chạm bong bóng → câu khác; chạm thú cưng → sang Góc nhỏ
 - [ ] Chuyến đi: câu chuyện thay đổi theo loài thú cưng đang dùng
+
+### Chăm thú cưng (bản Sân chơi & chăm sóc)
+- [ ] Cài đè xong: việc, xu, XP, đồ, trang bị, nhật ký còn nguyên; Góc nhỏ có thẻ chăm sóc với No bụng / Nhà sạch / Vui vẻ ở mức dễ chịu
+- [ ] Khay đồ ăn có sẵn 3 Táo giòn + 1 Cơm nắm; tắt hẳn app mở lại → không được tặng thêm
+- [ ] Cho ăn: số món giảm đúng 1, thú cưng ăn 3 miếng rồi hiện câu nói; no từ 95 → nút Cho ăn bị khóa, không mất món
+- [ ] Mua đồ ăn: trừ đúng giá, tăng đúng 1; thiếu xu → nút mờ, không trừ
+- [ ] Hôm sau (≈ 1 ngày không cho ăn) No bụng dưới 35: bong bóng chỉ nói một nhu cầu, nét mặt "mong được chăm" (không khóc/giận)
+- [ ] Bữa cơ bản miễn phí chỉ hiện khi đói; bấm xong No bụng lên 55, nút biến mất
+- [ ] Dọn nhà: bụi/lá/giấy vụn hiện ở sàn khi Nhà sạch thấp; chế độ dọn: chạm/vuốt sạch từng đốm; "Dọn nhanh" cho cùng kết quả; "Thôi" → không lưu gì; trang không bị cuộn khi đang vuốt bụi
+- [ ] Nựng: vuốt qua lại trên thú cưng ~3–4 giây → thanh "Đang nựng…" đầy → popup; giữ rồi kéo thú cưng KHÔNG tính là nựng
+- [ ] Chăm khi đang ổn: không có XP/xu, có câu giải thích; quá 2 lần/loại trong ngày: báo đã đủ thưởng
+
+### Sân chơi
+- [ ] Góc nhỏ có thẻ "Sân chơi"; mở ra thấy bạn nhỏ, số xu, "Xu sân chơi hôm nay x/20", 3 thẻ game có kỷ lục
+- [ ] "Đổi bạn chơi": loài đã có chọn được, loài chưa có bị khóa; đổi xong quay lại Góc nhỏ → thú cưng vẫn là loài cũ
+- [ ] Lần đầu mỗi game có hướng dẫn ngắn; lần sau vào thẳng đếm ngược 3-2-1
+- [ ] Nhảy Mây: kéo ngang một tay điều khiển được; tự nảy; lên cao bệ hẹp dần, có mây xanh di chuyển; rơi → màn kết quả; điểm không tăng khi nảy tại chỗ
+- [ ] Giỏ Quà: kéo giỏ mượt; bùn/mây mưa có dấu ✕ dễ nhận; hết 60 giây đúng lúc; không bị cộng điểm sau khi hết giờ
+- [ ] Lật Thẻ: Dễ 3×4, Vừa 4×4 vừa màn hình; chạm nhanh nhiều thẻ không mở quá 2; cặp sai tự úp; thú cưng phản ứng vui khi đúng, động viên khi sai
+- [ ] Nút tạm dừng dễ bấm; vuốt về màn hình chính / khóa máy giữa lượt → quay lại thấy "Tạm dừng", bấm Tiếp tục có đếm ngược
+- [ ] Thoát giữa lượt hỏi xác nhận; thoát xong không có xu, số xu cũ không đổi
+- [ ] Kết quả: hiện điểm, kỷ lục mới, xu thực nhận; chơi lại nhiều lượt liên tiếp không nhanh dần sai, không chồng tiếng
+- [ ] Chơi tới khi đủ 20 xu/ngày: lượt sau ghi "Hôm nay đã nhận đủ xu sân chơi", kỷ lục vẫn lưu
+- [ ] Âm thanh nhỏ, không ngắt nhạc đang nghe; tắt "Âm thanh trò chơi"/"Rung khi chơi" có tác dụng; bật Giảm chuyển động → ít hiệu ứng
+- [ ] Xuất sao lưu rồi khôi phục: khay đồ ăn, chỉ số, kỷ lục Sân chơi còn nguyên; chơi lại không nhận trùng
 
 ### Lập kế hoạch (mới)
 - [ ] Việc con: thêm/xóa/sắp xếp trong form; đánh dấu trong chi tiết; timeline hiện "1/3"

@@ -37,19 +37,49 @@ GitHub Actions mở app trên **iPhone ảo (iOS Simulator)** của máy macOS, 
 
 Ảnh tĩnh không thể hiện animation (thở, chớp mắt, vẫy đuôi, đi lại, tim bay khi chạm, nựng, nhấc lên và thả). Phần đó chỉ thấy khi chạy trên máy.
 
+## Chăm thú cưng
+
+| | | |
+|---|---|---|
+| ![Cần chăm](screenshots/25-care.jpg) Góc nhỏ khi đói, buồn chán, nhà hơi bẩn | ![Mua đồ ăn](screenshots/26-food.jpg) Cửa hàng đồ ăn | ![Cho ăn](screenshots/27-feed.jpg) Cho ăn — có thưởng |
+| ![Dọn nhà](screenshots/28-clean.jpg) Chế độ dọn nhà | ![Hết hạn mức](screenshots/29-care-capped.jpg) Cho ăn khi đã đủ thưởng hôm nay | |
+
+## Sân chơi
+
+| | | |
+|---|---|---|
+| ![Sân chơi](screenshots/30-playground.jpg) Sân chơi | ![Chọn bạn chơi](screenshots/31-pick-pet.jpg) Chọn bạn chơi (loài chưa có bị khóa) | ![Hướng dẫn](screenshots/32-tutorial.jpg) Hướng dẫn lần đầu |
+| ![Nhảy Mây](screenshots/33-jump.jpg) Nhảy Mây (bản xem trước tự chơi) | ![Giỏ Quà](screenshots/34-basket.jpg) Giỏ Quà | ![Lật Thẻ](screenshots/35-memory.jpg) Lật Thẻ Bạn Nhỏ (mức Vừa) |
+| ![Tạm dừng](screenshots/36-pause.jpg) Tạm dừng | ![Kết quả](screenshots/37-result.jpg) Kết quả có thưởng | ![Hết hạn mức](screenshots/38-result-capped.jpg) Kết quả khi đã đủ 20 xu hôm nay |
+
+Chụp liên tiếp cách nhau ~0,7 giây khi game đang chạy (để thấy nhân vật và vật phẩm thật sự di chuyển):
+
+| | | | |
+|---|---|---|---|
+| ![](screenshots/39-jump-frames-1.jpg) | ![](screenshots/39-jump-frames-2.jpg) | ![](screenshots/39-jump-frames-3.jpg) | ![](screenshots/39-jump-frames-4.jpg) |
+| ![](screenshots/40-basket-frames-1.jpg) | ![](screenshots/40-basket-frames-2.jpg) | ![](screenshots/40-basket-frames-3.jpg) | ![](screenshots/40-basket-frames-4.jpg) |
+
+Video gameplay (bản Debug tự chơi trên simulator) nằm trong artifact `Cozyday-gameplay-videos-run<số>` của mỗi lần chạy
+CI — không commit vào repo. Simulator trên máy CI không có GPU thật nên tốc độ khung hình trong video **không** phản ánh
+độ mượt trên iPhone.
+
 ## Giao diện tối
 
 | | | |
 |---|---|---|
 | ![Hôm nay — tối](screenshots/dark-02-today.jpg) | ![Tập trung — tối](screenshots/dark-06-focus.jpg) | ![Góc nhỏ — tối](screenshots/dark-07-corner.jpg) |
 | ![Nhật ký — tối](screenshots/dark-09-journal.jpg) | ![Tiến bộ — tối](screenshots/dark-10-progress.jpg) | ![Tủ đồ — tối](screenshots/dark-12-wardrobe.jpg) |
-| ![Thú cưng — tối](screenshots/dark-15-pet-gallery.jpg) | ![Phòng ngủ — tối](screenshots/dark-19-bedroom.jpg) | |
+| ![Thú cưng — tối](screenshots/dark-15-pet-gallery.jpg) | ![Phòng ngủ — tối](screenshots/dark-19-bedroom.jpg) | ![Chăm sóc — tối](screenshots/dark-25-care.jpg) |
+| ![Đồ ăn — tối](screenshots/dark-26-food.jpg) | ![Sân chơi — tối](screenshots/dark-30-playground.jpg) | ![Lật thẻ — tối](screenshots/dark-35-memory.jpg) |
+| ![Kết quả — tối](screenshots/dark-37-result.jpg) | | |
 
 ## Cỡ chữ rất lớn (Trợ năng)
 
 | | |
 |---|---|
 | ![Hôm nay — chữ lớn](screenshots/large-02-today.jpg) Ở cỡ chữ này, Hôm nay tự chuyển sang dạng Danh sách | ![Thêm việc — chữ lớn](screenshots/large-03-task-editor.jpg) |
+| ![Chăm sóc — chữ lớn](screenshots/large-25-care.jpg) | ![Đồ ăn — chữ lớn](screenshots/large-26-food.jpg) |
+| ![Sân chơi — chữ lớn](screenshots/large-30-playground.jpg) | ![Kết quả — chữ lớn](screenshots/large-37-result.jpg) |
 
 ## Chụp lại ảnh mới
 

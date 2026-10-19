@@ -12,7 +12,7 @@ không quảng cáo, không mua hàng trong app.
 | Tab | Nội dung |
 |---|---|
 | **Hôm nay** | Đầu trang gọn (ngày, lời chào, thú cưng nói chuyện trong bong bóng + tiến độ) · thanh chọn ngày theo tuần + nút về hôm nay · nhóm việc chưa xếp giờ · timeline dọc với đường "bây giờ", việc trùng giờ chia cột không đè chữ · chế độ Danh sách (tự bật khi cỡ chữ rất lớn) · Hộp chờ · **Sắp xếp lại** việc trễ (xem trước, có Hủy) · nút + thêm việc · mở **Tập trung** |
-| **Góc nhỏ** | Thú cưng **11 loài** (mèo, thỏ, hamster, gấu nhỏ, cáo, cún, vịt, ếch, capybara, gấu trúc, chim cánh cụt), **11 màu lông**, **trang phục & phụ kiện** (mũ, kính, đồ ở cổ, áo, cánh/ba lô/bóng bay… — 80+ món, một số mở khóa theo cấp) · **lớn dần** theo cấp · **animation**: thở, chớp mắt, vẫy đuôi, giật tai, nhảy, đi lại trong phòng; chạm để vuốt ve, **vuốt qua lại để nựng** (mắt híp, tim bay), **giữ rồi kéo để mang sang chỗ khác** · **Tủ đồ** mặc thử miễn phí · **Bộ sưu tập**: lưới các loài và 40 bộ phối sẵn, mua & mặc cả bộ bằng một chạm · **5 không gian**: phòng học, phòng ngủ, bếp & bàn ăn, phòng tắm, khu vườn (mở theo cấp), mỗi nơi có tường & sàn/bầu trời đổi được và 5–6 vị trí đồ (120+ món trang trí) · **Chuyến đi mỗi ngày** với nhiều câu chuyện theo loài và mùa, lưu trong **Sổ ký ức** · "Tuần này của thú cưng" |
+| **Góc nhỏ** | Thú cưng **11 loài** (mèo, thỏ, hamster, gấu nhỏ, cáo, cún, vịt, ếch, capybara, gấu trúc, chim cánh cụt), **11 màu lông**, **trang phục & phụ kiện** (mũ, kính, đồ ở cổ, áo, cánh/ba lô/bóng bay… — 80+ món, một số mở khóa theo cấp) · **lớn dần** theo cấp · **animation**: thở, chớp mắt, vẫy đuôi, giật tai, nhảy, đi lại trong phòng; chạm để vuốt ve, **vuốt qua lại để nựng** (mắt híp, tim bay), **giữ rồi kéo để mang sang chỗ khác** · **Tủ đồ** mặc thử miễn phí · **Bộ sưu tập**: lưới các loài và 40 bộ phối sẵn, mua & mặc cả bộ bằng một chạm · **5 không gian**: phòng học, phòng ngủ, bếp & bàn ăn, phòng tắm, khu vườn (mở theo cấp), mỗi nơi có tường & sàn/bầu trời đổi được và 5–6 vị trí đồ (120+ món trang trí) · **Chuyến đi mỗi ngày** với nhiều câu chuyện theo loài và mùa, lưu trong **Sổ ký ức** · "Tuần này của thú cưng" · **Chăm sóc**: No bụng / Nhà sạch / Vui vẻ giảm rất chậm (sàn 20, không bao giờ ốm hay bỏ đi), khay & cửa hàng **đồ ăn** (6 món, bữa cơ bản miễn phí khi đói), **dọn nhà** bằng cách chạm/vuốt bụi, nựng để vui — thưởng nhỏ có hạn mức · **Sân chơi**: 3 minigame ngắn chơi bằng chính thú cưng của bạn — **Nhảy Mây** (nảy lên mây), **Giỏ Quà** (hứng quà 60 giây), **Lật Thẻ Bạn Nhỏ** (trí nhớ) — kỷ lục, xu thưởng phụ tối đa 20 xu/ngày, không quảng cáo, không mất xu khi thua |
 | **Nhật ký** | Mood 1–5 có nhãn chữ + ghi chú · **câu gợi ý viết** · lịch tháng tô màu theo mood · **bài thở có hướng dẫn** (3 nhịp, 1–5 phút) |
 | **Tiến bộ** | Việc đã xong, phút tập trung, số ngày có hoạt động, chuỗi ngày · biểu đồ 7/30 ngày · **phân bố tâm trạng** · lịch sử xu & vật phẩm. Chỉ dữ liệu thật. |
 | **Cài đặt** (nút bánh răng) | Tên, khung giờ trong ngày, rung, thông báo, **hiện sự kiện từ app Lịch** (chỉ đọc), **Xuất / Khôi phục sao lưu**, quy tắc phần thưởng, quyền riêng tư |
@@ -57,11 +57,14 @@ việc cài được xác nhận bằng checklist trên iPhone thật.
 Cozyday/
   App/            Điểm vào app, AppDelegate (thông báo)
   Core/           Logic thuần Foundation — test được trên Linux (ngày/lặp, timeline, replan,
-                  sổ cái thưởng, cửa hàng, focus timer, nhắc việc, sao lưu, thống kê)
-  Persistence/    Lược đồ SwiftData V1 + migration plan, AppStore (ghi theo giao dịch)
+                  sổ cái thưởng, cửa hàng, focus timer, nhắc việc, sao lưu, thống kê,
+                  Care/ nhu cầu & đồ ăn, Play/ luật 3 minigame + quy đổi xu)
+  Persistence/    Lược đồ SwiftData V1→V2→V3 + migration plan, AppStore (ghi theo giao dịch)
   Services/       Thông báo, điều hướng, trạng thái UI, file sao lưu
   DesignSystem/   Design tokens (màu, khoảng cách, bo góc, chữ, chuyển động) + component
-  Features/       Today, Focus, Corner (mèo/phòng/cửa hàng), Journal, Progress, Settings, Onboarding, Root
+  Features/       Today, Focus, Corner (mèo/phòng/cửa hàng), Care (chăm sóc, đồ ăn, dọn nhà),
+                  Play (Sân chơi: vòng lặp khung hình, hình vẽ game, âm thanh tự tổng hợp), Journal, Progress,
+                  Settings, Onboarding, Root
   Resources/      Info.plist, Assets.xcassets (icon gốc)
 Tests/
   CoreTests/      Test logic (chạy cả `swift test` và trong Xcode)

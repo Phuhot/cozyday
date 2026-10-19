@@ -337,6 +337,16 @@ struct RewardRulesView: View {
             } footer: {
                 Text("Mỗi phần thưởng gắn với đúng một việc / phiên / ngày trong sổ cái, nên bấm nhanh hay mở lại app không nhận trùng.")
             }
+            Section("Chăm thú cưng") {
+                ForEach(CareConfig.rulesText, id: \.self) { Text($0) }
+            }
+            Section {
+                ForEach(MinigameConfig.rulesText, id: \.self) { Text($0) }
+            } header: {
+                Text("Sân chơi")
+            } footer: {
+                Text("App chạy offline: đổi ngày giờ của máy sẽ làm hạn mức theo ngày đổi theo. Cozyday không chống được điều đó tuyệt đối.")
+            }
         }
         .navigationTitle("Quy tắc phần thưởng")
     }

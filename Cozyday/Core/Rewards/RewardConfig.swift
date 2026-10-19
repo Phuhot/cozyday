@@ -44,6 +44,6 @@ enum RewardConfig {
         "Làm bài thở: +\(breathingXP) XP, +\(breathingCoins) xu, một lần mỗi ngày.",
         "Mỗi việc xong, phiên tập trung, nhật ký hoặc bài thở trong ngày nạp \(Adventure.energyPerActivity)% năng lượng. Đủ 100%, thú cưng đi chơi và về kể chuyện: +\(adventureXP) XP, +\(adventureCoins) xu, một lần mỗi ngày.",
         "Một số hình dạng và trang phục mở khóa theo cấp. Cấp không bao giờ bị giảm.",
-        "Mèo không bao giờ ốm, buồn bỏ đi hay mất đồ khi bạn nghỉ vài ngày."
+        "Thú cưng không bao giờ ốm, bỏ đi, mất cấp hay mất đồ khi bạn nghỉ vài ngày."
     ]
 }

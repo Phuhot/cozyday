@@ -23,6 +23,10 @@ struct GameHostView: View {
                     playArea(size: geo.size)
                 }
                 .onAppear { prepare(size: geo.size) }
+                .onChange(of: geo.size) { _, size in
+                    // Lần đầu có thể chưa có kích thước thật: chuẩn bị lại khi đã có.
+                    if !host.isConfigured { prepare(size: size) }
+                }
             }
             // Game hành động vẽ tràn màn hình; Lật thẻ nằm trong vùng an toàn.
             .ignoresSafeArea(.container, edges: host.kind == .memoryMatch ? [] : .all)
@@ -53,6 +57,7 @@ struct GameHostView: View {
 
     private func prepare(size: CGSize) {
         host.configure(size: size, scale: displayScale)
+        guard host.isConfigured, host.session.phase == .ready, !showTutorial else { return }
         if tutorialsSeen.split(separator: ",").contains(Substring(host.kind.rawValue)) && PreviewMode.current != .tutorial {
             host.begin()
         } else {

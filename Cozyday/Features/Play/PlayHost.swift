@@ -254,7 +254,8 @@ final class PlayHostModel: Identifiable {
     @ObservationIgnored var previewMemoryPairs = Int.max
     @ObservationIgnored private var autoplayAccumulator: TimeInterval = 0
 
-    var id: UUID { session.id }
+    /// = sessionID của lượt.
+    nonisolated let id: UUID
 
     init(kind: MinigameKind, level: MemoryLevel, appearance: PetAppearance, petName: String, store: AppStore,
          soundOn: Bool, hapticsOn: Bool) {
@@ -263,7 +264,9 @@ final class PlayHostModel: Identifiable {
         self.appearance = appearance
         self.petName = petName
         self.store = store
-        session = PlaySession()
+        let sessionID = UUID()
+        id = sessionID
+        session = PlaySession(id: sessionID)
         sound = GameSound(enabled: soundOn)
         haptics = GameHaptics(enabled: hapticsOn)
         loop.onFrame = { [weak self] t, dt in self?.frame(t, dt) }
