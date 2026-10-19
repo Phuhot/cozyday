@@ -268,6 +268,16 @@ struct TodayView: View {
             sheet = .inbox
         case .taskDetail:
             if let task = store.tasks(on: day).first(where: { !$0.checklist.isEmpty }) { sheet = .detail(task.id) }
+        case .trailerToday:
+            // Trailer: hoàn thành việc trễ giờ gần nhất, đúng như khi bấm nút tròn (lưu, thưởng, thú cưng vui).
+            try? await Task.sleep(nanoseconds: 1_400_000_000)
+            let minute = store.calendar.minuteOfDay(store.now)
+            let late = store.tasks(on: day).filter { $0.status == .open && ($0.startMinute ?? .max) < minute }
+            if let task = late.max(by: { ($0.startMinute ?? 0) < ($1.startMinute ?? 0) }) {
+                var reward: LedgerEntry?
+                ui.run { reward = try store.setStatus(id: task.id, to: .done) }
+                ui.reward(reward)
+            }
         default:
             break
         }

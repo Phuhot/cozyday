@@ -135,15 +135,15 @@ struct CornerView: View {
                 try? await Task.sleep(nanoseconds: 600_000_000)
                 switch screen {
                 case .food: foodTab = .shop
-                case .feed, .careCapped: foodTab = .tray
-                case .clean:
+                case .feed, .careCapped, .trailerFeed: foodTab = .tray
+                case .clean, .trailerClean:
                     startCleaning()
                 case .playground, .pickPet, .tutorial, .jump, .basket, .memory, .pause, .result, .resultCapped: showPlayground = true
                 default: break
                 }
                 switch screen {
                 case .shop: shopTarget = ShopTarget(room: .bedroom, slot: .bed)
-                case .wardrobe: showWardrobe = true
+                case .wardrobe, .trailerWardrobe: showWardrobe = true
                 case .avatar, .avatarOutfit: showAvatar = true
                 case .adventure: showAdventure = true
                 case .memories: showMemories = true

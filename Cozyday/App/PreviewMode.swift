@@ -46,6 +46,12 @@ enum PreviewScreen: String, CaseIterable {
     // Ảnh đại diện
     case avatar
     case avatarOutfit
+    // Quay trailer: giao diện thật, thao tác được bản Debug tự bấm theo kịch bản (scripts/trailer/record_footage.sh)
+    case trailerToday
+    case trailerFeed
+    case trailerCuddle
+    case trailerClean
+    case trailerWardrobe
 }
 
 /// Chế độ xem trước chỉ có trong bản Debug: dữ liệu mẫu nằm trong bộ nhớ, không đụng tới kho dữ liệu thật.
@@ -57,6 +63,16 @@ enum PreviewMode {
         return PreviewScreen(rawValue: raw)
         #else
         return nil
+        #endif
+    }
+
+    /// Quay trailer: thú cưng mẫu là vịt vàng đội mây nhỏ (giống icon app). Bật bằng `-CozyTrailer 1`
+    /// hoặc khi mở một màn `trailer…`. Chỉ có tác dụng trong bản Debug.
+    static var trailer: Bool {
+        #if DEBUG
+        return UserDefaults.standard.bool(forKey: "CozyTrailer") || current?.rawValue.hasPrefix("trailer") == true
+        #else
+        return false
         #endif
     }
 }
@@ -82,12 +98,14 @@ extension PreviewMode {
         if screen != .onboarding {
             try seed(store, clock: clock, activeFocus: screen == .focus, adventureReady: screen == .adventure)
             try seedCareAndPlay(store, screen: screen)
+            if trailer { try seedTrailerHero(store) }
         }
         let router = AppRouter.shared
         switch screen {
         case .corner, .shop, .wardrobe, .adventure, .memories, .bedroom, .kitchen, .bath, .garden, .collection, .look,
              .care, .food, .feed, .clean, .careCapped,
-             .playground, .pickPet, .tutorial, .jump, .basket, .memory, .pause, .result, .resultCapped, .avatar, .avatarOutfit:
+             .playground, .pickPet, .tutorial, .jump, .basket, .memory, .pause, .result, .resultCapped, .avatar, .avatarOutfit,
+             .trailerFeed, .trailerCuddle, .trailerClean, .trailerWardrobe:
             router.selectedTab = .corner
         case .journal, .breathing, .journalEditor: router.selectedTab = .journal
         case .progress: router.selectedTab = .progress
@@ -121,6 +139,12 @@ extension PreviewMode {
             try setNeeds(fullness: 24, cleanliness: 26, happiness: 41)
         case .clean:
             try setNeeds(fullness: 60, cleanliness: 22, happiness: 72)
+        case .trailerFeed:
+            try setNeeds(fullness: 28, cleanliness: 90, happiness: 70)
+        case .trailerCuddle:
+            try setNeeds(fullness: 85, cleanliness: 90, happiness: 30)
+        case .trailerClean:
+            try setNeeds(fullness: 85, cleanliness: 40, happiness: 75)
         case .careCapped:
             for _ in 0..<2 {
                 try setNeeds(fullness: 24, cleanliness: 80, happiness: 80)
@@ -145,6 +169,26 @@ extension PreviewMode {
                 try store.recordMinigame(outcome(.giftBasket, score: 120, primary: 60, secondary: 14, seconds: 60, minutesAgo: Double(20 - i)))
             }
         }
+    }
+
+    /// Nhân vật chính của trailer: vịt con lông mật ong đội "Đám mây nhỏ" như icon app. Món nào chưa đủ cấp thì cộng
+    /// thêm XP mẫu (chỉ trong bộ nhớ của bản Debug) để mở; mọi món vẫn được mua/mặc qua đúng hàm của cửa hàng.
+    @MainActor
+    private static func seedTrailerHero(_ store: AppStore) throws {
+        let needed = 5
+        if store.wallet.level < needed {
+            let xp = (needed - 1) * RewardConfig.xpPerLevel - store.wallet.xp + 10
+            try store.commit {
+                store.insertLedger(LedgerEntry(id: UUID(), key: "preview:trailerXP", kind: .taskCompleted, xp: xp, coins: 0,
+                                               createdAt: store.now, refID: nil, memo: "Xem trước"))
+            }
+        }
+        for item in ["species.duck", "fur.honey", "hat.cloud", "glasses.heart", "outfit.sailor", "hat.chef", "outfit.apron", "hat.straw", "neck.lei"]
+        where !Catalog.isOwned(item, owned: store.ownedIDs) {
+            try store.buy(itemID: item)
+        }
+        for item in ["species.duck", "fur.honey", "hat.cloud"] { try store.equip(itemID: item) }
+        for slot in [ItemSlot.neck, .glasses, .outfit, .back] { try store.unequip(slot: slot) }
     }
 
     /// Hai tuần dữ liệu mẫu: việc đã xong, phiên tập trung, nhật ký, đồ đã mua; hôm nay có việc xong,

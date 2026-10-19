@@ -312,6 +312,7 @@ struct CleanRoomView: View {
             }
             .frame(width: size.width, height: size.height)
             .contentShape(Rectangle())
+            .task(id: size.width) { await trailerScrub(size: size) }
             .gesture(DragGesture(minimumDistance: 0).onChanged { value in scrub(at: value.location, size: size) }
                 .onEnded { _ in
                     last = nil
@@ -384,6 +385,48 @@ struct CleanRoomView: View {
         } else if hint != nil, work.spot(near: point) != nil {
             hint = nil
         }
+    }
+
+    /// Trailer (bản Debug): đưa dụng cụ qua từng vết bằng đúng hàm `scrub` mà ngón tay dùng, đổi dụng cụ khi cần.
+    private func trailerScrub(size: CGSize) async {
+        #if DEBUG
+        guard PreviewMode.current == .trailerClean, size.width > 0 else { return }
+        let frame: UInt64 = 33_000_000
+        try? await Task.sleep(nanoseconds: 900_000_000)
+        let order = work.spots.indices.sorted { a, b in
+            let (sa, sb) = (work.spots[a], work.spots[b])
+            if sa.kind.tool != sb.kind.tool { return sa.kind.tool == .broom }
+            return sa.x < sb.x
+        }
+        var pos = (x: 0.5, y: 0.6)
+        for i in order where !work.spots[i].isClean {
+            let s = work.spots[i]
+            if tool != s.kind.tool {
+                last = nil
+                withAnimation(Motion.quick) { finger = nil }
+                try? await Task.sleep(nanoseconds: 250_000_000)
+                tool = s.kind.tool
+                hint = nil
+                try? await Task.sleep(nanoseconds: 300_000_000)
+            }
+            for k in 1...6 {
+                let f = Double(k) / 6
+                scrub(at: CGPoint(x: (pos.x + (s.x - pos.x) * f) * size.width, y: (pos.y + (s.y - pos.y) * f) * size.height), size: size)
+                try? await Task.sleep(nanoseconds: frame)
+            }
+            var phase = 0.0
+            var frames = 0
+            while !work.spots[i].isClean && frames < 150 && !Task.isCancelled {
+                phase += 0.55
+                frames += 1
+                pos = (x: s.x + 0.05 * sin(phase), y: s.y + 0.015 * cos(phase * 0.5))
+                scrub(at: CGPoint(x: pos.x * size.width, y: pos.y * size.height), size: size)
+                try? await Task.sleep(nanoseconds: frame)
+            }
+        }
+        last = nil
+        withAnimation(Motion.quick) { finger = nil }
+        #endif
     }
 
     private func save() {
@@ -475,6 +518,13 @@ struct FoodSheet: View {
             // Chụp ảnh xem trước: cho ăn một lần để thấy kết quả đã lưu.
             if PreviewMode.current == .feed || PreviewMode.current == .careCapped {
                 perform(.feed, foodID: "food.apple")
+            }
+            if PreviewMode.current == .trailerFeed {
+                // Trailer: để khay hiện một nhịp rồi mới cho ăn, như người dùng vừa bấm.
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 1_300_000_000)
+                    perform(.feed, foodID: "food.picnic")
+                }
             }
             #endif
         }

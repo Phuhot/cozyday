@@ -87,6 +87,19 @@ struct PetView: View {
         .accessibilityHint(interactive ? "Chạm để vuốt ve" : "")
         .accessibilityAction { if interactive { tapped() } }
         .accessibilityAction(named: "Nựng") { if interactive { stroke(by: 80) } }
+        .task { await trailerStroke() }
+    }
+
+    /// Trailer (bản Debug): vuốt qua lại khoảng 4 giây bằng đúng hàm mà cử chỉ vuốt gọi.
+    private func trailerStroke() async {
+        #if DEBUG
+        guard interactive, PreviewMode.current == .trailerCuddle else { return }
+        try? await Task.sleep(nanoseconds: 1_200_000_000)
+        for _ in 0..<130 where !Task.isCancelled {
+            stroke(by: 14)
+            try? await Task.sleep(nanoseconds: 33_000_000)
+        }
+        #endif
     }
 
     /// Giữ rồi kéo = nhấc lên; vuốt ngay = nựng.

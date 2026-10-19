@@ -64,6 +64,18 @@ struct WardrobeView: View {
                     slot = .species
                     trial = "species.bunny"
                 }
+                if PreviewMode.current == .trailerWardrobe {
+                    // Trailer: thử lần lượt vài món có thật trong tủ, như người dùng chạm từng ô.
+                    let picks: [(ItemSlot, String)] = [(.hat, "hat.chef"), (.outfit, "outfit.apron"), (.glasses, "glasses.heart"),
+                                                       (.outfit, "outfit.sailor"), (.hat, "hat.straw"), (.neck, "neck.lei")]
+                    try? await Task.sleep(nanoseconds: 900_000_000)
+                    for (s, id) in picks where !Task.isCancelled {
+                        slot = s
+                        try? await Task.sleep(nanoseconds: 350_000_000)
+                        trial = id
+                        try? await Task.sleep(nanoseconds: 750_000_000)
+                    }
+                }
             }
         }
     }
