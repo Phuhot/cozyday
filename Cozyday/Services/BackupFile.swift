@@ -20,6 +20,6 @@ struct BackupFile: FileDocument {
     }
 
     static func suggestedName(for day: DayKey) -> String {
-        "Cozyday-backup-\(day.string)"
+        "CozyDay-backup-\(day.string)"
     }
 }

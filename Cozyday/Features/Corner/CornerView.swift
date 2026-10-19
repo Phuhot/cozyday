@@ -10,6 +10,7 @@ struct CornerView: View {
     @AppStorage("corner.room") private var roomRaw = RoomKind.study.rawValue
     @State private var shopTarget: ShopTarget?
     @State private var showWardrobe = false
+    @State private var showAvatar = false
     @State private var showCollection = false
     @State private var showAdventure = false
     @State private var showMemories = false
@@ -52,6 +53,7 @@ struct CornerView: View {
                     }
 
                     PlaygroundEntryCard { showPlayground = true }
+                    AvatarEntryCard { showAvatar = true }
 
                     NeedsCard(cuddleFraction: cuddle.fraction,
                               onFeed: { foodTab = .tray },
@@ -108,6 +110,9 @@ struct CornerView: View {
             .sheet(item: $shopTarget) { target in
                 ShopView(initialRoom: target.room, initialSlot: target.slot)
             }
+            .sheet(isPresented: $showAvatar) {
+                AvatarStudioView()
+            }
             .sheet(isPresented: $showWardrobe) {
                 WardrobeView()
             }
@@ -144,6 +149,7 @@ struct CornerView: View {
                 switch screen {
                 case .shop: shopTarget = ShopTarget(room: .bedroom, slot: .bed)
                 case .wardrobe: showWardrobe = true
+                case .avatar, .avatarOutfit: showAvatar = true
                 case .adventure: showAdventure = true
                 case .memories: showMemories = true
                 case .collection, .look: showCollection = true

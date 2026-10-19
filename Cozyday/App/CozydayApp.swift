@@ -26,7 +26,7 @@ struct CozydayApp: App {
             case .failed(let message):
                 StorageErrorView(message: message)
             case .testHost:
-                Text("Cozyday test host")
+                Text("CozyDay test host")
             }
         }
     }
@@ -94,7 +94,7 @@ struct StorageErrorView: View {
                     .frame(maxWidth: .infinity)
                 Text("Không mở được dữ liệu")
                     .font(Typography.title)
-                Text("Cozyday không đọc được kho dữ liệu trên máy. App KHÔNG xóa hay tạo lại dữ liệu để tránh mất những gì bạn đã lưu.")
+                Text("CozyDay không đọc được kho dữ liệu trên máy. App KHÔNG xóa hay tạo lại dữ liệu để tránh mất những gì bạn đã lưu.")
                 Text("Hãy thử: tắt hẳn app rồi mở lại; kiểm tra iPhone còn dung lượng trống. Nếu vẫn lỗi, gửi nội dung bên dưới khi nhờ hỗ trợ (không chứa nội dung nhật ký).")
                     .foregroundStyle(Palette.inkMuted)
                 Text(message)

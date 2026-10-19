@@ -81,7 +81,7 @@ struct PlaygroundView: View {
                             Label(line, systemImage: "circle.fill")
                                 .labelStyle(BulletLabelStyle())
                         }
-                        Text("Vì app chạy hoàn toàn offline, nếu đổi ngày giờ của máy thì hạn mức theo ngày cũng đổi theo — Cozyday không chống được gian lận kiểu này một cách tuyệt đối.")
+                        Text("Vì app chạy hoàn toàn offline, nếu đổi ngày giờ của máy thì hạn mức theo ngày cũng đổi theo — CozyDay không chống được gian lận kiểu này một cách tuyệt đối.")
                             .font(Typography.caption).foregroundStyle(Palette.inkMuted)
                     }
                     .padding(.top, Spacing.s)
@@ -206,7 +206,7 @@ struct PlaygroundView: View {
                 Toggle(isOn: $hapticsOn) { Label("Rung khi chơi", systemImage: "iphone.radiowaves.left.and.right") }
                 Text(store.profile.hapticsEnabled
                      ? "Tiếng nhỏ, ngắn, không có nhạc nền và không ngắt nhạc bạn đang nghe. Công tắc im lặng của iPhone cũng tắt tiếng game."
-                     : "Rung đang tắt trong Cài đặt của Cozyday nên game cũng không rung.")
+                     : "Rung đang tắt trong Cài đặt của CozyDay nên game cũng không rung.")
                     .font(Typography.caption).foregroundStyle(Palette.inkMuted)
                     .fixedSize(horizontal: false, vertical: true)
                 Text("Nhảy Mây và Giỏ Quà cần kéo ngang bằng tay. Với VoiceOver: vuốt lên/xuống trên vùng chơi để di chuyển (chưa được thử trên máy thật). Lật Thẻ dùng được hoàn toàn với VoiceOver.")

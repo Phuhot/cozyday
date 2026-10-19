@@ -54,7 +54,7 @@ struct OnboardingView: View {
             PetView(appearance: PetAppearance(hat: "hat.sprout", stage: .little), mood: .happy, name: ProfileRecord.defaultPetName)
                 .frame(width: 150, height: 150)
                 .frame(maxWidth: .infinity)
-            Text("Chào mừng tới Cozyday")
+            Text("Chào mừng tới CozyDay")
                 .font(Typography.largeTitle)
                 .foregroundStyle(Palette.ink)
             Text("Sắp xếp ngày của bạn trên một timeline gọn gàng. Mỗi việc hoàn thành giúp chú mèo nhỏ trang trí góc phòng.")
@@ -73,7 +73,7 @@ struct OnboardingView: View {
 
     private var goalsStep: some View {
         VStack(alignment: .leading, spacing: Spacing.l) {
-            Text("Bạn muốn Cozyday giúp gì?")
+            Text("Bạn muốn CozyDay giúp gì?")
                 .font(Typography.title)
             Text("Chọn bao nhiêu cũng được — chỉ để gợi ý, có thể bỏ qua.")
                 .foregroundStyle(Palette.inkMuted)

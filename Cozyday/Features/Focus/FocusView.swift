@@ -99,7 +99,7 @@ struct FocusView: View {
             Text(reward.xp > 0
                  ? "Chạy hết \(focusMinutes) phút: +\(reward.xp) XP, +\(reward.coins) xu."
                  : "Phiên dưới \(RewardConfig.focusMinMinutesForReward) phút không có thưởng.")
-            Text("Tạm dừng không tính vào phút tập trung. Kết thúc sớm không có thưởng nhưng số phút đã tập trung vẫn được ghi lại. Cozyday không chặn ứng dụng khác.")
+            Text("Tạm dừng không tính vào phút tập trung. Kết thúc sớm không có thưởng nhưng số phút đã tập trung vẫn được ghi lại. CozyDay không chặn ứng dụng khác.")
         }
         .font(Typography.caption)
         .foregroundStyle(Palette.inkMuted)
@@ -160,7 +160,7 @@ struct FocusView: View {
                 } label: { Label("Kết thúc", systemImage: "stop.fill") }
                 .buttonStyle(SoftButtonStyle(tint: Palette.danger))
             }
-            Text("Bạn có thể khóa máy hoặc chuyển app. Nếu đã bật thông báo, Cozyday sẽ báo khi hết giờ.")
+            Text("Bạn có thể khóa máy hoặc chuyển app. Nếu đã bật thông báo, CozyDay sẽ báo khi hết giờ.")
                 .font(Typography.caption)
                 .foregroundStyle(Palette.inkMuted)
                 .multilineTextAlignment(.center)

@@ -25,6 +25,8 @@ struct BackupDocument: Codable, Equatable {
     var foodStock: [FoodStockRecord]?
     var careActions: [CareActionRecord]?
     var minigameResults: [MinigameResultRecord]?
+    /// Ảnh đại diện (thêm sau, vẫn là bản 2 vì là trường tùy chọn; file cũ không có → ảnh mặc định).
+    var avatar: AvatarConfig?
 
     var counts: BackupCounts {
         BackupCounts(
@@ -72,9 +74,9 @@ enum BackupError: Error, Equatable {
         case .notJSON:
             return "File không phải JSON hợp lệ."
         case .wrongFormat:
-            return "Đây không phải file sao lưu của Cozyday."
+            return "Đây không phải file sao lưu của CozyDay."
         case .unsupportedVersion(let found, let supported):
-            return "File sao lưu dùng phiên bản dữ liệu \(found), app này chỉ đọc được tới \(supported). Hãy cập nhật Cozyday trước khi khôi phục."
+            return "File sao lưu dùng phiên bản dữ liệu \(found), app này chỉ đọc được tới \(supported). Hãy cập nhật CozyDay trước khi khôi phục."
         case .corrupted(let detail):
             return "File sao lưu bị hỏng hoặc thiếu dữ liệu: \(detail)"
         case .duplicateID(let what):
@@ -271,6 +273,7 @@ enum BackupValidator {
             if Set(values).count != values.count { throw BackupError.duplicateID(what) }
         }
         if let care = d.petCare, !care.needs.isValid { throw BackupError.invalidValue("chỉ số chăm sóc") }
+        if let avatar = d.avatar, !avatar.isWellFormed { throw BackupError.invalidValue("ảnh đại diện") }
         let stock = d.foodStock ?? []
         try unique(stock.map(\.foodID), "khay đồ ăn")
         for s in stock {

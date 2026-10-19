@@ -246,7 +246,7 @@ struct TaskEditorView: View {
     private func askNotificationPermission() {
         Task {
             let granted = await notifications.requestPermissionIfNeeded()
-            permissionNote = granted ? nil : "Thông báo đang bị tắt cho Cozyday. Việc vẫn được lưu; bật lại trong Cài đặt iPhone → Cozyday → Thông báo nếu muốn được nhắc."
+            permissionNote = granted ? nil : "Thông báo đang bị tắt cho CozyDay. Việc vẫn được lưu; bật lại trong Cài đặt iPhone → CozyDay → Thông báo nếu muốn được nhắc."
         }
     }
 }

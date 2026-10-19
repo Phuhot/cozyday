@@ -58,6 +58,10 @@ final class AppStore {
     var careActions: [CareActionRecord] = []
     /// Sân chơi (V3): các lượt đã kết thúc.
     var minigameResults: [MinigameResultRecord] = []
+    /// Ảnh đại diện: chỉ là lựa chọn hiển thị nên lưu trong UserDefaults (không đổi lược đồ SwiftData),
+    /// vẫn có trong bản sao lưu. Ghi qua `saveAvatar`.
+    var avatar: AvatarConfig = .standard
+    @ObservationIgnored let defaults: UserDefaults
 
     /// Tăng sau mỗi lần ghi thành công — dùng để đồng bộ lại thông báo.
     private(set) var changeCounter = 0
@@ -68,8 +72,10 @@ final class AppStore {
     @ObservationIgnored var failNextSaveForTesting = false
     #endif
 
-    init(container: ModelContainer, clock: AppClock = SystemClock(), calendar: Calendar = .autoupdatingCurrent) throws {
+    init(container: ModelContainer, clock: AppClock = SystemClock(), calendar: Calendar = .autoupdatingCurrent,
+         defaults: UserDefaults = .standard) throws {
         self.context = ModelContext(container)
+        self.defaults = defaults
         self.context.autosaveEnabled = false
         self.clock = clock
         self.calendar = calendar
@@ -77,6 +83,7 @@ final class AppStore {
         self.petCare = PetCareRecord(needs: .initial(at: clock.now), welcomeGranted: true, createdAt: clock.now)
         try ensureProfile()
         try ensurePetCare()
+        self.avatar = Self.loadAvatar(from: defaults)
         try reloadAll()
         try repairDuplicateOccurrences()
     }

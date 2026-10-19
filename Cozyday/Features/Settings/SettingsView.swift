@@ -116,7 +116,7 @@ struct SettingsView: View {
                 }
             ))
             if calendarService.access == .denied {
-                Text("Cozyday chưa được phép đọc lịch. Bật lại trong Cài đặt iPhone → Cozyday → Lịch → Toàn quyền truy cập.")
+                Text("CozyDay chưa được phép đọc lịch. Bật lại trong Cài đặt iPhone → CozyDay → Lịch → Toàn quyền truy cập.")
                     .font(Typography.caption)
                     .foregroundStyle(Palette.inkMuted)
                 Button("Mở Cài đặt iPhone") {
@@ -126,7 +126,7 @@ struct SettingsView: View {
         } header: {
             Text("Lịch iPhone")
         } footer: {
-            Text("Chỉ đọc để hiện cạnh việc trên timeline và để \"Sắp xếp lại\" tránh giờ bận. Sự kiện không được lưu vào Cozyday và không có trong bản sao lưu.")
+            Text("Chỉ đọc để hiện cạnh việc trên timeline và để \"Sắp xếp lại\" tránh giờ bận. Sự kiện không được lưu vào CozyDay và không có trong bản sao lưu.")
         }
     }
 
@@ -148,7 +148,7 @@ struct SettingsView: View {
                     if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
                 }
             case .notDetermined, .unknown:
-                Text("Cozyday sẽ xin quyền khi bạn bật nhắc việc đầu tiên.")
+                Text("CozyDay sẽ xin quyền khi bạn bật nhắc việc đầu tiên.")
                     .font(Typography.caption)
                     .foregroundStyle(Palette.inkMuted)
             }
@@ -345,7 +345,7 @@ struct RewardRulesView: View {
             } header: {
                 Text("Sân chơi")
             } footer: {
-                Text("App chạy offline: đổi ngày giờ của máy sẽ làm hạn mức theo ngày đổi theo. Cozyday không chống được điều đó tuyệt đối.")
+                Text("App chạy offline: đổi ngày giờ của máy sẽ làm hạn mức theo ngày đổi theo. CozyDay không chống được điều đó tuyệt đối.")
             }
         }
         .navigationTitle("Quy tắc phần thưởng")
@@ -355,7 +355,7 @@ struct RewardRulesView: View {
 struct PrivacyView: View {
     var body: some View {
         List {
-            Text("Mọi dữ liệu chỉ nằm trên iPhone này (SwiftData, không đồng bộ iCloud). Cozyday không có tài khoản, máy chủ, quảng cáo hay analytics.")
+            Text("Mọi dữ liệu chỉ nằm trên iPhone này (SwiftData, không đồng bộ iCloud). CozyDay không có tài khoản, máy chủ, quảng cáo hay analytics.")
             Text("Thông báo là thông báo cục bộ do iPhone tự hiển thị, không gửi qua Internet.")
             Text("Gỡ app hoặc cài lại với bundle ID khác có thể làm mất dữ liệu. Hãy xuất sao lưu định kỳ và trước mỗi lần cập nhật.")
             Text("File sao lưu không mã hóa: ai mở được file sẽ đọc được tên việc và nhật ký.")

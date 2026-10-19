@@ -7,6 +7,7 @@ struct StatsView: View {
     @Environment(DayClock.self) private var dayClock
     @State private var range = 7
     @State private var metric = 0
+    @State private var showAvatar = false
 
     var body: some View {
         let today = dayClock.today
@@ -25,6 +26,8 @@ struct StatsView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: Spacing.l) {
+                    AvatarProfileCard { showAvatar = true }
+
                     HStack(spacing: Spacing.m) {
                         Picker("Khoảng thời gian", selection: $range) {
                             Text("7 ngày").tag(7)
@@ -90,6 +93,7 @@ struct StatsView: View {
             }
             .cozyBackground()
             .navigationTitle("Tiến bộ")
+            .sheet(isPresented: $showAvatar) { AvatarStudioView() }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) { SettingsButton() }
             }

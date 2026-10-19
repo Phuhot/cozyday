@@ -262,7 +262,7 @@ struct FoodSheet: View {
                             .foregroundStyle(Palette.sage)
                     }
                     if tab == .tray { tray } else { shop }
-                    Text("Đồ ăn trong game là đồ ăn tưởng tượng cho thú cưng của Cozyday, không phải hướng dẫn dinh dưỡng cho thú thật.")
+                    Text("Đồ ăn trong game là đồ ăn tưởng tượng cho thú cưng của CozyDay, không phải hướng dẫn dinh dưỡng cho thú thật.")
                         .font(Typography.caption2)
                         .foregroundStyle(Palette.inkMuted)
                 }

@@ -73,7 +73,7 @@ struct ReplanSheet: View {
         NavigationStack {
             List {
                 Section {
-                    Text("Cozyday chỉ dời các việc chưa xong đã trễ giờ vào khoảng trống từ bây giờ tới \(TimeOfDay.label(plan.windowEnd)). Việc cố định, việc đã xong và việc sắp tới giữ nguyên; thời lượng không đổi.")
+                    Text("CozyDay chỉ dời các việc chưa xong đã trễ giờ vào khoảng trống từ bây giờ tới \(TimeOfDay.label(plan.windowEnd)). Việc cố định, việc đã xong và việc sắp tới giữ nguyên; thời lượng không đổi.")
                         .font(Typography.callout)
                         .foregroundStyle(Palette.inkMuted)
                 }

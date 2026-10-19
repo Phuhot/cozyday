@@ -43,6 +43,9 @@ enum PreviewScreen: String, CaseIterable {
     case pause
     case result
     case resultCapped
+    // Ảnh đại diện
+    case avatar
+    case avatarOutfit
 }
 
 /// Chế độ xem trước chỉ có trong bản Debug: dữ liệu mẫu nằm trong bộ nhớ, không đụng tới kho dữ liệu thật.
@@ -71,7 +74,10 @@ extension PreviewMode {
     @MainActor
     static func makeEnvironment(for screen: PreviewScreen) throws -> AppEnvironment {
         let clock = PreviewClock()
-        let store = try AppStore(container: PersistenceController.makeContainer(inMemory: true), clock: clock)
+        // Ảnh đại diện xem trước lưu vào vùng riêng, không đụng lựa chọn thật.
+        let defaults = UserDefaults(suiteName: "CozyPreview.store") ?? .standard
+        defaults.removePersistentDomain(forName: "CozyPreview.store")
+        let store = try AppStore(container: PersistenceController.makeContainer(inMemory: true), clock: clock, defaults: defaults)
         let ui = UIState()
         if screen != .onboarding {
             try seed(store, clock: clock, activeFocus: screen == .focus, adventureReady: screen == .adventure)
@@ -81,7 +87,7 @@ extension PreviewMode {
         switch screen {
         case .corner, .shop, .wardrobe, .adventure, .memories, .bedroom, .kitchen, .bath, .garden, .collection, .look,
              .care, .food, .feed, .clean, .careCapped,
-             .playground, .pickPet, .tutorial, .jump, .basket, .memory, .pause, .result, .resultCapped:
+             .playground, .pickPet, .tutorial, .jump, .basket, .memory, .pause, .result, .resultCapped, .avatar, .avatarOutfit:
             router.selectedTab = .corner
         case .journal, .breathing, .journalEditor: router.selectedTab = .journal
         case .progress: router.selectedTab = .progress
@@ -103,6 +109,10 @@ extension PreviewMode {
                 model.apply(care)
                 store.petCare = care
             }
+        }
+        if screen != .onboarding {
+            // Ảnh đại diện mẫu: hoàng hôn + cầu vồng + tim, có tên.
+            try store.saveAvatar(AvatarConfig(background: "sunset", scene: "rainbow", effect: "hearts", mood: "happy", look: nil, showName: true))
         }
         try store.buyFood("food.carrot", quantity: 2, transactionID: UUID())
         try store.buyFood("food.picnic", transactionID: UUID())

@@ -33,7 +33,7 @@ Cập nhật: 2026-10-19 (phiên 5) · Nhánh: `claude/ios-project-section-12-4b
 - **Thông báo**: ID ổn định (`task.<uuid>`, `focus.end`, `journal.daily`), cửa sổ 7 ngày, tối đa 60 nhắc việc (giới hạn iOS 64).
 - **Thú cưng** vẽ theo lớp bằng Canvas (đuôi → tai → thân → áo → mặt → kính → cổ → mũ), animation tính từ thời gian
   (`TimelineView`), tắt khi bật Giảm chuyển động. Ngoại hình suy ra từ kho đồ + vị trí trang bị — **không đổi lược đồ**.
-- **Mèo, đồ nội thất, mood** vẽ bằng SwiftUI Canvas; icon vẽ bằng `scripts/tools/make_icon.py`. Không tải ảnh ngoài.
+- **Mèo, đồ nội thất, mood** vẽ bằng SwiftUI Canvas; icon = `AvatarPainter.appIcon` (vịt con vàng đội mây) xuất ra PNG 1024 không alpha. Không tải ảnh ngoài.
 - **CI**: XcodeGen tạo project; `xcodebuild archive` Release `-sdk iphoneos -destination generic/platform=iOS ARCHS=arm64`
   với `CODE_SIGNING_ALLOWED=NO`; đóng gói `Payload/Cozyday.app` bằng `ditto` + `zip -y`; script kiểm tra IPA fail nếu thiếu/sai.
 - Swift language mode 5 (trình biên dịch Swift 6.3 của Xcode 26.6) để tránh lỗi strict concurrency không cần thiết.

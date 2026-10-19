@@ -27,7 +27,8 @@ extension AppStore {
             petCare: petCare,
             foodStock: foodStock,
             careActions: careActions,
-            minigameResults: minigameResults
+            minigameResults: minigameResults,
+            avatar: avatar
         )
     }
 
@@ -65,6 +66,8 @@ extension AppStore {
             (document.minigameResults ?? []).forEach { self.context.insert(MinigameResultModel(record: $0)) }
         }
         try reloadAll()
+        // Ảnh đại diện nằm ngoài SwiftData: chỉ ghi sau khi phần dữ liệu chính đã khôi phục xong.
+        try? saveAvatar(document.avatar ?? .standard)
         // Phiên tập trung quá hạn trong bản sao lưu: chốt một lần (khóa sổ cái chống thưởng trùng).
         _ = try? reconcileFocus()
         try? ensureUpcomingOccurrences()

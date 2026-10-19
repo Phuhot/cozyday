@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>vi</string>
 	<key>CFBundleDisplayName</key>
-	<string>Cozyday</string>
+	<string>CozyDay</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -25,9 +25,11 @@
 		<string>vi</string>
 	</array>
 	<key>NSCalendarsFullAccessUsageDescription</key>
-	<string>Cozyday chỉ đọc sự kiện để hiện cạnh việc của bạn trên timeline. Không sửa, không lưu và không gửi đi đâu.</string>
+	<string>CozyDay chỉ đọc sự kiện để hiện cạnh việc của bạn trên timeline. Không sửa, không lưu và không gửi đi đâu.</string>
 	<key>NSCalendarsUsageDescription</key>
-	<string>Cozyday chỉ đọc sự kiện để hiện cạnh việc của bạn trên timeline. Không sửa, không lưu và không gửi đi đâu.</string>
+	<string>CozyDay chỉ đọc sự kiện để hiện cạnh việc của bạn trên timeline. Không sửa, không lưu và không gửi đi đâu.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Chỉ dùng khi bạn chọn "Lưu hình ảnh" để cất ảnh đại diện của thú cưng vào app Ảnh. CozyDay không đọc ảnh có sẵn của bạn.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
