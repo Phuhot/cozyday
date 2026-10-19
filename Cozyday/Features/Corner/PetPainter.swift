@@ -8,6 +8,8 @@ enum PetMood: Equatable {
     case happy
     case focus
     case rest
+    /// Đang cần được chăm (đói, buồn chán hoặc nhà bẩn): mắt tròn hơi cụp mày — dịu dàng, không khóc lóc.
+    case low
 
     var label: String {
         switch self {
@@ -15,6 +17,7 @@ enum PetMood: Equatable {
         case .happy: return "đang vui"
         case .focus: return "đang tập trung cùng bạn"
         case .rest: return "đang nghỉ ngơi"
+        case .low: return "đang mong được chăm một chút"
         }
     }
 }
@@ -471,7 +474,19 @@ struct PetPainter {
                     ctx.ellipse(c.x - 2.5 * f, c.y - 3.3 * f, 5 * f, 6.5 * f, ink)
                     ctx.circle(c.x - 0.6 * f, c.y - 1.6 * f, 0.9 * f, .white)
                 }
-            case .idle:
+            case .low where !pose.blink:
+                for c in [left, right] {
+                    if panda { ctx.circle(c.x, c.y, 4.4 * f, rgb(0xFFFDF8)) }
+                    ctx.ellipse(c.x - 2.6 * f, c.y - 2.6 * f, 5.2 * f, 6 * f, ink)
+                    ctx.circle(c.x - 0.7 * f, c.y - 1.2 * f, 1.1 * f, .white)
+                    ctx.circle(c.x + 1 * f, c.y + 1.2 * f, 0.55 * f, .white)
+                }
+                // Lông mày hơi xếch lên ở giữa.
+                ctx.strokePath(eyeLine.opacity(0.8), width: 1.5) { p in
+                    p.move(to: CGPoint(x: left.x - 4, y: left.y - 6)); p.addLine(to: CGPoint(x: left.x + 3, y: left.y - 7.8))
+                    p.move(to: CGPoint(x: right.x + 4, y: right.y - 6)); p.addLine(to: CGPoint(x: right.x - 3, y: right.y - 7.8))
+                }
+            case .idle, .low:
                 ctx.strokePath(eyeLine, width: 2.2) { p in
                     for c in [left, right] {
                         p.move(to: CGPoint(x: c.x - 3.5, y: c.y)); p.addLine(to: CGPoint(x: c.x + 3.5, y: c.y))
@@ -849,7 +864,7 @@ struct PetPainter {
         case .happy:
             ctx.draw(Text("✦").font(.system(size: 8)).foregroundColor(Palette.honey), at: CGPoint(x: 15, y: 26))
             ctx.draw(Text("✦").font(.system(size: 6)).foregroundColor(Palette.honey), at: CGPoint(x: 86, y: 34))
-        case .idle:
+        case .idle, .low:
             break
         }
     }

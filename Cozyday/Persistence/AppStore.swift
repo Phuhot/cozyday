@@ -44,11 +44,21 @@ final class AppStore {
     var equipped: [EquippedRecord] = []
     var focusSessions: [FocusSessionRecord] = []
     var journal: [JournalRecord] = []
+    /// Chăm thú cưng (V3): nhu cầu, khay đồ ăn, lịch sử chăm sóc gần đây.
+    var petCare: PetCareRecord
+    var foodStock: [FoodStockRecord] = []
+    var careActions: [CareActionRecord] = []
+    /// Sân chơi (V3): các lượt đã kết thúc.
+    var minigameResults: [MinigameResultRecord] = []
 
     /// Tăng sau mỗi lần ghi thành công — dùng để đồng bộ lại thông báo.
     private(set) var changeCounter = 0
 
     @ObservationIgnored private var isWriting = false
+    #if DEBUG
+    /// Chỉ dùng trong test: lần `commit` kế tiếp giả lập lỗi lưu (sau khi đã sửa model) để kiểm tra rollback.
+    @ObservationIgnored var failNextSaveForTesting = false
+    #endif
 
     init(container: ModelContainer, clock: AppClock = SystemClock(), calendar: Calendar = .autoupdatingCurrent) throws {
         self.context = ModelContext(container)
@@ -56,7 +66,9 @@ final class AppStore {
         self.clock = clock
         self.calendar = calendar
         self.profile = ProfileRecord.makeDefault(now: clock.now)
+        self.petCare = PetCareRecord(needs: .initial(at: clock.now), welcomeGranted: true, createdAt: clock.now)
         try ensureProfile()
+        try ensurePetCare()
         try reloadAll()
         try repairDuplicateOccurrences()
     }
@@ -77,6 +89,12 @@ final class AppStore {
         focusSessions = try context.fetch(FetchDescriptor<FocusSessionModel>()).map(\.record)
             .sorted { $0.startedAt < $1.startedAt }
         journal = try context.fetch(FetchDescriptor<JournalEntryModel>()).compactMap(\.record)
+        if let care = try fetchPetCareModel() { petCare = care.record }
+        foodStock = try context.fetch(FetchDescriptor<FoodStockModel>()).map(\.record)
+        careActions = try context.fetch(FetchDescriptor<CareActionModel>()).compactMap(\.record)
+            .sorted { $0.performedAt < $1.performedAt }
+        minigameResults = try context.fetch(FetchDescriptor<MinigameResultModel>()).compactMap(\.record)
+            .sorted { $0.finishedAt < $1.finishedAt }
     }
 
     /// Tạo hồ sơ mặc định đúng một lần (idempotent). Không bao giờ ghi đè hồ sơ đang có.
@@ -89,6 +107,30 @@ final class AppStore {
             context.rollback()
             throw StoreError.saveFailed(error.localizedDescription)
         }
+    }
+
+    /// Tạo hồ sơ chăm sóc đúng một lần (thú cưng mới hoặc bản cũ vừa nâng cấp lên V3), kèm gói đồ ăn chào mừng
+    /// trong CÙNG một lần lưu — mở lại app hay chạy lại migration không tặng thêm.
+    private func ensurePetCare() throws {
+        guard try fetchPetCareModel() == nil else { return }
+        let record = PetCareRecord(needs: .initial(at: clock.now), welcomeGranted: true, createdAt: clock.now)
+        context.insert(PetCareStateModel(record: record))
+        let existing = Set(try context.fetch(FetchDescriptor<FoodStockModel>()).map(\.foodID))
+        for pack in CareConfig.welcomePack where !existing.contains(pack.foodID) {
+            context.insert(FoodStockModel(foodID: pack.foodID, count: pack.count))
+        }
+        do {
+            try context.save()
+        } catch {
+            context.rollback()
+            throw StoreError.saveFailed(error.localizedDescription)
+        }
+    }
+
+    func fetchPetCareModel() throws -> PetCareStateModel? {
+        var descriptor = FetchDescriptor<PetCareStateModel>(sortBy: [SortDescriptor(\.createdAt)])
+        descriptor.fetchLimit = 1
+        return try context.fetch(descriptor).first
     }
 
     func fetchProfileModel() throws -> ProfileModel? {
@@ -124,6 +166,12 @@ final class AppStore {
         defer { isWriting = false }
         do {
             try body()
+            #if DEBUG
+            if failNextSaveForTesting {
+                failNextSaveForTesting = false
+                throw StoreError.saveFailed("lỗi giả lập trong test")
+            }
+            #endif
             try context.save()
             changeCounter += 1
         } catch {

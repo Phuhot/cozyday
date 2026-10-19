@@ -48,12 +48,70 @@ final class BackupTests: XCTestCase {
         XCTAssertEqual(decoded.counts.ownedItems, 1)
     }
 
+    /// File sao lưu bản 1 (trước khi có chăm thú cưng / Sân chơi) vẫn đọc được, phần mới để trống.
+    func testReadsVersion1BackupWithoutCareOrPlayData() throws {
+        var doc = Self.sampleDocument()
+        doc.schemaVersion = 1
+        let data = try BackupCodec.encode(doc)
+        let json = String(decoding: data, as: UTF8.self)
+        XCTAssertFalse(json.contains("petCare"))
+        XCTAssertFalse(json.contains("minigameResults"))
+        let decoded = try BackupCodec.decodeAndValidate(data)
+        XCTAssertNil(decoded.petCare)
+        XCTAssertNil(decoded.foodStock)
+        XCTAssertEqual(decoded.counts.food, 0)
+    }
+
+    func testVersion2RoundTripKeepsCareAndResults() throws {
+        var doc = Self.sampleDocument()
+        let actionID = UUID(), sessionID = UUID()
+        let when = date(2026, 10, 18, 20)
+        doc.petCare = PetCareRecord(needs: PetNeeds(fullness: 41.5, cleanliness: 22, happiness: 70, asOf: when), welcomeGranted: true, createdAt: date(2026, 10, 1))
+        doc.foodStock = [FoodStockRecord(foodID: "food.apple", count: 2), FoodStockRecord(foodID: "food.picnic", count: 0)]
+        doc.careActions = [CareActionRecord(id: actionID, kind: .clean, day: day("2026-10-18"), performedAt: when, foodID: nil,
+                                            before: 30, after: 100, xp: 3, coins: 2, note: .rewarded)]
+        doc.minigameResults = [MinigameResultRecord(id: sessionID, kind: .giftBasket, score: 64, primary: 40, secondary: 9, level: nil,
+                                                    activeSeconds: 60, species: "duck", startedAt: when.addingTimeInterval(-60), finishedAt: when,
+                                                    day: day("2026-10-18"), coins: 3, earned: 3, note: .rewarded)]
+        doc.ledger.append(LedgerEntry(id: UUID(), key: LedgerKeys.care(actionID), kind: .care, xp: 3, coins: 2, createdAt: when,
+                                      refID: actionID.uuidString.lowercased(), memo: "Dọn nhà"))
+        doc.ledger.append(LedgerEntry(id: UUID(), key: LedgerKeys.minigame(sessionID), kind: .minigame, xp: 0, coins: 3, createdAt: when,
+                                      refID: sessionID.uuidString.lowercased(), memo: "Giỏ Quà"))
+        doc.ledger.append(LedgerEntry(id: UUID(), key: LedgerKeys.foodPurchase(UUID()), kind: .foodPurchase, xp: 0, coins: -3, createdAt: when,
+                                      refID: "food.apple", memo: "Táo giòn ×1"))
+        let decoded = try BackupCodec.decodeAndValidate(try BackupCodec.encode(doc))
+        XCTAssertEqual(decoded, doc)
+        XCTAssertEqual(decoded.counts.food, 2)
+        XCTAssertEqual(decoded.counts.minigames, 1)
+
+        // Thưởng gần đây mà thiếu lịch sử → từ chối (để không mất khả năng chống thưởng trùng/hạn mức).
+        var orphan = doc
+        orphan.careActions = []
+        XCTAssertThrowsError(try BackupCodec.decodeAndValidate(try BackupCodec.encode(orphan)))
+        var noResult = doc
+        noResult.minigameResults = []
+        XCTAssertThrowsError(try BackupCodec.decodeAndValidate(try BackupCodec.encode(noResult)))
+        var negative = doc
+        negative.foodStock = [FoodStockRecord(foodID: "food.apple", count: -1)]
+        XCTAssertThrowsError(try BackupCodec.decodeAndValidate(try BackupCodec.encode(negative)))
+        var dupStock = doc
+        dupStock.foodStock = [FoodStockRecord(foodID: "food.apple", count: 1), FoodStockRecord(foodID: "food.apple", count: 1)]
+        XCTAssertThrowsError(try BackupCodec.decodeAndValidate(try BackupCodec.encode(dupStock)))
+        var badNeeds = doc
+        badNeeds.petCare?.needs.fullness = 180
+        XCTAssertThrowsError(try BackupCodec.decodeAndValidate(try BackupCodec.encode(badNeeds)))
+        var xpFromGame = doc
+        xpFromGame.ledger[xpFromGame.ledger.count - 2].xp = 50
+        XCTAssertThrowsError(try BackupCodec.decodeAndValidate(try BackupCodec.encode(xpFromGame)))
+    }
+
     func testRejectsNewerSchema() throws {
         var doc = Self.sampleDocument()
         doc.schemaVersion = BackupDocument.currentSchemaVersion + 1
         let data = try BackupCodec.encode(doc)
         XCTAssertThrowsError(try BackupCodec.decodeAndValidate(data)) { error in
-            XCTAssertEqual(error as? BackupError, .unsupportedVersion(found: 2, supported: 1))
+            XCTAssertEqual(error as? BackupError, .unsupportedVersion(found: BackupDocument.currentSchemaVersion + 1,
+                                                                     supported: BackupDocument.currentSchemaVersion))
         }
     }
 

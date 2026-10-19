@@ -108,7 +108,7 @@ struct StatsView: View {
             ForEach(Array(entries)) { e in
                 HStack(spacing: Spacing.m) {
                     Image(systemName: icon(e.kind))
-                        .foregroundStyle(e.kind == .purchase ? Palette.peach : Palette.sage)
+                        .foregroundStyle(e.kind.isSpending ? Palette.peach : Palette.sage)
                         .frame(width: 28)
                         .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: Spacing.xxs) {
@@ -192,13 +192,16 @@ struct StatsView: View {
         case .purchase: return "bag"
         case .adventure: return "map"
         case .breathing: return "wind"
+        case .minigame: return "gamecontroller"
+        case .care: return "heart"
+        case .foodPurchase: return "fork.knife"
         }
     }
 
     private func subtitle(_ e: LedgerEntry) -> String {
         let when = DateText.dateTime(e.createdAt, calendar: store.calendar)
         switch e.kind {
-        case .taskCompleted, .focusCompleted, .adventure: return "\(when) · \(e.memo)"
+        case .taskCompleted, .focusCompleted, .adventure, .minigame, .care, .foodPurchase: return "\(when) · \(e.memo)"
         default: return when
         }
     }

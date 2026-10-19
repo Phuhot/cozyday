@@ -7,6 +7,12 @@ enum LedgerKind: String, Codable, CaseIterable {
     case purchase
     case adventure
     case breathing
+    /// Thưởng xu từ minigame ở Sân chơi (không có XP).
+    case minigame
+    /// Thưởng nhỏ khi chăm thú cưng đúng lúc cần.
+    case care
+    /// Mua đồ ăn (vật phẩm tiêu hao, mua lặp lại được).
+    case foodPurchase
 
     var label: String {
         switch self {
@@ -16,6 +22,17 @@ enum LedgerKind: String, Codable, CaseIterable {
         case .purchase: return "Mua đồ"
         case .adventure: return "Chuyến phiêu lưu"
         case .breathing: return "Bài thở"
+        case .minigame: return "Sân chơi"
+        case .care: return "Chăm thú cưng"
+        case .foodPurchase: return "Mua đồ ăn"
+        }
+    }
+
+    /// Dòng chi tiêu (xu âm, không có XP).
+    var isSpending: Bool {
+        switch self {
+        case .purchase, .foodPurchase: return true
+        default: return false
         }
     }
 }
@@ -41,6 +58,10 @@ enum LedgerKeys {
     static func purchase(_ itemID: String) -> String { "purchase:\(itemID)" }
     static func adventure(_ day: DayKey) -> String { "adventure:\(day.string)" }
     static func breathing(_ day: DayKey) -> String { "breathing:\(day.string)" }
+    static func minigame(_ sessionID: UUID) -> String { "minigame:\(sessionID.uuidString.lowercased())" }
+    static func care(_ actionID: UUID) -> String { "care:\(actionID.uuidString.lowercased())" }
+    /// Mỗi lần mua đồ ăn có mã giao dịch riêng — khác `purchase:<itemID>` của đồ sở hữu vĩnh viễn.
+    static func foodPurchase(_ transactionID: UUID) -> String { "food-purchase:\(transactionID.uuidString.lowercased())" }
 }
 
 struct Wallet: Equatable {

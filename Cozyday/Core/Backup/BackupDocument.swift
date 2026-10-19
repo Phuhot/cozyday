@@ -4,7 +4,9 @@ import Foundation
 /// File ở dạng đọc được (KHÔNG mã hóa) — chứa nội dung riêng tư như tên việc và nhật ký.
 struct BackupDocument: Codable, Equatable {
     static let formatID = "cozyday.backup"
-    static let currentSchemaVersion = 1
+    /// 1: bản đầu. 2: thêm chăm thú cưng (nhu cầu, khay đồ ăn, lịch sử chăm sóc) và kết quả Sân chơi.
+    /// Bản 1 vẫn đọc được: các phần mới để trống → dùng giá trị mặc định khi khôi phục.
+    static let currentSchemaVersion = 2
 
     var format: String
     var schemaVersion: Int
@@ -18,6 +20,11 @@ struct BackupDocument: Codable, Equatable {
     var equipped: [EquippedRecord]
     var focusSessions: [FocusSessionRecord]
     var journal: [JournalRecord]
+    // V2 (có thể thiếu trong file cũ)
+    var petCare: PetCareRecord?
+    var foodStock: [FoodStockRecord]?
+    var careActions: [CareActionRecord]?
+    var minigameResults: [MinigameResultRecord]?
 
     var counts: BackupCounts {
         BackupCounts(
@@ -28,7 +35,9 @@ struct BackupDocument: Codable, Equatable {
             focusSessions: focusSessions.count,
             journal: journal.count,
             coins: Wallet(entries: ledger).coins,
-            xp: Wallet(entries: ledger).xp
+            xp: Wallet(entries: ledger).xp,
+            food: (foodStock ?? []).reduce(0) { $0 + $1.count },
+            minigames: minigameResults?.count ?? 0
         )
     }
 }
@@ -42,6 +51,8 @@ struct BackupCounts: Equatable {
     var journal: Int
     var coins: Int
     var xp: Int
+    var food: Int = 0
+    var minigames: Int = 0
 }
 
 enum BackupError: Error, Equatable {
@@ -216,8 +227,10 @@ enum BackupValidator {
         if wallet.coins < 0 { throw BackupError.invalidValue("số xu âm") }
         for e in d.ledger {
             switch e.kind {
-            case .purchase:
+            case .purchase, .foodPurchase:
                 guard e.coins <= 0, e.xp == 0 else { throw BackupError.invalidValue("dòng mua đồ") }
+            case .minigame:
+                guard e.coins >= 0, e.coins <= MinigameConfig.maxCoinsPerRun, e.xp == 0 else { throw BackupError.invalidValue("dòng thưởng Sân chơi") }
             default:
                 guard e.coins >= 0, e.xp >= 0 else { throw BackupError.invalidValue("dòng thưởng âm") }
             }
@@ -247,6 +260,45 @@ enum BackupValidator {
         for j in d.journal {
             guard Mood(rawValue: j.mood) != nil else { throw BackupError.invalidValue("mood ngoài khoảng 1–5") }
             guard j.note.count <= JournalRecord.maxNoteLength else { throw BackupError.invalidValue("nhật ký quá dài") }
+        }
+        try validateCareAndPlay(d)
+    }
+
+    /// Phần V2: chỉ số trong giới hạn, số lượng không âm, ID không trùng, thưởng có lịch sử đi kèm
+    /// (để sau khi khôi phục vẫn chống được thưởng trùng và tính đúng hạn mức).
+    private static func validateCareAndPlay(_ d: BackupDocument) throws {
+        func unique<T: Hashable>(_ values: [T], _ what: String) throws {
+            if Set(values).count != values.count { throw BackupError.duplicateID(what) }
+        }
+        if let care = d.petCare, !care.needs.isValid { throw BackupError.invalidValue("chỉ số chăm sóc") }
+        let stock = d.foodStock ?? []
+        try unique(stock.map(\.foodID), "khay đồ ăn")
+        for s in stock {
+            guard FoodCatalog.item(s.foodID) != nil else { throw BackupError.brokenReference("món ăn không có trong danh mục: \(s.foodID)") }
+            guard (0...FoodCatalog.maxStock).contains(s.count) else { throw BackupError.invalidValue("số lượng đồ ăn") }
+        }
+        let actions = d.careActions ?? []
+        try unique(actions.map(\.id), "lịch sử chăm sóc")
+        for a in actions {
+            guard (0...100).contains(a.before), (0...100).contains(a.after), a.xp >= 0, a.coins >= 0 else {
+                throw BackupError.invalidValue("lịch sử chăm sóc")
+            }
+            if let food = a.foodID, FoodCatalog.item(food) == nil { throw BackupError.brokenReference("món ăn: \(food)") }
+        }
+        let results = d.minigameResults ?? []
+        try unique(results.map(\.id), "lượt Sân chơi")
+        for r in results {
+            guard r.coins >= 0, r.coins <= MinigameConfig.maxCoinsPerRun, r.score >= 0, r.activeSeconds >= 0 else {
+                throw BackupError.invalidValue("kết quả Sân chơi")
+            }
+        }
+        // Thưởng gần ngày xuất file phải có lịch sử tương ứng (lịch sử cũ hơn có thể đã được cắt bớt).
+        let careIDs = Set(actions.map { $0.id.uuidString.lowercased() })
+        let resultIDs = Set(results.map { $0.id.uuidString.lowercased() })
+        let recent = d.exportedAt.addingTimeInterval(-2 * 86400)
+        for e in d.ledger where e.createdAt >= recent {
+            if e.kind == .care, !careIDs.contains(e.refID ?? "") { throw BackupError.brokenReference("thưởng chăm sóc thiếu lịch sử") }
+            if e.kind == .minigame, !resultIDs.contains(e.refID ?? "") { throw BackupError.brokenReference("thưởng Sân chơi thiếu kết quả") }
         }
     }
 

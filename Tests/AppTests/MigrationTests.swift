@@ -64,4 +64,66 @@ final class MigrationTests: XCTestCase {
         let reopened = try AppStore(container: PersistenceController.makeContainer(url: url))
         XCTAssertEqual(reopened.occurrence(taskID)?.checklist.map(\.isDone), [true, false])
     }
+
+    /// Bản đang cài (V2: chưa có chăm thú cưng / Sân chơi) → bản mới (V3): giữ việc, xu, đồ, trang bị;
+    /// tạo hồ sơ chăm sóc + gói đồ ăn chào mừng đúng một lần.
+    func testV2StoreOpensWithV3KeepingDataAndGrantsWelcomeOnce() throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("cozy-migration-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let url = folder.appendingPathComponent("Cozyday.store")
+        let taskID = UUID(), journalID = UUID()
+
+        do {
+            let v2 = Schema(versionedSchema: CozySchemaV2.self)
+            let container = try ModelContainer(for: v2, configurations: [ModelConfiguration(schema: v2, url: url, cloudKitDatabase: .none)])
+            let context = ModelContext(container)
+            context.insert(CozySchemaV2.ProfileModel(
+                userName: "An", petName: "Bông", goalsRaw: "study", activeStartMinute: 420, activeEndMinute: 1320,
+                hapticsEnabled: false, journalReminderEnabled: false, journalReminderMinute: 1260,
+                onboardingCompleted: true, createdAt: Date(), dataVersion: 1
+            ))
+            let occ = CozySchemaV2.TaskOccurrenceModel(id: taskID)
+            occ.occurrenceKey = "o:\(taskID.uuidString.lowercased())"
+            occ.dayRaw = "2026-10-18"
+            occ.title = "Việc bản V2"
+            occ.statusRaw = "done"
+            occ.completedAt = Date()
+            occ.subtasksJSON = Subtasks.encode([Subtask(title: "Bước A", isDone: true)])
+            context.insert(occ)
+            for (key, kind, xp, coins) in [("task:\(taskID.uuidString.lowercased())", "taskCompleted", 120, 140),
+                                           ("purchase:hat.beanie", "purchase", 0, -30)] {
+                let e = CozySchemaV2.LedgerEntryModel(id: UUID())
+                e.key = key
+                e.kindRaw = kind
+                e.xp = xp
+                e.coins = coins
+                context.insert(e)
+            }
+            context.insert(CozySchemaV2.OwnedItemModel(itemID: "hat.beanie", acquiredAt: Date(), transactionID: nil))
+            context.insert(CozySchemaV2.EquippedSlotModel(slotRaw: "hat", itemID: "hat.beanie"))
+            let j = CozySchemaV2.JournalEntryModel(id: journalID)
+            j.dayRaw = "2026-10-18"
+            j.note = "Nhật ký cũ"
+            context.insert(j)
+            try context.save()
+        }
+
+        let store = try AppStore(container: PersistenceController.makeContainer(url: url))
+        XCTAssertEqual(store.profile.petName, "Bông")
+        XCTAssertFalse(store.profile.hapticsEnabled)
+        XCTAssertEqual(store.occurrence(taskID)?.checklist.first?.title, "Bước A")
+        XCTAssertEqual(store.wallet, Wallet(xp: 120, coins: 110))
+        XCTAssertEqual(store.equippedMap[.hat], "hat.beanie")
+        XCTAssertEqual(store.journal.first?.note, "Nhật ký cũ")
+        XCTAssertEqual(store.foodCount("food.apple"), 3)
+        XCTAssertNil(store.currentNeeds.mostUrgent)
+
+        // Dùng tính năng mới rồi mở lại: không tặng lại, dữ liệu mới còn nguyên.
+        try store.performCare(.feed, foodID: "food.apple", actionID: UUID())
+        let reopened = try AppStore(container: PersistenceController.makeContainer(url: url))
+        XCTAssertEqual(reopened.foodCount("food.apple"), 2)
+        XCTAssertEqual(reopened.careActions.count, 1)
+        XCTAssertEqual(reopened.wallet, Wallet(xp: 120, coins: 110))
+    }
 }

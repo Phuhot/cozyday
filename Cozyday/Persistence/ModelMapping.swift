@@ -212,3 +212,84 @@ extension JournalEntryModel {
         updatedAt = r.updatedAt
     }
 }
+
+extension PetCareStateModel {
+    convenience init(record r: PetCareRecord) {
+        self.init(createdAt: r.createdAt)
+        apply(r)
+    }
+
+    var record: PetCareRecord {
+        PetCareRecord(
+            needs: PetNeeds(fullness: fullness, cleanliness: cleanliness, happiness: happiness, asOf: asOf),
+            welcomeGranted: welcomeGranted, createdAt: createdAt
+        )
+    }
+
+    func apply(_ r: PetCareRecord) {
+        fullness = r.needs.fullness
+        cleanliness = r.needs.cleanliness
+        happiness = r.needs.happiness
+        asOf = r.needs.asOf
+        welcomeGranted = r.welcomeGranted
+        createdAt = r.createdAt
+    }
+}
+
+extension FoodStockModel {
+    convenience init(record r: FoodStockRecord) {
+        self.init(foodID: r.foodID, count: r.count)
+    }
+
+    var record: FoodStockRecord { FoodStockRecord(foodID: foodID, count: count) }
+}
+
+extension CareActionModel {
+    convenience init(record r: CareActionRecord) {
+        self.init(id: r.id)
+        kindRaw = r.kind.rawValue
+        dayRaw = r.day.string
+        performedAt = r.performedAt
+        foodID = r.foodID
+        before = r.before
+        after = r.after
+        xp = r.xp
+        coins = r.coins
+        noteRaw = r.note.rawValue
+    }
+
+    var record: CareActionRecord? {
+        guard let kind = CareActionKind(rawValue: kindRaw), let day = DayKey(string: dayRaw) else { return nil }
+        return CareActionRecord(id: id, kind: kind, day: day, performedAt: performedAt, foodID: foodID, before: before,
+                                after: after, xp: xp, coins: coins, note: CareRewardNote(rawValue: noteRaw) ?? .notNeeded)
+    }
+}
+
+extension MinigameResultModel {
+    convenience init(record r: MinigameResultRecord) {
+        self.init(id: r.id)
+        kindRaw = r.kind.rawValue
+        score = r.score
+        primary = r.primary
+        secondary = r.secondary
+        levelRaw = r.level?.rawValue
+        activeSeconds = r.activeSeconds
+        species = r.species
+        startedAt = r.startedAt
+        finishedAt = r.finishedAt
+        dayRaw = r.day.string
+        coins = r.coins
+        earned = r.earned
+        noteRaw = r.note.rawValue
+    }
+
+    var record: MinigameResultRecord? {
+        guard let kind = MinigameKind(rawValue: kindRaw), let day = DayKey(string: dayRaw) else { return nil }
+        return MinigameResultRecord(
+            id: id, kind: kind, score: score, primary: primary, secondary: secondary,
+            level: levelRaw.flatMap(MemoryLevel.init(rawValue:)), activeSeconds: activeSeconds, species: species,
+            startedAt: startedAt, finishedAt: finishedAt, day: day, coins: coins, earned: earned,
+            note: MinigameRewardNote(rawValue: noteRaw) ?? .belowThreshold
+        )
+    }
+}

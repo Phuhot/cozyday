@@ -23,7 +23,11 @@ extension AppStore {
             ownedItems: owned,
             equipped: equipped,
             focusSessions: focusSessions,
-            journal: journal
+            journal: journal,
+            petCare: petCare,
+            foodStock: foodStock,
+            careActions: careActions,
+            minigameResults: minigameResults
         )
     }
 
@@ -40,6 +44,10 @@ extension AppStore {
             try self.deleteAll(EquippedSlotModel.self)
             try self.deleteAll(FocusSessionModel.self)
             try self.deleteAll(JournalEntryModel.self)
+            try self.deleteAll(PetCareStateModel.self)
+            try self.deleteAll(FoodStockModel.self)
+            try self.deleteAll(CareActionModel.self)
+            try self.deleteAll(MinigameResultModel.self)
 
             self.context.insert(ProfileModel(record: document.profile))
             document.templates.forEach { self.context.insert(TaskTemplateModel(record: $0)) }
@@ -49,6 +57,12 @@ extension AppStore {
             document.equipped.forEach { self.context.insert(EquippedSlotModel(record: $0)) }
             document.focusSessions.forEach { self.context.insert(FocusSessionModel(record: $0)) }
             document.journal.forEach { self.context.insert(JournalEntryModel(record: $0)) }
+            // File cũ (bản 1) chưa có phần chăm sóc: dùng chỉ số mặc định dễ chịu, không tặng lại gói chào mừng.
+            let care = document.petCare ?? PetCareRecord(needs: .initial(at: self.now), welcomeGranted: true, createdAt: self.now)
+            self.context.insert(PetCareStateModel(record: care))
+            (document.foodStock ?? []).filter { $0.count > 0 }.forEach { self.context.insert(FoodStockModel(record: $0)) }
+            (document.careActions ?? []).forEach { self.context.insert(CareActionModel(record: $0)) }
+            (document.minigameResults ?? []).forEach { self.context.insert(MinigameResultModel(record: $0)) }
         }
         try reloadAll()
         // Phiên tập trung quá hạn trong bản sao lưu: chốt một lần (khóa sổ cái chống thưởng trùng).

@@ -177,18 +177,26 @@ enum CozySchemaV1: VersionedSchema {
 }
 
 enum CozyMigrationPlan: SchemaMigrationPlan {
-    static var schemas: [any VersionedSchema.Type] { [CozySchemaV1.self, CozySchemaV2.self] }
-    static var stages: [MigrationStage] { [v1ToV2] }
+    static var schemas: [any VersionedSchema.Type] { [CozySchemaV1.self, CozySchemaV2.self, CozySchemaV3.self] }
+    static var stages: [MigrationStage] { [v1ToV2, v2ToV3] }
 
     /// V1 → V2: chỉ thêm cột `subtasksJSON` (mặc định rỗng) → migration nhẹ, không đụng dữ liệu cũ.
     static let v1ToV2 = MigrationStage.lightweight(fromVersion: CozySchemaV1.self, toVersion: CozySchemaV2.self)
+
+    /// V2 → V3: chỉ thêm bảng mới (chăm thú cưng, Sân chơi) → migration nhẹ. Hồ sơ chăm sóc và gói đồ ăn
+    /// chào mừng được tạo một lần khi mở app (`AppStore.ensurePetCare`), không phải trong migration.
+    static let v2ToV3 = MigrationStage.lightweight(fromVersion: CozySchemaV2.self, toVersion: CozySchemaV3.self)
 }
 
-typealias ProfileModel = CozySchemaV2.ProfileModel
-typealias TaskTemplateModel = CozySchemaV2.TaskTemplateModel
-typealias TaskOccurrenceModel = CozySchemaV2.TaskOccurrenceModel
-typealias LedgerEntryModel = CozySchemaV2.LedgerEntryModel
-typealias OwnedItemModel = CozySchemaV2.OwnedItemModel
-typealias EquippedSlotModel = CozySchemaV2.EquippedSlotModel
-typealias FocusSessionModel = CozySchemaV2.FocusSessionModel
-typealias JournalEntryModel = CozySchemaV2.JournalEntryModel
+typealias ProfileModel = CozySchemaV3.ProfileModel
+typealias TaskTemplateModel = CozySchemaV3.TaskTemplateModel
+typealias TaskOccurrenceModel = CozySchemaV3.TaskOccurrenceModel
+typealias LedgerEntryModel = CozySchemaV3.LedgerEntryModel
+typealias OwnedItemModel = CozySchemaV3.OwnedItemModel
+typealias EquippedSlotModel = CozySchemaV3.EquippedSlotModel
+typealias FocusSessionModel = CozySchemaV3.FocusSessionModel
+typealias JournalEntryModel = CozySchemaV3.JournalEntryModel
+typealias PetCareStateModel = CozySchemaV3.PetCareStateModel
+typealias FoodStockModel = CozySchemaV3.FoodStockModel
+typealias CareActionModel = CozySchemaV3.CareActionModel
+typealias MinigameResultModel = CozySchemaV3.MinigameResultModel

@@ -308,6 +308,8 @@ struct RestoreConfirmSheet: View {
                     LabeledContent("Đồ đã có", value: "\(c.ownedItems)")
                     LabeledContent("Phiên tập trung", value: "\(c.focusSessions)")
                     LabeledContent("Nhật ký", value: "\(c.journal)")
+                    LabeledContent("Đồ ăn trong khay", value: document.foodStock == nil ? "chưa có (bản sao lưu cũ)" : "\(c.food)")
+                    LabeledContent("Lượt Sân chơi", value: "\(c.minigames)")
                 }
                 Section("Dữ liệu hiện tại") {
                     LabeledContent("Việc", value: "\(store.occurrences.filter { !$0.isRemoved }.count)")

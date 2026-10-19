@@ -49,7 +49,7 @@ final class UIState {
             return focus.kind == .focus ? .focus : .rest
         }
         if let t = lastCelebrationAt, Date().timeIntervalSince(t) < 30 * 60 { return .happy }
-        if let last = store.ledger.last(where: { $0.kind != .purchase }),
+        if let last = store.ledger.last(where: { !$0.kind.isSpending }),
            store.now.timeIntervalSince(last.createdAt) < 2 * 3600 {
             return .happy
         }
