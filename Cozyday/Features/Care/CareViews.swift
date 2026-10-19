@@ -224,6 +224,7 @@ struct FoodSheet: View {
     @Environment(AppStore.self) private var store
     @Environment(UIState.self) private var ui
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var tab: Tab = .tray
     /// Mã hành động đang chờ — giữ lại khi lưu lỗi để thử lại không làm hai lần.
     @State private var pendingFeed: (foodID: String, id: UUID)?
@@ -242,12 +243,15 @@ struct FoodSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: Spacing.l) {
-                    HStack {
-                        Picker("Mục", selection: $tab) {
-                            ForEach(Tab.allCases) { Text($0.label).tag($0) }
+                    ViewThatFits(in: .horizontal) {
+                        HStack {
+                            tabPicker
+                            CoinBadge(coins: store.wallet.coins)
                         }
-                        .pickerStyle(.segmented)
-                        CoinBadge(coins: store.wallet.coins)
+                        VStack(alignment: .leading, spacing: Spacing.s) {
+                            tabPicker
+                            CoinBadge(coins: store.wallet.coins)
+                        }
                     }
                     if let meal {
                         MealResultCard(show: meal, appearance: store.petAppearance, petName: store.profile.displayPetName)
@@ -281,6 +285,13 @@ struct FoodSheet: View {
             }
             #endif
         }
+    }
+
+    private var tabPicker: some View {
+        Picker("Mục", selection: $tab) {
+            ForEach(Tab.allCases) { Text($0.label).tag($0) }
+        }
+        .pickerStyle(.segmented)
     }
 
     // MARK: Khay
@@ -357,7 +368,7 @@ struct FoodSheet: View {
     }
 
     private func foodRow(_ food: FoodItem, trailing: AnyView, detail: String) -> some View {
-        HStack(spacing: Spacing.m) {
+        let info = HStack(spacing: Spacing.m) {
             FoodArtView(foodID: food.id)
                 .frame(width: 56, height: 56)
                 .padding(Spacing.xs)
@@ -368,8 +379,15 @@ struct FoodSheet: View {
                 Text(detail).font(Typography.caption).foregroundStyle(Palette.inkMuted)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            Spacer(minLength: Spacing.xs)
-            trailing
+            Spacer(minLength: 0)
+        }
+        return Group {
+            // Chữ rất lớn: nút xuống dòng riêng để tên và tác dụng không bị bóp.
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: Spacing.s) { info; trailing }
+            } else {
+                HStack(spacing: Spacing.s) { info; trailing }
+            }
         }
         .padding(Spacing.m)
         .background(Palette.surface, in: RoundedRectangle(cornerRadius: Radius.l, style: .continuous))

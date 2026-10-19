@@ -19,6 +19,7 @@ struct CornerView: View {
     @State private var foodTab: FoodSheet.Tab?
     @State private var cleaning: CleanSession?
     @State private var cuddle = CuddleProgress()
+    @State private var cuddleDoneAt: TimeInterval = 0
 
     /// Một lượt dọn nhà: mã hành động cố định cho cả lượt (thử lại sau lỗi lưu không làm hai lần).
     struct CleanSession: Equatable {
@@ -35,6 +36,7 @@ struct CornerView: View {
 
     var body: some View {
         NavigationStack {
+            ScrollViewReader { proxy in
             ScrollView {
                 VStack(alignment: .leading, spacing: Spacing.l) {
                     RoomPicker(selection: Binding(get: { room }, set: { roomRaw = $0.rawValue }), level: store.wallet.level)
@@ -55,6 +57,7 @@ struct CornerView: View {
                               onFeed: { foodTab = .tray },
                               onClean: startCleaning,
                               onCuddle: { finishCare(.cuddle, id: UUID()) })
+                        .id("needs")
 
                     HStack(spacing: Spacing.s) {
                         Button {
@@ -85,6 +88,13 @@ struct CornerView: View {
                 .padding(Spacing.l)
             }
             .scrollDisabled(cleaning != nil)
+            .task {
+                // Ảnh xem trước (Debug): cuộn tới thẻ chăm sóc.
+                guard PreviewMode.current == .care else { return }
+                try? await Task.sleep(nanoseconds: 700_000_000)
+                proxy.scrollTo("needs", anchor: .center)
+            }
+            }
             .cozyBackground()
             .navigationTitle("Góc nhỏ")
             .navigationDestination(isPresented: $showPlayground) { PlaygroundView() }
@@ -247,8 +257,12 @@ struct CornerView: View {
 
     /// Vuốt trên người thú cưng: cộng thời gian vuốt thật; đủ ~3,5 giây là xong một lượt nựng.
     private func stroked() {
-        if cuddle.stroke(at: ProcessInfo.processInfo.systemUptime) {
+        let now = ProcessInfo.processInfo.systemUptime
+        // Vừa nựng xong: nghỉ 2 giây trước khi tính lượt mới (tránh popup dồn dập khi vuốt liên tục).
+        guard now - cuddleDoneAt > 2 else { return }
+        if cuddle.stroke(at: now) {
             cuddle.reset()
+            cuddleDoneAt = now
             finishCare(.cuddle, id: UUID())
         }
     }

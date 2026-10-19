@@ -82,7 +82,9 @@ struct CoinBadge: View {
             Text("\(coins)")
                 .font(Typography.headline.monospacedDigit())
                 .foregroundStyle(Palette.ink)
+                .lineLimit(1)
         }
+        .fixedSize()
         .padding(.horizontal, Spacing.m)
         .padding(.vertical, Spacing.xs + 2)
         .background(Palette.surfaceMuted, in: Capsule())

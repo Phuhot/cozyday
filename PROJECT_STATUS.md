@@ -1,6 +1,6 @@
 # PROJECT_STATUS — Cozyday
 
-Cập nhật: 2026-10-18 (phiên 4) · Nhánh: `claude/ios-project-section-12-4bpxn7` · Repo: `Phuhot/cozyday` (private)
+Cập nhật: 2026-10-19 (phiên 5) · Nhánh: `claude/ios-project-section-12-4bpxn7` · Repo: `Phuhot/cozyday` (private)
 
 ## Mốc hiện tại
 
@@ -11,16 +11,23 @@ Cập nhật: 2026-10-18 (phiên 4) · Nhánh: `claude/ios-project-section-12-4b
 | **C — hoàn thiện 1.0** | Code xong: việc lặp, nhắc việc, focus timer, phòng/cửa hàng, nhật ký, thống kê, accessibility cơ bản. Build: **đạt**. Trên máy thật: **chưa xác minh**. |
 | **E — chiều sâu (sau phản hồi cài thử)** | Thú cưng: 5 hình dạng, 8 màu lông, 34 món trang phục, 3 giai đoạn lớn, animation, vuốt ve + lời thoại, tủ đồ mặc thử, chuyến đi mỗi ngày + Sổ ký ức. Lập kế hoạch: việc con, kéo đổi giờ, sự kiện app Lịch (chỉ đọc), gợi ý nhật ký, bài thở, thống kê tâm trạng. Build + test simulator: **đạt** (run #12). Trên máy thật: **chưa xác minh**. |
 | **F — phòng, bộ sưu tập, giao diện dễ thương (phiên 4)** | 5 không gian (phòng học, phòng ngủ, bếp, phòng tắm, vườn) mở theo cấp, 120+ đồ trang trí, tường & sàn/bầu trời đổi được · 11 loài, 11 màu lông, 80+ trang phục & phụ kiện (vị trí mới `back`) · Bộ sưu tập: 40 bộ phối sẵn, mua & mặc cả bộ · vuốt để nựng, giữ để nhấc & thả · 18 khuôn truyện theo loài/mùa, lời thoại theo loài · giao diện: thú cưng nói chuyện ở Hôm nay, popup thưởng có thú cưng, tuần của thú cưng, nút/thẻ mềm, nền họa tiết. Kiểm tra: run #14 (commit `7625744`) build Release + kiểm tra IPA **đạt**, **77/77 test** trên iOS Simulator **đạt**, 35 ảnh giao diện. Run #13 lỗi biên dịch (trùng tên `FlowChips`) → sửa ở run #14. Trên máy thật: **chưa xác minh**. |
+| **G — chăm thú cưng + Sân chơi (phiên 5)** | Nhu cầu No bụng/Nhà sạch/Vui vẻ (suy giảm theo mốc thời gian, sàn 20, tối đa 24 giờ, không hình phạt) · khay & cửa hàng đồ ăn (6 món, `food-purchase:<id>`), bữa cơ bản miễn phí, dọn nhà (chạm/vuốt hoặc Dọn nhanh), nựng (vuốt thật ~3,5 s hoặc nút); thưởng nhỏ `care:<id>` có hạn mức · Sân chơi: Nhảy Mây, Giỏ Quà, Lật Thẻ Bạn Nhỏ — chơi bằng thú cưng đang có (đổi loài đã sở hữu chỉ trong Sân chơi), kỷ lục, xu phụ ≤ 6/lượt, ≤ 20/ngày (`minigame:<sessionID>`), tạm dừng tự động, đếm ngược khi tiếp tục, lưu một lần + thử lại cùng sessionID · lược đồ **V3** (chỉ thêm bảng), sao lưu **bản 2** (đọc được bản 1). Kiểm tra: KẾT_QUẢ_RUN. Trên máy thật: **chưa xác minh**. |
 | **D — bàn giao** | Tài liệu cài đặt, xử lý sự cố, dữ liệu/quy tắc, checklist đã có. **Ảnh giao diện** chụp tự động trên iOS Simulator: [`docs/UI_PREVIEW_VI.md`](docs/UI_PREVIEW_VI.md). Còn chờ: kết quả cài thử trên iPhone. |
 
 ## Quyết định kỹ thuật
 
 - **Native Swift + SwiftUI**, iOS **17.0** (giả định — cần đối chiếu iPhone của bạn), chỉ iPhone, dọc.
-- **SwiftData** với `VersionedSchema` V1 → **V2** (thêm việc con, migration nhẹ) + `SchemaMigrationPlan`; `cloudKitDatabase: .none`; store riêng `Cozyday.store`.
+- **SwiftData** với `VersionedSchema` V1 → V2 (thêm việc con) → **V3** (thêm bảng chăm sóc + Sân chơi), đều migration nhẹ + `SchemaMigrationPlan`; `cloudKitDatabase: .none`; store riêng `Cozyday.store`.
   Không dùng relationship (tham chiếu bằng ID) để quy tắc xóa rõ ràng và sổ cái không bị cascade.
 - **Một lớp ghi duy nhất** `AppStore` (@MainActor): mọi thao tác = kiểm tra bằng Core → sửa model → `save()` một lần; lỗi → `rollback()`.
 - **Core thuần Foundation** (`Cozyday/Core`) biên dịch cả trong app và trong `Package.swift` để test trên Linux.
-- **Số dư xu/XP = tổng sổ cái** (không lưu số dư riêng). Khóa sổ cái: `task:<id>`, `focus:<id>`, `journal:<ngày>`, `purchase:<item>`.
+- **Số dư xu/XP = tổng sổ cái** (không lưu số dư riêng). Khóa sổ cái: `task:<id>`, `focus:<id>`, `journal:<ngày>`, `purchase:<item>`,
+  `food-purchase:<transactionID>` (đồ ăn mua lặp lại), `care:<careActionID>`, `minigame:<sessionID>`.
+- **Minigame vẽ bằng SwiftUI Canvas + CADisplayLink** (không SpriteKit): dùng lại `PetPainter`, vẽ thử được trên Linux;
+  bạn nhỏ được dựng sẵn thành ảnh một lần cho mỗi (ngoại hình, tư thế, cỡ) — bộ đệm tối đa 24 ảnh. Luật chơi, va chạm,
+  điểm, thưởng nằm trong `Core/Play` (thuần, có seed, test được); thời gian lượt = tổng các bước thời gian thật khi đang chơi
+  (khung khựng > 0,1 s chỉ tính 0,1 s), không đếm khung hình. Âm thanh tự tổng hợp (AVAudioEngine, phiên `.ambient`).
+- **Nhu cầu thú cưng** tính lười từ mốc `asOf` đã lưu (không timer nền); chỉ ghi khi có hành động chăm sóc.
 - **Giờ của việc = giờ đồng hồ địa phương** + khóa ngày `yyyy-MM-dd`; mốc tuyệt đối dùng `Date`. Phép tính ngày qua `Calendar`.
 - **Focus timer**: nguồn sự thật là mốc thời gian đã lưu; UI chỉ vẽ; thông báo cục bộ khi hết giờ; không background audio.
 - **Thông báo**: ID ổn định (`task.<uuid>`, `focus.end`, `journal.daily`), cửa sổ 7 ngày, tối đa 60 nhắc việc (giới hạn iOS 64).

@@ -46,6 +46,7 @@ struct PlaygroundView: View {
     @AppStorage("playground.sound") private var soundOn = true
     @AppStorage("playground.haptics") private var hapticsOn = true
     @AppStorage("playground.memoryLevel") private var levelRaw = MemoryLevel.easy.rawValue
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var active: PlayHostModel?
     @State private var pickingPet = false
 
@@ -111,25 +112,28 @@ struct PlaygroundView: View {
         let name = store.profile.displayPetName
         return CozyCard {
             VStack(alignment: .leading, spacing: Spacing.m) {
-                HStack(spacing: Spacing.m) {
-                    PetView(appearance: playAppearance, mood: .happy, name: name)
-                        .frame(width: 96, height: 96)
-                    VStack(alignment: .leading, spacing: Spacing.xs) {
-                        Text("Chơi cùng \(name)")
-                            .font(Typography.title)
-                            .foregroundStyle(Palette.ink)
-                            .fixedSize(horizontal: false, vertical: true)
-                        Text("Hình dạng: \(playAppearance.species.name)\(playSpecies == nil ? " (đang dùng)" : "")")
-                            .font(Typography.callout).foregroundStyle(Palette.inkMuted)
-                        Button {
-                            pickingPet = true
-                        } label: {
-                            Label("Đổi bạn chơi", systemImage: "arrow.left.arrow.right")
-                                .font(Typography.callout.weight(.semibold))
-                        }
-                        .frame(minHeight: HitTarget.min)
-                        .accessibilityHint("Chọn loài khác bạn đã có để chơi. Không đổi thú cưng ngoài Góc nhỏ.")
+                let pet = PetView(appearance: playAppearance, mood: .happy, name: name).frame(width: 96, height: 96)
+                let info = VStack(alignment: .leading, spacing: Spacing.xs) {
+                    Text("Chơi cùng \(name)")
+                        .font(Typography.title)
+                        .foregroundStyle(Palette.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text("Hình dạng: \(playAppearance.species.name)\(playSpecies == nil ? " (đang dùng)" : "")")
+                        .font(Typography.callout).foregroundStyle(Palette.inkMuted)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Button {
+                        pickingPet = true
+                    } label: {
+                        Label("Đổi bạn chơi", systemImage: "arrow.left.arrow.right")
+                            .font(Typography.callout.weight(.semibold))
                     }
+                    .frame(minHeight: HitTarget.min)
+                    .accessibilityHint("Chọn loài khác bạn đã có để chơi. Không đổi thú cưng ngoài Góc nhỏ.")
+                }
+                if dynamicTypeSize.isAccessibilitySize {
+                    VStack(alignment: .leading, spacing: Spacing.s) { pet; info }
+                } else {
+                    HStack(spacing: Spacing.m) { pet; info }
                 }
                 VStack(alignment: .leading, spacing: Spacing.xs) {
                     HStack {

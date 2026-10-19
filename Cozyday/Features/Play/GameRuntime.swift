@@ -158,6 +158,7 @@ final class GameSound {
             return
         }
         self.engine = engine
+        GameSound.activeCount += 1
         players = nodes
         for cue in GameCue.allCases { buffers[cue] = Self.synthesize(cue, format: format) }
     }
@@ -175,14 +176,23 @@ final class GameSound {
         node.play()
     }
 
+    /// Dừng hẳn (gọi nhiều lần không sao). Chỉ trả phiên âm thanh nếu chính lượt này đã mở nó,
+    /// để lệnh dọn trễ của lượt cũ không tắt tiếng của lượt mới (bấm "Chơi lại").
     func stop() {
+        guard let engine else { return }
         players.forEach { $0.stop() }
-        engine?.stop()
-        engine = nil
+        engine.stop()
+        self.engine = nil
         players = []
         buffers = [:]
-        if enabled { try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation) }
+        GameSound.activeCount -= 1
+        if GameSound.activeCount == 0 {
+            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        }
     }
+
+    /// Số bộ phát đang chạy (thường 0 hoặc 1; có thể 2 trong khoảnh khắc chuyển sang lượt mới).
+    private static var activeCount = 0
 
     /// Tiếng "bíp/bóp" mềm: sóng sin + họa âm nhẹ, đường bao tắt dần.
     static func synthesize(_ cue: GameCue, format: AVAudioFormat) -> AVAudioPCMBuffer? {
