@@ -21,7 +21,14 @@ for f in "$SRC"/*.mp4; do
   python3 - "$name" "$size" "/tmp/$name.pts" >> "$DEST/frames.txt" <<'PY'
 import sys
 name, size, path = sys.argv[1:4]
-t = [float(x) for x in open(path) if x.strip() and x.strip() != "N/A"]
+t = []
+for line in open(path):
+    v = line.strip().split(",")[0]
+    try:
+        t.append(float(v))
+    except ValueError:
+        pass
+t.sort()
 dur = t[-1] - t[0] if len(t) > 1 else 0
 gap = max((b - a for a, b in zip(t, t[1:])), default=0)
 fps = (len(t) - 1) / dur if dur > 0 else 0
