@@ -18,3 +18,7 @@ clip | kích thước | thời lượng (s) | số khung | fps trung bình | kho
 clean | 1206x2622 | 19.45 | 1603 | 82.4 | 1.82
 cuddle | 1206x2622 | 6.21 | 290 | 46.5 | 0.08
 today-tick | 1206x2622 | 4.67 | 174 | 37.0 | 0.64
+
+## Run 3
+clip | kích thước | thời lượng (s) | số khung | fps trung bình | khoảng hở lớn nhất (s)
+today-tick | 1206x2622 | 7.88 | 219 | 27.7 | 1.02
