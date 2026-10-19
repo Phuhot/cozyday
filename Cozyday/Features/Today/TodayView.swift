@@ -43,6 +43,8 @@ struct TodayView: View {
     @State private var sheet: TodaySheet?
     @State private var layoutMode: TodayLayoutMode?
     @State private var showDatePicker = false
+    /// Trailer (bản Debug): cuộn tới timeline.
+    @State private var trailerScroll = false
 
     private var day: DayKey { selectedDay ?? dayClock.today }
     private var effectiveLayout: TodayLayoutMode {
@@ -142,6 +144,7 @@ struct TodayView: View {
                                 .pickerStyle(.segmented)
                                 .fixedSize()
                             }
+                            .id("timeline")
                             if effectiveLayout == .timeline {
                                 DayTimeline(
                                     tasks: timed, isToday: isToday,
@@ -168,6 +171,10 @@ struct TodayView: View {
                 }
                 .onChange(of: day) { _, _ in
                     withAnimation { proxy.scrollTo("top", anchor: .top) }
+                }
+                .onChange(of: trailerScroll) { _, go in
+                    // Trailer (bản Debug): cuộn để thấy việc trễ giờ trên timeline trước khi tick.
+                    if go { withAnimation(.easeInOut(duration: 0.6)) { proxy.scrollTo("timeline", anchor: .top) } }
                 }
             }
             .cozyBackground()
@@ -270,7 +277,8 @@ struct TodayView: View {
             if let task = store.tasks(on: day).first(where: { !$0.checklist.isEmpty }) { sheet = .detail(task.id) }
         case .trailerToday:
             // Trailer: hoàn thành việc trễ giờ gần nhất, đúng như khi bấm nút tròn (lưu, thưởng, thú cưng vui).
-            try? await Task.sleep(nanoseconds: 1_400_000_000)
+            trailerScroll = true
+            try? await Task.sleep(nanoseconds: 1_600_000_000)
             let minute = store.calendar.minuteOfDay(store.now)
             let late = store.tasks(on: day).filter { $0.status == .open && ($0.startMinute ?? .max) < minute }
             if let task = late.max(by: { ($0.startMinute ?? 0) < ($1.startMinute ?? 0) }) {

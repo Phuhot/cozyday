@@ -45,6 +45,21 @@ def font(path, size, weight):
 
 
 # ---------- tiện ích ----------
+class Over:
+    """Vẽ bán trong suốt đúng cách: vẽ lên lớp trong suốt riêng rồi alpha_composite vào ảnh nền khi xong."""
+
+    def __init__(self, base):
+        self.base = base
+        self.layer = Image.new("RGBA", base.size, (0, 0, 0, 0))
+        self.d = ImageDraw.Draw(self.layer)
+
+    def __enter__(self):
+        return self.d
+
+    def __exit__(self, *a):
+        self.base.alpha_composite(self.layer)
+
+
 def clamp(x, a=0.0, b=1.0):
     return max(a, min(b, x))
 
@@ -137,7 +152,12 @@ def backdrop(stops, pattern=True):
     g = gradient(W, H, stops)
     if not pattern:
         return g
-    d = ImageDraw.Draw(g, "RGBA")
+    with Over(g) as d:
+        pattern_tiles(d)
+    return g
+
+
+def pattern_tiles(d):
     tile = 220
     for r in range(H // tile + 2):
         for c in range(W // tile + 2):
@@ -155,7 +175,6 @@ def backdrop(stops, pattern=True):
                 heart(d, ox + 60, oy + 70, 34, LAVENDER + (16,))
             else:
                 star(d, ox + 56, oy + 66, 20, 9, HONEY + (24,))
-    return g
 
 
 def heart(d, cx, cy, s, fill):
@@ -183,7 +202,7 @@ def sparkle4(d, cx, cy, s, fill):
 TITLE_FONT = font(F_BALOO, 96, "ExtraBold")
 
 
-def title_layer(text, t, t_in, t_out, y=230, size=96, color=INK, pill=True):
+def title_layer(text, t, t_in, t_out, y=205, size=96, color=INK, pill=True):
     """Chữ bật theo cụm (tách ở dấu chấm), mỗi cụm một dòng; ra bằng thu nhỏ + mờ."""
     if t < t_in or t > t_out + 0.2:
         return None
@@ -274,16 +293,6 @@ def fit_crop(cx, cy, w_norm, aspect, src_aspect):
     return (x0, y0, x0 + w_norm, y0 + h_norm)
 
 
-# Cảnh footage: (clip, giây bắt đầu trong clip, tốc độ). Mốc chỉnh theo footage thật (xem STORYBOARD.md).
-SHOTS = {}
-
-
-def shot_frame(key, t, t0):
-    name, start, speed = SHOTS[key]
-    c = clip(name)
-    return c.frame(start + (t - t0) * speed)
-
-
 # ---------- cảnh 1: thẻ việc rối → xếp gọn ----------
 CARDS = [  # (giờ, tên, màu) — đúng dữ liệu mẫu trong app (PreviewMode)
     ("7:00", "Đi bộ 30 phút", SAGE),
@@ -334,12 +343,12 @@ def scene_open(t):
     duck_bottom = lerp(1720, 1840, after)
     duck = seq("s1", int(t * T.FPS))
     # thẻ việc
-    d_tl = ImageDraw.Draw(cv, "RGBA")
     if t > snap0:
         k = ease_out((t - snap0 - 0.1) / 0.4)
         x = 175
         y0, y1 = timeline_pos(0)[1] - 40, timeline_pos(len(CARDS) - 1)[1] + 40
-        d_tl.line([(x, y0), (x, lerp(y0, y1, k))], fill=LAVENDER + (110,), width=6)
+        with Over(cv) as d_tl:
+            d_tl.line([(x, y0), (x, lerp(y0, y1, k))], fill=LAVENDER + (110,), width=6)
     cards_layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     for i in range(len(CARDS)):
         appear = 0.2 + i * 0.17
@@ -365,40 +374,61 @@ def scene_open(t):
         k = (t - T.TAP) / 0.6
         r = lerp(120, 900, ease_out(k))
         cx, cy = 540, duck_bottom - 450 * duck_scale
-        ImageDraw.Draw(cv, "RGBA").ellipse([cx - r, cy - r, cx + r, cy + r], outline=LAVENDER + (int(160 * (1 - k)),), width=14)
+        with Over(cv) as dr:
+            dr.ellipse([cx - r, cy - r, cx + r, cy + r], outline=LAVENDER + (int(160 * (1 - k)),), width=14)
     paste_scaled(cv, duck, 540, duck_bottom - duck.height * duck_scale / 2, duck_scale)
     cv.alpha_composite(cards_layer)
     return cv
 
 
-# ---------- cảnh 2: tick việc thật ----------
+# ---------- cảnh giao diện thật ----------
+# Mỗi cảnh: clip, giây bắt đầu trong clip, tốc độ, khung đặt trên màn (x0, y0, x1, y1),
+# vùng nhìn đầu/cuối trong footage (tâm x, tâm y, bề rộng — tỉ lệ 0–1), kiểu chuyển máy, nền.
+TALL = (60, 430, 1020, 1870)
+SQUARE = (60, 560, 1020, 1520)
+SHOT = {
+    "today": dict(clip="today-tick", start=4.6, speed=1.0, rect=TALL, a=(0.5, 0.55, 0.62), b=(0.5, 0.55, 1.0),
+                  move=(T.TICK + 0.35, 0.9), bg=[LAV_SOFT, CREAM]),
+    "wardrobe": dict(clip="wardrobe", start=8.15, speed=1.0, rect=TALL, a=(0.5, 0.4, 1.0), b=(0.5, 0.28, 0.5),
+                     move=(T.WARDROBE[0] + 0.4, 0.5), bg=[CREAM, LAV_SOFT]),
+    "feed": dict(clip="feed", start=5.7, speed=1.25, rect=SQUARE, a=(0.5, 0.33, 1.0), b=(0.5, 0.31, 0.9),
+                 move=(T.CARE_CUTS[0] + 0.5, 1.0), bg=[CREAM, (0xFB, 0xE7, 0xDE)]),
+    "cuddle": dict(clip="cuddle", start=5.0, speed=0.8, rect=SQUARE, a=(0.5, 0.46, 0.95), b=(0.45, 0.5, 0.7),
+                   move=(T.CARE_CUTS[1], 1.8), bg=[CREAM, (0xFB, 0xE7, 0xDE)]),
+    "clean": dict(clip="clean", start=7.0, speed=1.6, rect=SQUARE, a=(0.5, 0.36, 0.95), b=(0.5, 0.36, 0.88),
+                  move=(T.CARE_CUTS[2], 1.7), bg=[CREAM, (0xFB, 0xE7, 0xDE)]),
+    "jump": dict(clip="jump", start=12.8, speed=1.0, rect=TALL, a=(0.5, 0.52, 1.0), b=(0.5, 0.52, 0.94),
+                 move=(T.GAME_CUTS[0], 2.0), bg=[LAV_SOFT, (0xDC, 0xEC, 0xFA)]),
+    "basket": dict(clip="basket", start=16.55, speed=1.0, rect=TALL, a=(0.5, 0.7, 0.86), b=(0.5, 0.72, 0.8),
+                   move=(T.GAME_CUTS[1], 2.0), bg=[LAV_SOFT, (0xDC, 0xEC, 0xFA)]),
+    "memory": dict(clip="memory", start=13.25, speed=1.0, rect=TALL, a=(0.5, 0.55, 1.0), b=(0.5, 0.5, 1.0),
+                   move=(T.GAME_CUTS[2], 2.0), bg=[LAV_SOFT, (0xDC, 0xEC, 0xFA)]),
+}
+_bg = {}
+
+
+def ui_shot(key, t, t0):
+    c = SHOT[key]
+    bgk = tuple(map(tuple, c["bg"]))
+    if bgk not in _bg:
+        _bg[bgk] = backdrop(c["bg"])
+    cv = _bg[bgk].copy()
+    im = clip(c["clip"]).frame(c["start"] + (t - t0) * c["speed"])
+    m0, md = c["move"]
+    k = ease_in_out((t - m0) / md)
+    cx, cy, w = [lerp(x, y, k) for x, y in zip(c["a"], c["b"])]
+    r = c["rect"]
+    aspect = (r[2] - r[0]) / (r[3] - r[1])
+    ui_card(cv, im, fit_crop(cx, cy, w, aspect, im.width / im.height), r)
+    return cv
+
+
 def scene_today(t):
-    cv = backdrop([LAV_SOFT, CREAM])
-    im = shot_frame("today", t, T.TODAY[0])
-    src_aspect = im.width / im.height
-    # Cận cảnh dòng việc → lùi ra thấy popup thưởng và thú cưng.
-    k = ease_in_out((t - (T.TICK + 0.35)) / 0.9)
-    cx, cy = SHOT_FOCUS["today_row"]
-    w_norm = lerp(0.62, 1.0, k)
-    cy = lerp(cy, 0.5, k)
-    rect = (60, 420, 1020, 1840)
-    aspect = (rect[2] - rect[0]) / (rect[3] - rect[1])
-    ui_card(cv, im, fit_crop(cx, cy, w_norm, aspect, src_aspect), rect)
-    return cv
+    return ui_shot("today", t, T.TODAY[0])
 
 
-# ---------- tủ đồ thật ----------
 def scene_wardrobe(t):
-    cv = backdrop([CREAM, LAV_SOFT])
-    im = shot_frame("wardrobe", t, T.WARDROBE[0])
-    rect = (60, 420, 1020, 1840)
-    aspect = (rect[2] - rect[0]) / (rect[3] - rect[1])
-    # Zoom có định hướng vào thú cưng mặc thử, nối sang montage ảnh đại diện.
-    k = ease_in_out((t - T.WARDROBE[0] - 0.35) / 0.55)
-    fx, fy = SHOT_FOCUS["wardrobe_pet"]
-    w_norm = lerp(1.0, 0.42, k)
-    ui_card(cv, im, fit_crop(fx, lerp(0.42, fy, k), w_norm, aspect, im.width / im.height), rect)
-    return cv
+    return ui_shot("wardrobe", t, T.WARDROBE[0])
 
 
 # ---------- montage trang phục ----------
@@ -432,34 +462,16 @@ def scene_montage(t):
     return cv
 
 
-# ---------- cảnh 4: chăm sóc thật ----------
 def scene_care(t):
-    cv = backdrop([CREAM, (0xFB, 0xE7, 0xDE)])
     cuts = T.CARE_CUTS + [T.CARE[1]]
     idx = max(i for i in range(3) if t >= cuts[i])
-    key = ["feed", "cuddle", "clean"][idx]
-    im = shot_frame(key, t, cuts[idx])
-    rect = (60, 420, 1020, 1840)
-    aspect = (rect[2] - rect[0]) / (rect[3] - rect[1])
-    fx, fy, wn = SHOT_FOCUS[key]
-    # đẩy máy rất chậm vào chủ thể
-    k = (t - cuts[idx]) / (cuts[idx + 1] - cuts[idx])
-    ui_card(cv, im, fit_crop(fx, fy, wn * lerp(1.0, 0.92, k), aspect, im.width / im.height), rect)
-    return cv
+    return ui_shot(["feed", "cuddle", "clean"][idx], t, cuts[idx])
 
 
-# ---------- cảnh 5: gameplay thật ----------
 def scene_games(t):
-    cv = backdrop([LAV_SOFT, (0xDC, 0xEC, 0xFA)])
     cuts = T.GAME_CUTS + [T.GAMES[1]]
     idx = max(i for i in range(3) if t >= cuts[i])
-    key = ["jump", "basket", "memory"][idx]
-    im = shot_frame(key, t, cuts[idx])
-    rect = (60, 420, 1020, 1840)
-    aspect = (rect[2] - rect[0]) / (rect[3] - rect[1])
-    fx, fy, wn = SHOT_FOCUS[key]
-    ui_card(cv, im, fit_crop(fx, fy, wn, aspect, im.width / im.height), rect)
-    return cv
+    return ui_shot(["jump", "basket", "memory"][idx], t, cuts[idx])
 
 
 # ---------- cảnh 6: cao trào trong phòng ngủ ----------
@@ -468,7 +480,11 @@ PET_X = 0.35
 
 
 def particles(cv, t, origin, starts, seed=3):
-    d = ImageDraw.Draw(cv, "RGBA")
+    with Over(cv) as d:
+        _particles(d, t, origin, starts, seed)
+
+
+def _particles(d, t, origin, starts, seed):
     rnd = np.random.default_rng(seed)
     for s0 in starts:
         for j in range(9):
@@ -532,7 +548,6 @@ def end_card_bg():
     global _end_bg
     if _end_bg is None:
         _end_bg = backdrop([hexrgb(0xBFE3FF), hexrgb(0xDCD3FF), hexrgb(0xFFD1E3)], pattern=False)
-        d = ImageDraw.Draw(_end_bg, "RGBA")
         g = Image.new("L", (W, H), 0)
         ImageDraw.Draw(g).ellipse([90, 300, 990, 1200], fill=110)
         g = g.filter(ImageFilter.GaussianBlur(120))
@@ -552,11 +567,11 @@ SPARK_POS = [(160, 330), (930, 260), (120, 1180), (960, 1240), (250, 1700), (860
 
 def scene_end(t):
     cv = end_card_bg().copy()
-    d = ImageDraw.Draw(cv, "RGBA")
-    for j, (x, y) in enumerate(SPARK_POS):
-        tw = 0.5 + 0.5 * math.sin(t * 2.2 + j * 1.3)
-        a = int(200 * tw * clamp((t - T.ICON - 0.3) / 0.5))
-        sparkle4(d, x, y, 18 + 10 * tw, (255, 255, 255, a))
+    with Over(cv) as d:
+        for j, (x, y) in enumerate(SPARK_POS):
+            tw = 0.5 + 0.5 * math.sin(t * 2.2 + j * 1.3)
+            a = int(200 * tw * clamp((t - T.ICON - 0.3) / 0.5))
+            sparkle4(d, x, y, 18 + 10 * tw, (255, 255, 255, a))
     k = (t - T.ICON) / 0.5
     sc = back_out(k, 2.2) if k < 1 else 1.0
     icon = load(ICON).resize((ICON_SIZE, ICON_SIZE), Image.LANCZOS)
@@ -601,17 +616,17 @@ def scene_end(t):
         dn.text((x0 + cozy_w, 115), "Day", font=F_NAME, fill=INK, anchor="lm")
         paste_scaled(cv, name, W / 2, 1110, back_out(nk), clamp(nk * 3))
     # tagline hai cụm
-    for j, line in enumerate(["Một ngày gọn hơn.", "Một góc nhỏ vui hơn."]):
-        lk = ease_out((t - (T.ICON + 0.8 + j * 0.25)) / 0.35)
-        if lk > 0:
-            d.text((W / 2, 1270 + j * 78 + 30 * (1 - lk)), line, font=F_TAG, fill=INK + (int(255 * lk),), anchor="mm")
-    bk = ease_out((t - (T.ICON + 1.35)) / 0.35)
-    if bk > 0:
-        txt = "Bản dùng thử"
-        tw = F_SMALL.getlength(txt)
-        a = int(255 * bk)
-        d.rounded_rectangle([W / 2 - tw / 2 - 30, 1500, W / 2 + tw / 2 + 30, 1566], 33, fill=(255, 255, 255, int(170 * bk)))
-        d.text((W / 2, 1533), txt, font=F_SMALL, fill=INK_MUTED + (a,), anchor="mm")
+    with Over(cv) as d:
+        for j, line in enumerate(["Một ngày gọn hơn.", "Một góc nhỏ vui hơn."]):
+            lk = ease_out((t - (T.ICON + 0.8 + j * 0.25)) / 0.35)
+            if lk > 0:
+                d.text((W / 2, 1270 + j * 78 + 30 * (1 - lk)), line, font=F_TAG, fill=INK + (int(255 * lk),), anchor="mm")
+        bk = ease_out((t - (T.ICON + 1.35)) / 0.35)
+        if bk > 0:
+            txt = "Bản dùng thử"
+            tw = F_SMALL.getlength(txt)
+            d.rounded_rectangle([W / 2 - tw / 2 - 30, 1500, W / 2 + tw / 2 + 30, 1566], 33, fill=(255, 255, 255, int(170 * bk)))
+            d.text((W / 2, 1533), txt, font=F_SMALL, fill=INK_MUTED + (int(255 * bk),), anchor="mm")
     return cv
 
 
@@ -637,7 +652,8 @@ def coin_wipe(t, a_img_fn, b_img_fn):
     a = a_img_fn(t)
     b = b_img_fn(max(t, T.WARDROBE[0]))
     m = Image.new("L", (W, H), 0)
-    ImageDraw.Draw(m).rectangle([0, 0, int(x), H], fill=255)
+    if x > 0:
+        ImageDraw.Draw(m).rectangle([0, 0, int(x), H], fill=255)
     out = a.copy()
     out.paste(b, (0, 0), m)
     squash = abs(math.cos(k * math.pi * 3)) * 0.75 + 0.25
@@ -696,32 +712,6 @@ def render(t):
         if lay is not None:
             cv.alpha_composite(lay)
     return cv.convert("RGB")
-
-
-# Vùng quan tâm trong footage (tọa độ chuẩn hóa) — chỉnh theo footage thật.
-SHOT_FOCUS = {
-    "today_row": (0.5, 0.42),
-    "wardrobe_pet": (0.5, 0.2),
-    "feed": (0.5, 0.3, 1.0),
-    "cuddle": (0.5, 0.3, 1.0),
-    "clean": (0.5, 0.35, 1.0),
-    "jump": (0.5, 0.5, 1.0),
-    "basket": (0.5, 0.5, 1.0),
-    "memory": (0.5, 0.5, 1.0),
-}
-SHOTS.update({
-    "today": ("today-tick", 1.0, 1.0),
-    "wardrobe": ("wardrobe", 2.5, 1.0),
-    "feed": ("feed", 2.5, 1.0),
-    "cuddle": ("cuddle", 3.0, 0.8),
-    "clean": ("clean", 4.0, 1.6),
-    "jump": ("jump", 8.0, 1.0),
-    "basket": ("basket", 8.0, 1.0),
-    "memory": ("memory", 8.0, 1.0),
-})
-cfg = os.path.join(ROOT, "shots.py")
-if os.path.exists(cfg):
-    exec(open(cfg).read())
 
 
 def main():
