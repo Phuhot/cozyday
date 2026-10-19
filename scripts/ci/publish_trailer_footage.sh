@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Chạy trên Ubuntu: nén footage trailer (đã tải từ artifact vào build/trailer-footage) xuống 720 px chiều ngang,
+# Chạy trên Ubuntu: nén footage trailer (đã tải từ artifact vào build/trailer-footage) xuống 1080 px chiều ngang (đủ nét cho cảnh cận),
 # ghi thống kê khung hình của bản gốc, rồi commit vào marketing/trailer/footage trên đúng nhánh vừa quay.
 set -euo pipefail
 SRC="build/trailer-footage"
@@ -27,8 +27,8 @@ gap = max((b - a for a, b in zip(t, t[1:])), default=0)
 fps = (len(t) - 1) / dur if dur > 0 else 0
 print(f"{name} | {size} | {dur:.2f} | {len(t)} | {fps:.1f} | {gap:.2f}")
 PY
-  ffmpeg -v error -y -i "$f" -vf "scale=720:-2:flags=lanczos" -fps_mode passthrough \
-    -c:v libx264 -crf 19 -preset slow -pix_fmt yuv420p -an -movflags +faststart "$DEST/$name.mp4"
+  ffmpeg -v error -y -i "$f" -vf "scale=1080:-2:flags=lanczos" -fps_mode passthrough \
+    -c:v libx264 -crf 22 -preset slow -pix_fmt yuv420p -an -movflags +faststart "$DEST/$name.mp4"
 done
 cp "$SRC/device.txt" "$DEST/" 2>/dev/null || true
 cat "$DEST/frames.txt"
