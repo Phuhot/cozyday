@@ -71,7 +71,7 @@ Cập nhật: 2026-10-19 (phiên 5) · Nhánh: `claude/ios-project-section-12-4b
 | **Run #15** (commit `cd5b8a7`, phiên 5 — chăm thú cưng + Sân chơi): build Release + kiểm tra IPA | **Đạt** — `Cozyday-unsigned-ipa-run15`, 1,8 MB, `iphoneos/arm64`, MinimumOS 17.0, bundle `com.phuhot.cozyday`; 1 cảnh báo biên dịch (`Identifiable` của PlayHostModel) → đã sửa |
 | Run #15: unit test trên iOS Simulator | **Đạt 122/122** (gồm `CareAndPlayStoreTests`, migration V2 → V3 trên kho thật, sao lưu bản 1/bản 2) |
 | Run #15: 65 ảnh + 3 video gameplay trên simulator | **Đạt**, không màn nào crash. Claude đã xem từng ảnh mới: thấy bố cục chữ rất lớn bị chật ở Đồ ăn/Sân chơi → sửa ở run #16. Video nằm trong artifact (Claude không tải được do proxy chặn máy chủ lưu artifact) — thay vào đó đối chiếu ảnh chụp liên tiếp với giờ trong log: đồng hồ Giỏ Quà chạy 25 s trong 25,3 s thực; Nhảy Mây leo 3,6 m/s (≤ giới hạn vật lý ~4 m/s) |
-| **Run #16** (commit `366305c`, bản cuối phiên 5): build Release + kiểm tra IPA, 122/122 test simulator, chụp ảnh + video | **Đạt** — artifact `Cozyday-unsigned-ipa-run16`, `Cozyday-ui-screenshots-run16`, `Cozyday-gameplay-videos-run16`. Workflow *Core logic tests (Linux)* run #4 **đạt**. Job Ubuntu *Lưu ảnh giao diện vào docs/screenshots* **không khởi động** (thất bại sau 3–4 giây, không có log, chạy lại cũng vậy) — nghi hết phút/giới hạn chi tiêu GitHub Actions của repo private, **chưa xác minh** |
+| **Run #16** (commit `366305c`, bản cuối phiên 5): build Release + kiểm tra IPA, 122/122 test simulator, chụp ảnh + video | **Đạt** — artifact `Cozyday-unsigned-ipa-run16`, `Cozyday-ui-screenshots-run16`, `Cozyday-gameplay-videos-run16`. Workflow *Core logic tests (Linux)* run #4 **đạt**. Job Ubuntu *Lưu ảnh giao diện vào docs/screenshots* **không khởi động** — GitHub báo: *"The job was not started because recent account payments have failed or your spending limit needs to be increased"* (bạn chụp màn hình xác nhận). Không phải lỗi code |
 | `swift test` Core trên Linux (92 test, phiên 5) | **Đạt** — thêm 31 test: nhu cầu, đồ ăn, thưởng/hạn mức, máy trạng thái lượt chơi, 3 engine game (có "người chơi máy" leo > 200 m với 31 seed) |
 | Minigame vẽ thử trên Linux (mây, sao, quà, bùn/mây mưa có dấu ✕, giỏ, đồ ăn, bụi) | **Đạt**, đã xem bằng mắt |
 | Hình vẽ phòng/thú cưng kiểm tra kiểu + vẽ thử ra PNG trên Linux (SwiftUI giả xuất SVG, chỉ để xem trước — không thay cho build thật) | **Đạt**: mọi món đồ, 6 loài mới, 40 bộ phối đều đã được vẽ ra và xem bằng mắt |
@@ -110,8 +110,8 @@ Cập nhật: 2026-10-19 (phiên 5) · Nhánh: `claude/ios-project-section-12-4b
 7. Sân chơi chưa được chơi bằng tay trên máy thật: cảm giác kéo, độ khó, tốc độ khung hình (simulator CI không có GPU thật),
    âm thanh, rung, VoiceOver trong 2 game hành động (vuốt lên/xuống để di chuyển) đều **chưa xác minh**.
 8. Hạn mức theo ngày (chăm sóc, Sân chơi) đổi theo ngày giờ của máy — app offline không chống được việc chỉnh giờ (đã ghi trong tài liệu).
-9. Run #16: job lưu ảnh (Ubuntu) không khởi động được, không có log. Nếu do hết phút GitHub Actions (repo private, phút macOS
-   tính gấp 10), các lần build sau cũng có thể bị chặn — xem *Settings → Billing → Actions* của tài khoản GitHub.
+9. Run #16: job lưu ảnh (Ubuntu) bị GitHub chặn vì **thanh toán thất bại hoặc chạm giới hạn chi tiêu Actions** (đã xác nhận qua
+   thông báo của GitHub). Trước khi xử lý ở *Settings → Billing and plans*, mọi lần build mới (kể cả IPA) đều có thể bị chặn.
    Phần sửa bố cục chữ rất lớn (Đồ ăn, Sân chơi) ở run #16 vì vậy **chưa được Claude xem lại bằng ảnh**.
 
 ## Bước tiếp theo
