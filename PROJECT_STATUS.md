@@ -11,7 +11,7 @@ Cập nhật: 2026-10-19 (phiên 5) · Nhánh: `claude/ios-project-section-12-4b
 | **C — hoàn thiện 1.0** | Code xong: việc lặp, nhắc việc, focus timer, phòng/cửa hàng, nhật ký, thống kê, accessibility cơ bản. Build: **đạt**. Trên máy thật: **chưa xác minh**. |
 | **E — chiều sâu (sau phản hồi cài thử)** | Thú cưng: 5 hình dạng, 8 màu lông, 34 món trang phục, 3 giai đoạn lớn, animation, vuốt ve + lời thoại, tủ đồ mặc thử, chuyến đi mỗi ngày + Sổ ký ức. Lập kế hoạch: việc con, kéo đổi giờ, sự kiện app Lịch (chỉ đọc), gợi ý nhật ký, bài thở, thống kê tâm trạng. Build + test simulator: **đạt** (run #12). Trên máy thật: **chưa xác minh**. |
 | **F — phòng, bộ sưu tập, giao diện dễ thương (phiên 4)** | 5 không gian (phòng học, phòng ngủ, bếp, phòng tắm, vườn) mở theo cấp, 120+ đồ trang trí, tường & sàn/bầu trời đổi được · 11 loài, 11 màu lông, 80+ trang phục & phụ kiện (vị trí mới `back`) · Bộ sưu tập: 40 bộ phối sẵn, mua & mặc cả bộ · vuốt để nựng, giữ để nhấc & thả · 18 khuôn truyện theo loài/mùa, lời thoại theo loài · giao diện: thú cưng nói chuyện ở Hôm nay, popup thưởng có thú cưng, tuần của thú cưng, nút/thẻ mềm, nền họa tiết. Kiểm tra: run #14 (commit `7625744`) build Release + kiểm tra IPA **đạt**, **77/77 test** trên iOS Simulator **đạt**, 35 ảnh giao diện. Run #13 lỗi biên dịch (trùng tên `FlowChips`) → sửa ở run #14. Trên máy thật: **chưa xác minh**. |
-| **G — chăm thú cưng + Sân chơi (phiên 5)** | Nhu cầu No bụng/Nhà sạch/Vui vẻ (suy giảm theo mốc thời gian, sàn 20, tối đa 24 giờ, không hình phạt) · khay & cửa hàng đồ ăn (6 món, `food-purchase:<id>`), bữa cơ bản miễn phí, dọn nhà (chạm/vuốt hoặc Dọn nhanh), nựng (vuốt thật ~3,5 s hoặc nút); thưởng nhỏ `care:<id>` có hạn mức · Sân chơi: Nhảy Mây, Giỏ Quà, Lật Thẻ Bạn Nhỏ — chơi bằng thú cưng đang có (đổi loài đã sở hữu chỉ trong Sân chơi), kỷ lục, xu phụ ≤ 6/lượt, ≤ 20/ngày (`minigame:<sessionID>`), tạm dừng tự động, đếm ngược khi tiếp tục, lưu một lần + thử lại cùng sessionID · lược đồ **V3** (chỉ thêm bảng), sao lưu **bản 2** (đọc được bản 1). Kiểm tra: KẾT_QUẢ_RUN. Trên máy thật: **chưa xác minh**. |
+| **G — chăm thú cưng + Sân chơi (phiên 5)** | Nhu cầu No bụng/Nhà sạch/Vui vẻ (suy giảm theo mốc thời gian, sàn 20, tối đa 24 giờ, không hình phạt) · khay & cửa hàng đồ ăn (6 món, `food-purchase:<id>`), bữa cơ bản miễn phí, dọn nhà (chạm/vuốt hoặc Dọn nhanh), nựng (vuốt thật ~3,5 s hoặc nút); thưởng nhỏ `care:<id>` có hạn mức · Sân chơi: Nhảy Mây, Giỏ Quà, Lật Thẻ Bạn Nhỏ — chơi bằng thú cưng đang có (đổi loài đã sở hữu chỉ trong Sân chơi), kỷ lục, xu phụ ≤ 6/lượt, ≤ 20/ngày (`minigame:<sessionID>`), tạm dừng tự động, đếm ngược khi tiếp tục, lưu một lần + thử lại cùng sessionID · lược đồ **V3** (chỉ thêm bảng), sao lưu **bản 2** (đọc được bản 1). Kiểm tra: **run #16** (commit `366305c`) build Release + kiểm tra IPA **đạt**, **122/122 test** trên iOS Simulator **đạt**, 92 test Core trên Linux (CI) **đạt**, chụp 65 ảnh + 3 video **đạt** (không crash). Ảnh trong repo là của run #15; ảnh run #16 (sau khi sửa bố cục chữ lớn) chỉ nằm trong artifact vì job lưu ảnh không chạy được — xem "Vấn đề còn mở". Trên máy thật: **chưa xác minh**. |
 | **D — bàn giao** | Tài liệu cài đặt, xử lý sự cố, dữ liệu/quy tắc, checklist đã có. **Ảnh giao diện** chụp tự động trên iOS Simulator: [`docs/UI_PREVIEW_VI.md`](docs/UI_PREVIEW_VI.md). Còn chờ: kết quả cài thử trên iPhone. |
 
 ## Quyết định kỹ thuật
@@ -68,6 +68,12 @@ Cập nhật: 2026-10-19 (phiên 5) · Nhánh: `claude/ios-project-section-12-4b
 | **Run #10–#12**: thú cưng mới + việc con/lịch/bài thở — build Release, kiểm tra IPA, unit test, chụp 27 ảnh | **Đạt** ở run #12 (commit `882099a`): **68/68 test** trên iOS Simulator, gồm test migration V1→V2 trên kho thật và test tủ đồ/chuyến đi. Run #10 lỗi biên dịch (`switch` thiếu case) → sửa ở run #11 |
 | **Run #13–#14**: phòng, bộ sưu tập, loài mới — build Release, kiểm tra IPA, unit test, chụp 35 ảnh | **Đạt** ở run #14: **77/77 test** trên iOS Simulator (gồm mua cả bộ "tất cả hoặc không", khóa đồ theo cấp mở phòng). Run #13 lỗi biên dịch → đã sửa |
 | `swift test` Core trên Linux (61 test) | **Đạt** (phiên 4) |
+| **Run #15** (commit `cd5b8a7`, phiên 5 — chăm thú cưng + Sân chơi): build Release + kiểm tra IPA | **Đạt** — `Cozyday-unsigned-ipa-run15`, 1,8 MB, `iphoneos/arm64`, MinimumOS 17.0, bundle `com.phuhot.cozyday`; 1 cảnh báo biên dịch (`Identifiable` của PlayHostModel) → đã sửa |
+| Run #15: unit test trên iOS Simulator | **Đạt 122/122** (gồm `CareAndPlayStoreTests`, migration V2 → V3 trên kho thật, sao lưu bản 1/bản 2) |
+| Run #15: 65 ảnh + 3 video gameplay trên simulator | **Đạt**, không màn nào crash. Claude đã xem từng ảnh mới: thấy bố cục chữ rất lớn bị chật ở Đồ ăn/Sân chơi → sửa ở run #16. Video nằm trong artifact (Claude không tải được do proxy chặn máy chủ lưu artifact) — thay vào đó đối chiếu ảnh chụp liên tiếp với giờ trong log: đồng hồ Giỏ Quà chạy 25 s trong 25,3 s thực; Nhảy Mây leo 3,6 m/s (≤ giới hạn vật lý ~4 m/s) |
+| **Run #16** (commit `366305c`, bản cuối phiên 5): build Release + kiểm tra IPA, 122/122 test simulator, chụp ảnh + video | **Đạt** — artifact `Cozyday-unsigned-ipa-run16`, `Cozyday-ui-screenshots-run16`, `Cozyday-gameplay-videos-run16`. Workflow *Core logic tests (Linux)* run #4 **đạt**. Job Ubuntu *Lưu ảnh giao diện vào docs/screenshots* **không khởi động** (thất bại sau 3–4 giây, không có log, chạy lại cũng vậy) — nghi hết phút/giới hạn chi tiêu GitHub Actions của repo private, **chưa xác minh** |
+| `swift test` Core trên Linux (92 test, phiên 5) | **Đạt** — thêm 31 test: nhu cầu, đồ ăn, thưởng/hạn mức, máy trạng thái lượt chơi, 3 engine game (có "người chơi máy" leo > 200 m với 31 seed) |
+| Minigame vẽ thử trên Linux (mây, sao, quà, bùn/mây mưa có dấu ✕, giỏ, đồ ăn, bụi) | **Đạt**, đã xem bằng mắt |
 | Hình vẽ phòng/thú cưng kiểm tra kiểu + vẽ thử ra PNG trên Linux (SwiftUI giả xuất SVG, chỉ để xem trước — không thay cho build thật) | **Đạt**: mọi món đồ, 6 loài mới, 40 bộ phối đều đã được vẽ ra và xem bằng mắt |
 | Cài IPA bằng Sideloadly lên iPhone thật (bản đầu) | Bạn báo **đã cài thử được** (phiên 3) — chưa có checklist chi tiết |
 | Mở độc lập khi tắt PC, offline, dữ liệu sau khi tắt/mở app | **Chưa xác minh** |
@@ -101,13 +107,21 @@ Cập nhật: 2026-10-19 (phiên 5) · Nhánh: `claude/ios-project-section-12-4b
 4. Trang sideloadly.io không truy cập được từ môi trường của Claude → yêu cầu Windows/iTunes/auto-refresh trong tài liệu cần bạn đối chiếu trang chính thức.
 5. Cử chỉ nhấc/nựng thú cưng nằm trong ScrollView của Góc nhỏ: cần thử trên máy thật xem có tranh chấp với cuộn trang không.
 6. Ảnh giao diện chỉ chụp trên iOS 26 (runner không có sẵn simulator iOS 17/18). Giao diện iOS 17–18 (không có Liquid Glass) chưa được xem.
+7. Sân chơi chưa được chơi bằng tay trên máy thật: cảm giác kéo, độ khó, tốc độ khung hình (simulator CI không có GPU thật),
+   âm thanh, rung, VoiceOver trong 2 game hành động (vuốt lên/xuống để di chuyển) đều **chưa xác minh**.
+8. Hạn mức theo ngày (chăm sóc, Sân chơi) đổi theo ngày giờ của máy — app offline không chống được việc chỉnh giờ (đã ghi trong tài liệu).
+9. Run #16: job lưu ảnh (Ubuntu) không khởi động được, không có log. Nếu do hết phút GitHub Actions (repo private, phút macOS
+   tính gấp 10), các lần build sau cũng có thể bị chặn — xem *Settings → Billing → Actions* của tài khoản GitHub.
+   Phần sửa bố cục chữ rất lớn (Đồ ăn, Sân chơi) ở run #16 vì vậy **chưa được Claude xem lại bằng ảnh**.
 
 ## Bước tiếp theo
 
 1. Bạn: trả lời 3 câu hỏi (iPhone + iOS; Windows 10/11; GitHub/Sideloadly + private/public).
 2. Bạn: tải artifact IPA mới nhất → cài bằng Sideloadly → chạy checklist `docs/TEST_CHECKLIST_VI.md` → gửi kết quả/ảnh lỗi.
-3. Claude: sửa lỗi theo phản hồi thiết bị; tinh chỉnh giao diện theo ảnh chụp từ iPhone thật của bạn.
+3. Bạn: thử các mục "Chăm thú cưng" và "Sân chơi" trong checklist (nhất là kéo một tay, tạm dừng khi vuốt về màn hình chính, hạn mức 20 xu).
+4. Claude: sửa lỗi theo phản hồi thiết bị; chỉnh độ khó/độ nhạy kéo của minigame theo cảm nhận của bạn.
 
 ## Backlog sau 1.0 (không làm trong bản này)
 
-Widget · Live Activities · đồng bộ iCloud · SideStore · lưu nhiều bộ phối của riêng bạn · xuất lịch (.ics) · mã hóa file sao lưu.
+Widget · Live Activities · đồng bộ iCloud · SideStore · lưu nhiều bộ phối của riêng bạn · xuất lịch (.ics) · mã hóa file sao lưu ·
+nhạc nền tự sáng tác cho Sân chơi · thêm minigame · kéo món ăn thả vào thú cưng (hiện chỉ có nút Cho ăn).

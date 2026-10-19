@@ -39,6 +39,9 @@ GitHub Actions mở app trên **iPhone ảo (iOS Simulator)** của máy macOS, 
 
 ## Chăm thú cưng
 
+Ảnh dưới đây chụp ở run #15. Run #16 có sửa bố cục ở cỡ chữ rất lớn (Đồ ăn, Sân chơi); ảnh run #16 nằm trong artifact
+`Cozyday-ui-screenshots-run16` nhưng chưa được đưa vào thư mục này.
+
 | | | |
 |---|---|---|
 | ![Cần chăm](screenshots/25-care.jpg) Góc nhỏ khi đói, buồn chán, nhà hơi bẩn | ![Mua đồ ăn](screenshots/26-food.jpg) Cửa hàng đồ ăn | ![Cho ăn](screenshots/27-feed.jpg) Cho ăn — có thưởng |
