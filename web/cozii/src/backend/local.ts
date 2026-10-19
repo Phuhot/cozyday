@@ -9,7 +9,7 @@ const TX_KEY = 'cozii:local:tx:v1'
 const LAST_SEEN = 'cozii:local:lastSeen'
 
 export function uuid(): string {
-  if (globalThis.crypto?.randomUUID) return crypto.randomUUID()
+  if (typeof globalThis.crypto?.randomUUID === "function") return crypto.randomUUID()
   const b = new Uint8Array(16)
   globalThis.crypto.getRandomValues(b)
   b[6] = (b[6] & 0x0f) | 0x40

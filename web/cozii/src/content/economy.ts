@@ -48,6 +48,8 @@ export const ECONOMY = {
     initial: { fullness: 80, cleanliness: 85, happiness: 80 },
     cleanTo: 100,
     cuddleGain: 35,
+    /** Thời gian vuốt thật (giây) để hoàn thành một lượt nựng; nghỉ quá 0,25 giây giữa hai lần vuốt thì không cộng. */
+    cuddleSeconds: 3.5,
     playGain: 15,
     freeMealTo: 55,
     fullEnough: 95,
