@@ -38,6 +38,8 @@ struct PetView: View {
     var onPickUp: ((CGSize) -> Void)?
     /// Thả xuống: độ dời cuối cùng.
     var onDrop: ((CGSize) -> Void)?
+    /// Mỗi lần ngón tay vuốt trên người (dùng tính tiến độ nựng của vòng chăm sóc).
+    var onStroke: (() -> Void)?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var start = Date()
@@ -133,6 +135,7 @@ struct PetView: View {
 
     /// Cộng dồn quãng vuốt: cứ ~60pt là thêm tim và rung nhẹ.
     private func stroke(by distance: CGFloat) {
+        onStroke?()
         pettedUntil = Date().addingTimeInterval(0.9)
         strokeDistance += distance
         guard strokeDistance > 60 else { return }

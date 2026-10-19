@@ -98,7 +98,7 @@ jobs:
     name: Unit test + ảnh giao diện trên iOS Simulator
     if: github.event_name == 'push' || inputs.run_tests || inputs.ui_preview
     runs-on: macos-26
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - name: Lấy source
         uses: actions/checkout@v7
@@ -129,6 +129,14 @@ jobs:
           name: Cozyday-ui-screenshots-run${{ github.run_number }}
           path: build/screenshots/
           if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload video gameplay (simulator, bản Debug tự chơi)
+        uses: actions/upload-artifact@v7
+        with:
+          name: Cozyday-gameplay-videos-run${{ github.run_number }}
+          path: build/output/videos/
+          if-no-files-found: warn
           retention-days: 14
 
       - name: Upload bản .app cho simulator

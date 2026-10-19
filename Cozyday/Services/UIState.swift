@@ -49,6 +49,8 @@ final class UIState {
             return focus.kind == .focus ? .focus : .rest
         }
         if let t = lastCelebrationAt, Date().timeIntervalSince(t) < 30 * 60 { return .happy }
+        // Đang cần chăm (đói, buồn chán, nhà bẩn): nét mặt mong được chăm — không khóc, không giận.
+        if store.currentNeeds.mostUrgent != nil { return .low }
         if let last = store.ledger.last(where: { !$0.kind.isSpending }),
            store.now.timeIntervalSince(last.createdAt) < 2 * 3600 {
             return .happy

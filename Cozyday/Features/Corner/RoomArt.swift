@@ -37,6 +37,7 @@ struct RoomView: View {
     var haptics = true
     var speech: ((Int) -> String)?
     var onTapSlot: ((ItemSlot) -> Void)?
+    var onStroke: (() -> Void)?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.colorScheme) private var colorScheme
@@ -103,7 +104,8 @@ struct RoomView: View {
                                 home = x
                                 drag = nil
                                 start = Date()
-                            })
+                            },
+                            onStroke: onStroke)
                         .frame(width: size, height: size)
                         .offset(x: w * spot.x + (drag?.width ?? 0),
                                 y: h * 0.86 - size + min(max(drag?.height ?? 0, -h * 0.5), h * 0.08))

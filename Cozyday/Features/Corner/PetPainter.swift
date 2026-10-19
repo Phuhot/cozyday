@@ -482,7 +482,7 @@ struct PetPainter {
                     ctx.circle(c.x + 1 * f, c.y + 1.2 * f, 0.55 * f, .white)
                 }
                 // Lông mày hơi xếch lên ở giữa.
-                ctx.strokePath(eyeLine.opacity(0.8), width: 1.5) { p in
+                ctx.strokePath(line.opacity(0.8), width: 1.5) { p in
                     p.move(to: CGPoint(x: left.x - 4, y: left.y - 6)); p.addLine(to: CGPoint(x: left.x + 3, y: left.y - 7.8))
                     p.move(to: CGPoint(x: right.x + 4, y: right.y - 6)); p.addLine(to: CGPoint(x: right.x - 3, y: right.y - 7.8))
                 }

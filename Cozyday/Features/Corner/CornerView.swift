@@ -15,6 +15,21 @@ struct CornerView: View {
     @State private var showMemories = false
     @State private var editingName = false
     @State private var nameDraft = ""
+    @State private var showPlayground = false
+    @State private var foodTab: FoodSheet.Tab?
+    @State private var cleaning: CleanSession?
+    @State private var cuddle = CuddleProgress()
+
+    /// Một lượt dọn nhà: mã hành động cố định cho cả lượt (thử lại sau lỗi lưu không làm hai lần).
+    struct CleanSession: Equatable {
+        let id = UUID()
+        let spots: [(x: Double, y: Double, kind: Int)]
+        var cleared: Set<Int> = []
+        var saveFailed = false
+
+        static func == (a: CleanSession, b: CleanSession) -> Bool { a.id == b.id && a.cleared == b.cleared && a.saveFailed == b.saveFailed }
+        var isDone: Bool { cleared.count >= spots.count }
+    }
 
     private var room: RoomKind { RoomKind(rawValue: roomRaw) ?? .study }
 
@@ -26,9 +41,20 @@ struct CornerView: View {
 
                     roomArea
 
-                    Text("Chạm để vuốt ve, vuốt qua lại để nựng, giữ rồi kéo để đưa \(store.profile.displayPetName) sang chỗ khác. Chạm một ô trong phòng để chọn đồ.")
-                        .font(Typography.caption)
-                        .foregroundStyle(Palette.inkMuted)
+                    if let cleaning {
+                        cleanBar(cleaning)
+                    } else {
+                        Text("Chạm để vuốt ve, vuốt qua lại để nựng, giữ rồi kéo để đưa \(store.profile.displayPetName) sang chỗ khác. Chạm một ô trong phòng để chọn đồ.")
+                            .font(Typography.caption)
+                            .foregroundStyle(Palette.inkMuted)
+                    }
+
+                    PlaygroundEntryCard { showPlayground = true }
+
+                    NeedsCard(cuddleFraction: cuddle.fraction,
+                              onFeed: { foodTab = .tray },
+                              onClean: startCleaning,
+                              onCuddle: { finishCare(.cuddle, id: UUID()) })
 
                     HStack(spacing: Spacing.s) {
                         Button {
@@ -58,8 +84,14 @@ struct CornerView: View {
                 }
                 .padding(Spacing.l)
             }
+            .scrollDisabled(cleaning != nil)
             .cozyBackground()
             .navigationTitle("Góc nhỏ")
+            .navigationDestination(isPresented: $showPlayground) { PlaygroundView() }
+            .sheet(item: $foodTab) { tab in
+                FoodSheet(initialTab: tab)
+                    .presentationDetents([.large])
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) { SettingsButton() }
             }
@@ -90,6 +122,15 @@ struct CornerView: View {
                 default: roomRaw = RoomKind.study.rawValue
                 }
                 try? await Task.sleep(nanoseconds: 600_000_000)
+                switch screen {
+                case .food: foodTab = .shop
+                case .feed, .careCapped: foodTab = .tray
+                case .clean:
+                    startCleaning()
+                    cleaning?.cleared = [0, 2, 4]
+                case .playground, .pickPet, .tutorial, .jump, .basket, .memory, .pause, .result, .resultCapped: showPlayground = true
+                default: break
+                }
                 switch screen {
                 case .shop: shopTarget = ShopTarget(room: .bedroom, slot: .bed)
                 case .wardrobe: showWardrobe = true
@@ -123,8 +164,23 @@ struct CornerView: View {
                 bounceTrigger: ui.celebrateCounter,
                 haptics: store.profile.hapticsEnabled,
                 speech: { tap in PetDialogue.line(for: store.petDialogueContext(today: dayClock.today), tap: tap, species: store.petAppearance.species) },
-                onTapSlot: { slot in shopTarget = ShopTarget(room: room, slot: slot) }
+                onTapSlot: { slot in shopTarget = ShopTarget(room: room, slot: slot) },
+                onStroke: stroked
             )
+            .allowsHitTesting(cleaning == nil)
+            .overlay {
+                if let session = cleaning {
+                    CleanModeLayer(spots: session.spots,
+                                   cleared: Binding(get: { cleaning?.cleared ?? [] }, set: { cleaning?.cleared = $0 }),
+                                   haptics: store.profile.hapticsEnabled)
+                } else {
+                    DustLayer(cleanliness: store.currentNeeds.cleanliness)
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: Radius.xl, style: .continuous))
+            .onChange(of: cleaning?.cleared.count) { _, _ in
+                if let session = cleaning, session.isDone, !session.saveFailed { saveCleaning() }
+            }
         } else {
             RoomView(room: room, equipped: [:], appearance: store.petAppearance, petMood: .rest,
                      petName: store.profile.displayPetName, bounceTrigger: 0)
@@ -147,6 +203,92 @@ struct CornerView: View {
                     .padding(Spacing.xl)
                 }
                 .accessibilityElement(children: .combine)
+        }
+    }
+
+    // MARK: Chăm sóc
+
+    private func startCleaning() {
+        let level = store.wallet.level
+        guard room.isUnlocked(level: level) else { roomRaw = RoomKind.study.rawValue; return }
+        let c = store.currentNeeds.cleanliness
+        guard c < CareConfig.cleanEnough else {
+            ui.errorMessage = CareError.alreadyClean.errorDescription
+            return
+        }
+        let count = CleanPlan.spotCount(cleanliness: c)
+        cleaning = CleanSession(spots: CleanPlan.spots(count: count, seed: UInt64.random(in: 1...UInt64.max)))
+    }
+
+    private func saveCleaning() {
+        guard let session = cleaning else { return }
+        if finishCare(.clean, id: session.id) {
+            cleaning = nil
+        } else {
+            cleaning?.saveFailed = true
+        }
+    }
+
+    /// Lưu một hành động chăm sóc; chỉ báo kết quả khi lưu thành công.
+    @discardableResult
+    private func finishCare(_ kind: CareActionKind, id: UUID) -> Bool {
+        do {
+            let record = try store.performCare(kind, actionID: id)
+            let name = store.profile.displayPetName
+            let line = CareDialogue.done(kind, petName: name, alreadyFine: record.note == .notNeeded)
+            let note = CareDialogue.rewardNote(record)
+            ui.showReward(note.isEmpty ? line : "\(line)\n\(note)")
+            return true
+        } catch {
+            ui.errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            return false
+        }
+    }
+
+    /// Vuốt trên người thú cưng: cộng thời gian vuốt thật; đủ ~3,5 giây là xong một lượt nựng.
+    private func stroked() {
+        if cuddle.stroke(at: ProcessInfo.processInfo.systemUptime) {
+            cuddle.reset()
+            finishCare(.cuddle, id: UUID())
+        }
+    }
+
+    private func cleanBar(_ session: CleanSession) -> some View {
+        CozyCard(padding: Spacing.m) {
+            VStack(alignment: .leading, spacing: Spacing.s) {
+                HStack {
+                    Label("Dọn nhà: \(session.cleared.count)/\(session.spots.count)", systemImage: "sparkles")
+                        .font(Typography.headline)
+                        .foregroundStyle(Palette.ink)
+                    Spacer()
+                    ProgressView(value: Double(session.cleared.count), total: Double(max(1, session.spots.count)))
+                        .tint(Palette.sage)
+                        .frame(maxWidth: 110)
+                        .accessibilityHidden(true)
+                }
+                Text(session.saveFailed ? "Chưa lưu được. Thử lưu lại nhé — không bị tính hai lần."
+                     : "Chạm hoặc vuốt qua bụi, lá khô và giấy vụn. Dọn ở đây là dọn cả nhà.")
+                    .font(Typography.caption)
+                    .foregroundStyle(Palette.inkMuted)
+                    .fixedSize(horizontal: false, vertical: true)
+                HStack(spacing: Spacing.s) {
+                    if session.saveFailed {
+                        Button("Thử lưu lại") { saveCleaning() }
+                            .buttonStyle(PrimaryButtonStyle(color: Palette.sage))
+                    } else {
+                        Button {
+                            cleaning?.cleared = Set(session.spots.indices)
+                        } label: {
+                            Label("Dọn nhanh", systemImage: "wand.and.stars").frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(PrimaryButtonStyle(color: Palette.sage))
+                        .accessibilityHint("Dọn hết bụi một lần, nhận kết quả như khi tự tay dọn")
+                    }
+                    Button("Thôi") { cleaning = nil }
+                        .buttonStyle(SoftButtonStyle(tint: Palette.inkMuted))
+                        .accessibilityHint("Thoát chế độ dọn, không lưu")
+                }
+            }
         }
     }
 
@@ -192,7 +334,7 @@ struct CornerView: View {
                 }
                 .font(Typography.callout.weight(.semibold))
                 .foregroundStyle(Palette.sage)
-                Text("\(store.profile.displayPetName) \(ui.petMood(store: store).label). Thú cưng không bao giờ ốm hay giận khi bạn nghỉ vài ngày.")
+                Text("\(store.profile.displayPetName) \(ui.petMood(store: store).label). Thú cưng không bao giờ ốm, bỏ đi hay giận khi bạn bận vài ngày.")
                     .font(Typography.callout)
                     .foregroundStyle(Palette.ink)
             }

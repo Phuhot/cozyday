@@ -22,6 +22,14 @@ enum StoreError: Error, LocalizedError, Equatable {
     }
 }
 
+extension Error {
+    /// Lỗi ghi đĩa tạm thời (dữ liệu đã được rollback) — có thể thử lại với cùng mã giao dịch/lượt chơi.
+    var isSaveFailure: Bool {
+        if case .saveFailed? = self as? StoreError { return true }
+        return false
+    }
+}
+
 /// Nơi duy nhất đọc/ghi dữ liệu của app. Chạy trên main actor nên các thao tác được tuần tự hóa:
 /// bấm nhanh hai lần không thể tạo hai giao dịch song song.
 ///

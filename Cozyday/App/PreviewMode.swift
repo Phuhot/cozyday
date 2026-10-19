@@ -27,6 +27,22 @@ enum PreviewScreen: String, CaseIterable {
     case garden
     case collection
     case look
+    // Chăm thú cưng
+    case care
+    case food
+    case feed
+    case clean
+    case careCapped
+    // Sân chơi
+    case playground
+    case pickPet
+    case tutorial
+    case jump
+    case basket
+    case memory
+    case pause
+    case result
+    case resultCapped
 }
 
 /// Chế độ xem trước chỉ có trong bản Debug: dữ liệu mẫu nằm trong bộ nhớ, không đụng tới kho dữ liệu thật.
@@ -59,10 +75,13 @@ extension PreviewMode {
         let ui = UIState()
         if screen != .onboarding {
             try seed(store, clock: clock, activeFocus: screen == .focus, adventureReady: screen == .adventure)
+            try seedCareAndPlay(store, screen: screen)
         }
         let router = AppRouter.shared
         switch screen {
-        case .corner, .shop, .wardrobe, .adventure, .memories, .bedroom, .kitchen, .bath, .garden, .collection, .look:
+        case .corner, .shop, .wardrobe, .adventure, .memories, .bedroom, .kitchen, .bath, .garden, .collection, .look,
+             .care, .food, .feed, .clean, .careCapped,
+             .playground, .pickPet, .tutorial, .jump, .basket, .memory, .pause, .result, .resultCapped:
             router.selectedTab = .corner
         case .journal, .breathing, .journalEditor: router.selectedTab = .journal
         case .progress: router.selectedTab = .progress
@@ -71,6 +90,51 @@ extension PreviewMode {
         default: router.selectedTab = .today
         }
         return AppEnvironment(store: store, ui: ui, dayClock: DayClock(), notifications: NotificationService(), calendar: CalendarService())
+    }
+
+    /// Chỉ số chăm sóc và lượt Sân chơi mẫu cho từng màn chụp ảnh.
+    @MainActor
+    private static func seedCareAndPlay(_ store: AppStore, screen: PreviewScreen) throws {
+        func setNeeds(fullness: Double, cleanliness: Double, happiness: Double) throws {
+            try store.commit {
+                guard let model = try store.fetchPetCareModel() else { return }
+                var care = store.petCare
+                care.needs = PetNeeds(fullness: fullness, cleanliness: cleanliness, happiness: happiness, asOf: store.now)
+                model.apply(care)
+                store.petCare = care
+            }
+        }
+        try store.buyFood("food.carrot", quantity: 2, transactionID: UUID())
+        try store.buyFood("food.picnic", transactionID: UUID())
+        switch screen {
+        case .care, .feed:
+            try setNeeds(fullness: 24, cleanliness: 26, happiness: 41)
+        case .clean:
+            try setNeeds(fullness: 60, cleanliness: 22, happiness: 72)
+        case .careCapped:
+            for _ in 0..<2 {
+                try setNeeds(fullness: 24, cleanliness: 80, happiness: 80)
+                try store.performCare(.feed, foodID: "food.apple", actionID: UUID())
+            }
+            try setNeeds(fullness: 24, cleanliness: 80, happiness: 80)
+        default:
+            break
+        }
+        let playScreens: [PreviewScreen] = [.playground, .pickPet, .tutorial, .jump, .basket, .memory, .pause, .result, .resultCapped]
+        guard playScreens.contains(screen) else { return }
+        func outcome(_ kind: MinigameKind, score: Int, primary: Int, secondary: Int, seconds: Double, minutesAgo: Double) -> MinigameOutcome {
+            let end = store.now.addingTimeInterval(-minutesAgo * 60)
+            return MinigameOutcome(sessionID: UUID(), kind: kind, score: score, primary: primary, secondary: secondary,
+                                   level: kind == .memoryMatch ? .easy : nil, activeSeconds: seconds, completed: true,
+                                   species: "cat", startedAt: end.addingTimeInterval(-seconds), finishedAt: end)
+        }
+        try store.recordMinigame(outcome(.cloudJump, score: CloudJumpEngine.score(heightMeters: 48, stars: 3), primary: 48, secondary: 3, seconds: 42, minutesAgo: 50))
+        try store.recordMinigame(outcome(.giftBasket, score: 64, primary: 38, secondary: 11, seconds: 60, minutesAgo: 30))
+        if screen == .resultCapped {
+            for i in 0..<3 {
+                try store.recordMinigame(outcome(.giftBasket, score: 120, primary: 60, secondary: 14, seconds: 60, minutesAgo: Double(20 - i)))
+            }
+        }
     }
 
     /// Hai tuần dữ liệu mẫu: việc đã xong, phiên tập trung, nhật ký, đồ đã mua; hôm nay có việc xong,
