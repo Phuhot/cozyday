@@ -294,12 +294,12 @@ def fit_crop(cx, cy, w_norm, aspect, src_aspect):
 
 
 # ---------- cảnh 1: thẻ việc rối → xếp gọn ----------
-CARDS = [  # (giờ, tên, màu) — đúng dữ liệu mẫu trong app (PreviewMode)
-    ("7:00", "Đi bộ 30 phút", SAGE),
-    ("9:00", "Trả lời email của nhóm", WORK),
+CARDS = [  # (giờ, tên, màu): đúng dữ liệu mẫu và giờ trong footage màn Hôm nay
+    ("8:30", "Đi bộ 30 phút", SAGE),
     ("9:30", "Ôn từ vựng tiếng Anh", LAVENDER),
-    ("11:15", "Gọi điện cho bà", PEACH),
-    ("18:30", "Nấu bữa tối", HONEY),
+    ("10:30", "Trả lời email của nhóm", WORK),
+    ("11:45", "Gọi điện cho bà", PEACH),
+    ("13:00", "Nấu bữa tối", HONEY),
 ]
 CARD_W, CARD_H = 760, 118
 F_CARD = font(F_NUNITO, 42, "Bold")
@@ -387,15 +387,15 @@ def scene_open(t):
 TALL = (60, 430, 1020, 1870)
 SQUARE = (60, 560, 1020, 1520)
 SHOT = {
-    "today": dict(clip="today-tick", start=4.6, speed=1.0, rect=TALL, a=(0.5, 0.55, 0.62), b=(0.5, 0.55, 1.0),
+    "today": dict(clip="today-tick", start=5.35, speed=0.85, rect=TALL, a=(0.62, 0.42, 0.7), b=(0.5, 0.6, 1.0),
                   move=(T.TICK + 0.35, 0.9), bg=[LAV_SOFT, CREAM]),
     "wardrobe": dict(clip="wardrobe", start=8.15, speed=1.0, rect=TALL, a=(0.5, 0.4, 1.0), b=(0.5, 0.28, 0.5),
                      move=(T.WARDROBE[0] + 0.4, 0.5), bg=[CREAM, LAV_SOFT]),
-    "feed": dict(clip="feed", start=5.7, speed=1.25, rect=SQUARE, a=(0.5, 0.33, 1.0), b=(0.5, 0.31, 0.9),
+    "feed": dict(clip="feed", start=5.7, speed=1.25, rect=SQUARE, a=(0.5, 0.33, 0.95), b=(0.45, 0.29, 0.64),
                  move=(T.CARE_CUTS[0] + 0.5, 1.0), bg=[CREAM, (0xFB, 0xE7, 0xDE)]),
-    "cuddle": dict(clip="cuddle", start=5.0, speed=0.8, rect=SQUARE, a=(0.5, 0.46, 0.95), b=(0.45, 0.5, 0.7),
+    "cuddle": dict(clip="cuddle", start=2.3, speed=0.85, rect=SQUARE, a=(0.5, 0.46, 0.95), b=(0.45, 0.5, 0.7),
                    move=(T.CARE_CUTS[1], 1.8), bg=[CREAM, (0xFB, 0xE7, 0xDE)]),
-    "clean": dict(clip="clean", start=7.0, speed=1.6, rect=SQUARE, a=(0.5, 0.36, 0.95), b=(0.5, 0.36, 0.88),
+    "clean": dict(clip="clean", start=9.4, speed=1.75, rect=SQUARE, a=(0.5, 0.38, 0.95), b=(0.5, 0.36, 0.86),
                   move=(T.CARE_CUTS[2], 1.7), bg=[CREAM, (0xFB, 0xE7, 0xDE)]),
     "jump": dict(clip="jump", start=12.8, speed=1.0, rect=TALL, a=(0.5, 0.52, 1.0), b=(0.5, 0.52, 0.94),
                  move=(T.GAME_CUTS[0], 2.0), bg=[LAV_SOFT, (0xDC, 0xEC, 0xFA)]),
@@ -671,7 +671,7 @@ def flash(cv, t, at, dur=0.12, strength=150):
 
 def zoom_out_of(img, k, cx, cy):
     """Zoom có định hướng: phóng to quanh (cx, cy) và mờ dần sang trắng kem."""
-    s = lerp(1, 3.2, ease_in_out(k))
+    s = lerp(1, 2.3, ease_in_out(k))
     w, h = W / s, H / s
     x0 = clamp(cx - w / 2, 0, W - w)
     y0 = clamp(cy - h / 2, 0, H - h)
@@ -684,8 +684,8 @@ def render(t):
     if t < T.OPEN[1]:
         cv = scene_open(t)
         if t > 2.55:
-            tx, ty = timeline_pos(1)
-            cv = zoom_out_of(cv, (t - 2.55) / 0.45, tx, ty)
+            tx, ty = timeline_pos(2)  # thẻ "Trả lời email của nhóm", đúng việc được tick ở cảnh sau
+            cv = zoom_out_of(cv, (t - 2.55) / 0.45, tx - 60, ty)
     elif t < T.TODAY[1] + 0.6 and t >= T.COIN:
         cv = coin_wipe(t, scene_today, scene_wardrobe)
     elif t < T.TODAY[1]:
