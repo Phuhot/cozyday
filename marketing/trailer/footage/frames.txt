@@ -1,0 +1,14 @@
+# Thống kê khung hình bản gốc (simulator ghi theo khung hình thay đổi, không cố định fps)
+clip | kích thước | thời lượng (s) | số khung | fps trung bình | khoảng hở lớn nhất (s)
+avatar | 1206x2622 | 7.71 | 140 | 18.0 | 2.60
+basket | 1206x2622 | 19.11 | 973 | 50.9 | 3.71
+clean | 1206x2622 | 15.48 | 911 | 58.8 | 2.13
+cuddle | 1206x2622 | 11.56 | 276 | 23.8 | 1.91
+feed | 1206x2622 | 9.50 | 325 | 34.1 | 1.48
+jump | 1206x2622 | 18.65 | 1027 | 55.0 | 1.75
+memory | 1206x2622 | 20.47 | 931 | 45.4 | 1.89
+room-bedroom | 1206x2622 | 6.82 | 247 | 36.1 | 1.18
+room-garden | 1206x2622 | 8.01 | 234 | 29.1 | 2.04
+room-kitchen | 1206x2622 | 7.32 | 203 | 27.6 | 1.80
+today-tick | 1206x2622 | 8.90 | 227 | 25.4 | 1.05
+wardrobe | 1206x2622 | 12.89 | 509 | 39.4 | 2.14
