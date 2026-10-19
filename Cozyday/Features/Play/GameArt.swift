@@ -450,12 +450,13 @@ enum DustArt {
 
     /// Mạng nhện tròn + bé nhện cười treo bên dưới.
     static func cobweb(_ ctx: GraphicsContext, center c: CGPoint, size s: CGFloat) {
-        let line = Color.white.opacity(0.9)
-        let shade = rgb(0x9C93A8).opacity(0.55)
+        // Nét xám đậm + viền sáng mảnh: thấy rõ trên cả tường sáng lẫn tường tối.
+        let line = Color.white.opacity(0.85)
+        let shade = rgb(0x6E6580).opacity(0.85)
         let r = s * 0.5
         for pass in 0..<2 {
             let color = pass == 0 ? shade : line
-            let w = max(0.6, s * (pass == 0 ? 0.045 : 0.025))
+            let w = max(0.7, s * (pass == 0 ? 0.05 : 0.02))
             ctx.strokePath(color, width: w) { p in
                 for i in 0..<8 {
                     let a = Double(i) * .pi / 4
