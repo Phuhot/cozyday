@@ -26,7 +26,7 @@ enum PetDialogue {
             return [
                 "Suỵt… mình đang tập trung cùng \(name) đó.", "Cố lên, sắp xong rồi!",
                 "Mình ngồi đây đọc sách với \(name) nhé.", "Mình giữ yên lặng cho \(name) nè.",
-                "Từng chút một thôi, không vội đâu.", "Mình đang canh giờ giúp \(name) đó.",
+                "Còn mấy phút nữa thôi, mình đếm cùng nè.", "Mình đang canh giờ giúp \(name) đó.",
                 "Xong phiên này mình cùng uống nước nha.", "Mình cũng đang chăm chú lắm nè…",
                 "Hít một hơi thật sâu rồi làm tiếp nhé."
             ]
@@ -37,14 +37,14 @@ enum PetDialogue {
         switch c.minuteOfDay {
         case 300..<660:
             lines += ["Chào buổi sáng, \(name)!", "Hôm nay mình làm gì trước nhỉ?", "Uống một cốc nước cho tỉnh táo nào.",
-                      "Nắng sớm đẹp ghê!", "Mình dậy rồi nè, \(name) dậy chưa?", "Hôm nay cứ nhẹ nhàng thôi nha.",
+                      "Nắng sớm đẹp ghê!", "Mình dậy rồi nè, \(name) dậy chưa?", "Sáng nay mình muốn ăn bánh mì nướng.",
                       "Vươn vai một cái cho khỏe nào!", "Ăn sáng chưa đó?"]
         case 660..<780:
             lines += ["Trưa rồi, nhớ ăn gì đó nhé.", "Nghỉ một chút cũng được mà.", "Trưa nay ăn món gì ngon thế?",
                       "Chợp mắt mười phút cũng tốt lắm.", "Nắng trưa ấm quá, mình muốn nằm phơi.",
                       "Nửa ngày rồi, \(name) giỏi ghê."]
         case 780..<1080:
-            lines += ["Buổi chiều lười biếng ghê…", "Duỗi lưng một cái nào!", "Một việc nhỏ thôi cũng là tiến bộ.",
+            lines += ["Buổi chiều lười biếng ghê…", "Duỗi lưng một cái nào!", "Làm một việc năm phút thôi rồi nghỉ nhé?",
                       "Làm một ngụm trà không?", "Ngó ra cửa sổ một chút cho mắt nghỉ nào.",
                       "Chiều nay mình ở đây với \(name) nha.", "Đi bộ vài bước cho thoải mái nhé?"]
         case 1080..<1320:
@@ -60,16 +60,16 @@ enum PetDialogue {
             if c.tasksDone == c.tasksTotal {
                 lines += ["Xong hết việc hôm nay rồi! Giỏi quá đi!", "Hết việc rồi, giờ là giờ thư giãn!"]
             } else if c.tasksDone > 0 {
-                lines += ["Đã xong \(c.tasksDone)/\(c.tasksTotal) việc rồi đó.", "Từng việc một, mình thấy hết đó."]
+                lines += ["Đã xong \(c.tasksDone)/\(c.tasksTotal) việc rồi đó.", "Mình đánh dấu từng việc trong sổ đó."]
             } else {
                 lines += ["Bắt đầu bằng việc dễ nhất nhé?", "Chưa làm cũng không sao, mình vẫn ở đây."]
             }
         } else {
-            lines += ["Hôm nay chưa có kế hoạch gì — thong thả cũng tốt.", "Một ngày trống cũng là một món quà."]
+            lines += ["Hôm nay chưa có việc gì. Mình nằm phơi nắng nhé?", "Lịch trống trơn! Thêm một việc nhỏ không?"]
         }
         if c.minuteOfDay >= 1080 {
             if c.wroteJournal {
-                lines.append("Viết nhật ký xong rồi, thấy nhẹ lòng hơn chưa?")
+                lines.append("Viết nhật ký xong rồi! Mai mình đọc lại nhé?")
             } else {
                 lines += ["Hôm nay của \(name) thế nào? Viết vài dòng nhật ký không?",
                           "Kể mình nghe một điều vui hôm nay nhé?"]
@@ -83,7 +83,7 @@ enum PetDialogue {
         }
         lines += speciesChatter(species, name: name)
         lines += ["Rừ rừ…", "Mình thích được xoa đầu lắm.", "Mình thương \(name) nhiều lắm.",
-                  "Nghỉ một chút cũng là đang chăm sóc bản thân đó.", "Hôm nay mình nhặt được một chiếc lá xinh lắm.",
+                  "Mình vừa ngáp một cái to ơi là to.", "Hôm nay mình nhặt được một chiếc lá xinh lắm.",
                   "Có \(name) ở đây là vui rồi."]
         return lines
     }

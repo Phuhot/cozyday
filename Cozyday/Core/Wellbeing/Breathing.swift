@@ -26,7 +26,7 @@ struct BreathingPattern: Identifiable, Equatable {
 
     static let calm = BreathingPattern(id: "calm", name: "Thư giãn 4–6", detail: "Hít 4 giây, thở ra 6 giây.",
                                        phases: [Phase(kind: .inhale, seconds: 4), Phase(kind: .exhale, seconds: 6)])
-    static let box = BreathingPattern(id: "box", name: "Thở hộp 4–4–4–4", detail: "Hít, giữ, thở ra, nghỉ — mỗi nhịp 4 giây.",
+    static let box = BreathingPattern(id: "box", name: "Thở hộp 4–4–4–4", detail: "Hít, giữ, thở ra, nghỉ. Mỗi nhịp 4 giây.",
                                       phases: [Phase(kind: .inhale, seconds: 4), Phase(kind: .hold, seconds: 4),
                                                Phase(kind: .exhale, seconds: 4), Phase(kind: .rest, seconds: 4)])
     static let sleepy = BreathingPattern(id: "478", name: "Dễ ngủ 4–7–8", detail: "Hít 4 giây, giữ 7 giây, thở ra 8 giây.",

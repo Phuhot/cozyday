@@ -121,7 +121,7 @@ enum JournalPrompts {
         "Nếu kể ngày hôm nay bằng một câu, bạn sẽ viết gì?",
         "Điều gì bạn đang mong chờ trong tuần này?",
         "Bạn đã dành thời gian cho người mình thương chưa?",
-        "Một việc bạn đã trì hoãn — bước đầu tiên nhỏ nhất là gì?",
+        "Có việc nào bạn đang để đó? Bước đầu tiên nhỏ nhất của nó là gì?",
         "Lúc nào trong ngày bạn thấy có năng lượng nhất?",
         "Hôm nay có điều gì bất ngờ không?",
         "Bạn muốn nói gì với chính mình của một năm trước?"

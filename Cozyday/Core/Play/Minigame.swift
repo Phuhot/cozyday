@@ -34,8 +34,10 @@ enum MinigameKind: String, Codable, CaseIterable, Identifiable {
     /// Luật ngắn trong màn hướng dẫn (đọc trong ~5 giây).
     var howTo: [String] {
         switch self {
-        case .cloudJump: return ["Bạn nhỏ tự nảy khi chạm mây.", "Kéo ngang để sang trái/phải.", "Rơi xuống dưới là hết lượt."]
-        case .giftBasket: return ["Kéo ngang để di chuyển giỏ.", "Hứng trái cây, sao, hộp quà.", "Né bùn (●) và mây mưa (☂)."]
+        case .cloudJump: return ["Bạn nhỏ tự nảy khi chạm mây. Kéo ngang để sang trái/phải.",
+                                 "Né mây giông và chim. Mây viền nét đứt chỉ nảy được một lần.",
+                                 "Rơi xuống dưới là hết lượt."]
+        case .giftBasket: return ["Kéo ngang để di chuyển giỏ.", "Hứng trái cây, sao, hộp quà.", "Né cục bùn nâu và đám mây mưa."]
         case .memoryMatch: return ["Chạm để lật hai thẻ.", "Giống nhau thì giữ mở.", "Ghép hết các cặp là thắng."]
         }
     }
@@ -116,7 +118,7 @@ enum MinigameRewardNote: String, Codable, Equatable {
         case .rewarded: return ""
         case .partialCap: return "Chỉ nhận phần còn lại của hạn mức hôm nay."
         case .dailyCapReached: return "Hôm nay đã nhận đủ xu sân chơi. Kỷ lục vẫn được lưu!"
-        case .belowThreshold: return "Chưa đạt mức tối thiểu để nhận xu — thử lại nhé!"
+        case .belowThreshold: return "Chưa đủ điểm tối thiểu để nhận xu. Thử lại nhé!"
         case .notCompleted: return "Lượt chưa hoàn thành nên chưa có xu."
         case .implausible: return "Kết quả không hợp lệ nên không tính xu."
         }

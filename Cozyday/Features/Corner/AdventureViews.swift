@@ -28,7 +28,7 @@ struct AdventureCard: View {
                     .accessibilityLabel("Năng lượng đi chơi")
                     .accessibilityValue("\(energy) phần trăm")
                 if claimed {
-                    Text(Adventure.story(for: today, petName: name, species: store.petAppearance.species).title + " — đã kể xong hôm nay.")
+                    Text(Adventure.story(for: today, petName: name, species: store.petAppearance.species).title + ": đã kể xong hôm nay.")
                         .font(Typography.callout)
                         .foregroundStyle(Palette.inkMuted)
                     Button("Đọc lại câu chuyện") { showStory = true }

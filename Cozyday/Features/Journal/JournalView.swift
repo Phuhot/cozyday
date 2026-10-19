@@ -302,7 +302,7 @@ struct JournalEditor: View {
                 } header: {
                     Text("Gợi ý viết")
                 } footer: {
-                    Text("Không bắt buộc — viết gì cũng được, một chữ cũng được.")
+                    Text("Không bắt buộc. Viết gì cũng được, một chữ cũng được.")
                 }
                 Section("Tâm trạng") {
                     HStack(spacing: Spacing.xs) {

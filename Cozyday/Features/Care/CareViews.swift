@@ -380,7 +380,7 @@ struct CleanRoomView: View {
         self.last = point
         // Gợi ý nhẹ khi đang dùng dụng cụ chậm hơn.
         if let near = work.spot(near: point), near.kind.tool != tool {
-            hint = "\(near.kind.name) dễ sạch hơn với \(near.kind.tool.name.lowercased()) — đổi dụng cụ ở dưới nhé."
+            hint = "\(near.kind.name) dễ sạch hơn với \(near.kind.tool.name.lowercased()). Đổi dụng cụ ở dưới nhé."
         } else if hint != nil, work.spot(near: point) != nil {
             hint = nil
         }
@@ -398,7 +398,7 @@ struct CleanRoomView: View {
             }
         } else {
             saveFailed = true
-            hint = "Chưa lưu được. Thử lưu lại nhé — không bị tính hai lần."
+            hint = "Chưa lưu được. Thử lưu lại nhé, không bị tính hai lần."
         }
     }
 }
@@ -513,7 +513,7 @@ struct FoodSheet: View {
         }
         if owned.isEmpty {
             EmptyStateView(symbol: "basket", title: "Khay đang trống",
-                           message: "Mua đồ ăn ở mục \"Mua đồ ăn\" — món rẻ nhất chỉ \(FoodCatalog.all.map(\.price).min() ?? 3) xu.")
+                           message: "Mua đồ ăn ở mục “Mua đồ ăn”. Món rẻ nhất chỉ \(FoodCatalog.all.map(\.price).min() ?? 3) xu.")
             Button("Đi mua đồ ăn") { tab = .shop }
                 .buttonStyle(SoftButtonStyle())
         }
@@ -522,7 +522,7 @@ struct FoodSheet: View {
                     detail: "Còn \(store.foodCount(food.id))")
         }
         if needs.fullness >= CareConfig.fullEnough {
-            Text("\(store.profile.displayPetName) no căng rồi — để dành đồ ăn cho lần sau nhé.")
+            Text("\(store.profile.displayPetName) no căng rồi. Để dành đồ ăn cho lần sau nhé.")
                 .font(Typography.callout).foregroundStyle(Palette.inkMuted)
         }
     }

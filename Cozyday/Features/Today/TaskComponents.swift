@@ -217,7 +217,7 @@ struct TaskDetailSheet: View {
                             .foregroundStyle(Palette.inkMuted)
                     }
                     if task.isFixed {
-                        Label("Giờ cố định — không bị sắp xếp lại", systemImage: "pin")
+                        Label("Giờ cố định (không bị sắp xếp lại)", systemImage: "pin")
                             .font(Typography.caption)
                             .foregroundStyle(Palette.inkMuted)
                     }

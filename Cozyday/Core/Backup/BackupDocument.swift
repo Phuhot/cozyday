@@ -194,7 +194,7 @@ enum BackupValidator {
 
         let templateIDs = Set(d.templates.map(\.id))
         for t in d.templates {
-            try checkTiming(start: t.startMinute, duration: t.durationMinutes, what: "mẫu \"\(t.title.prefix(20))\"")
+            try checkTiming(start: t.startMinute, duration: t.durationMinutes, what: "mẫu “\(t.title.prefix(20))”")
             if t.recurrence.frequency == .weekly && t.recurrence.weekdays.isEmpty {
                 throw BackupError.invalidValue("lịch lặp theo thứ không có thứ nào")
             }
@@ -219,7 +219,7 @@ enum BackupValidator {
             if o.startMinute != nil && o.day == nil {
                 throw BackupError.invalidValue("việc có giờ nhưng không có ngày")
             }
-            try checkTiming(start: o.startMinute, duration: o.durationMinutes, what: "việc \"\(o.title.prefix(20))\"")
+            try checkTiming(start: o.startMinute, duration: o.durationMinutes, what: "việc “\(o.title.prefix(20))”")
             try checkOffset(o.reminderOffsetMinutes)
             if o.status == .done && o.completedAt == nil {
                 throw BackupError.invalidValue("việc đã xong nhưng thiếu thời điểm hoàn thành")

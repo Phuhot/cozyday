@@ -241,7 +241,7 @@ struct AvatarStudioView: View {
                     }
                     .buttonStyle(SoftButtonStyle(tint: Palette.lavender))
 
-                    Text("Ảnh chỉ được tạo trên máy khi bạn bấm chia sẻ — app không tải lên đâu cả. Chọn \"Lưu hình ảnh\" để cất vào app Ảnh.")
+                    Text("Ảnh chỉ được tạo trên máy khi bạn bấm chia sẻ. App không tải ảnh lên đâu cả. Chọn “Lưu hình ảnh” để cất vào app Ảnh.")
                         .font(Typography.caption)
                         .foregroundStyle(Palette.inkMuted)
                         .multilineTextAlignment(.center)

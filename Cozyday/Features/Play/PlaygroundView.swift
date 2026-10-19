@@ -81,7 +81,7 @@ struct PlaygroundView: View {
                             Label(line, systemImage: "circle.fill")
                                 .labelStyle(BulletLabelStyle())
                         }
-                        Text("Vì app chạy hoàn toàn offline, nếu đổi ngày giờ của máy thì hạn mức theo ngày cũng đổi theo — CozyDay không chống được gian lận kiểu này một cách tuyệt đối.")
+                        Text("Vì app chạy hoàn toàn offline, nếu đổi ngày giờ của máy thì hạn mức theo ngày cũng đổi theo. CozyDay không chống được gian lận kiểu này một cách tuyệt đối.")
                             .font(Typography.caption).foregroundStyle(Palette.inkMuted)
                     }
                     .padding(.top, Spacing.s)
@@ -144,7 +144,7 @@ struct PlaygroundView: View {
                     ProgressView(value: Double(min(todayCoins, MinigameConfig.dailyCoinCap)), total: Double(MinigameConfig.dailyCoinCap))
                         .tint(Palette.honey)
                     Text(todayCoins >= MinigameConfig.dailyCoinCap
-                         ? "Hôm nay đã nhận đủ xu sân chơi — vẫn chơi và lập kỷ lục thoải mái!"
+                         ? "Hôm nay đã nhận đủ xu sân chơi. Vẫn chơi và lập kỷ lục thoải mái!"
                          : "Sân chơi là giờ nghỉ ngắn. Việc chính, tập trung và chăm sóc bản thân vẫn cho nhiều xu hơn.")
                         .font(Typography.caption).foregroundStyle(Palette.inkMuted)
                         .fixedSize(horizontal: false, vertical: true)
@@ -327,7 +327,7 @@ struct PlayPetPicker: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: Spacing.m) {
-                    Text("Bạn nhỏ mặc nguyên bộ đồ đang dùng. Đổi ở đây chỉ áp dụng cho Sân chơi — thú cưng ở Góc nhỏ giữ nguyên. Hình dạng không làm game dễ hay khó hơn.")
+                    Text("Bạn nhỏ mặc nguyên bộ đồ đang dùng. Đổi ở đây chỉ áp dụng cho Sân chơi, thú cưng ở Góc nhỏ giữ nguyên. Hình dạng không làm game dễ hay khó hơn.")
                         .font(Typography.callout).foregroundStyle(Palette.inkMuted)
                         .fixedSize(horizontal: false, vertical: true)
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 100), spacing: Spacing.m)], spacing: Spacing.m) {

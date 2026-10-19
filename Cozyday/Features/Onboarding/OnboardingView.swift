@@ -75,7 +75,7 @@ struct OnboardingView: View {
         VStack(alignment: .leading, spacing: Spacing.l) {
             Text("Bạn muốn CozyDay giúp gì?")
                 .font(Typography.title)
-            Text("Chọn bao nhiêu cũng được — chỉ để gợi ý, có thể bỏ qua.")
+            Text("Chọn bao nhiêu cũng được. Phần này chỉ để gợi ý, có thể bỏ qua.")
                 .foregroundStyle(Palette.inkMuted)
             FlowChips(items: UsageGoal.allCases.map { (id: $0.rawValue, label: $0.label) }, selected: Set(goals.map(\.rawValue))) { id in
                 guard let g = UsageGoal(rawValue: id) else { return }

@@ -50,7 +50,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Ngày của bạn")
                 } footer: {
-                    Text("Khung giờ hoạt động dùng khi \"Sắp xếp lại\" các việc trễ giờ.")
+                    Text("Khung giờ hoạt động dùng khi “Sắp xếp lại” các việc trễ giờ.")
                 }
 
                 notificationSection
@@ -126,7 +126,7 @@ struct SettingsView: View {
         } header: {
             Text("Lịch iPhone")
         } footer: {
-            Text("Chỉ đọc để hiện cạnh việc trên timeline và để \"Sắp xếp lại\" tránh giờ bận. Sự kiện không được lưu vào CozyDay và không có trong bản sao lưu.")
+            Text("Chỉ đọc để hiện cạnh việc trên timeline và để “Sắp xếp lại” tránh giờ bận. Sự kiện không được lưu vào CozyDay và không có trong bản sao lưu.")
         }
     }
 
@@ -165,7 +165,7 @@ struct SettingsView: View {
         } header: {
             Text("Thông báo")
         } footer: {
-            Text("Nhắc việc được lên lịch cho 7 ngày tới và làm mới mỗi khi bạn mở app. iOS có thể trì hoãn hoặc ẩn thông báo theo chế độ Tập trung và cài đặt của bạn — đây không phải chuông báo thức.")
+            Text("Nhắc việc được lên lịch cho 7 ngày tới và làm mới mỗi khi bạn mở app. iOS có thể trì hoãn hoặc ẩn thông báo theo chế độ Tập trung và cài đặt của bạn, nên đừng dùng nó thay chuông báo thức.")
         }
     }
 
@@ -191,7 +191,7 @@ struct SettingsView: View {
         } header: {
             Text("Sao lưu")
         } footer: {
-            Text("File sao lưu (JSON) chứa toàn bộ dữ liệu: việc, lịch lặp, xu, sổ thưởng, đồ đạc, phiên tập trung và nhật ký. File ở dạng chữ đọc được, KHÔNG mã hóa — đừng chia sẻ công khai. Gỡ app sẽ xóa dữ liệu trên máy; gia hạn chữ ký không phải là sao lưu.")
+            Text("File sao lưu (JSON) chứa toàn bộ dữ liệu: việc, lịch lặp, xu, sổ thưởng, đồ đạc, phiên tập trung và nhật ký. File ở dạng chữ đọc được, KHÔNG mã hóa, đừng chia sẻ công khai. Gỡ app sẽ xóa dữ liệu trên máy; gia hạn chữ ký không phải là sao lưu.")
         }
     }
 

@@ -83,7 +83,7 @@ struct StatsView: View {
 
                     moodCard(days: days)
 
-                    Text("\"Việc đã xong\" phản ánh trạng thái hiện tại: bỏ đánh dấu hoàn thành thì thống kê giảm, nhưng xu/XP đã nhận được giữ nguyên.")
+                    Text("“Việc đã xong” phản ánh trạng thái hiện tại: bỏ đánh dấu hoàn thành thì thống kê giảm, nhưng xu/XP đã nhận được giữ nguyên.")
                         .font(Typography.caption)
                         .foregroundStyle(Palette.inkMuted)
 

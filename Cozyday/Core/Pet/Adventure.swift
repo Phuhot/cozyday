@@ -282,11 +282,11 @@ enum Adventure {
         "Bỗng nghe tiếng sáo diều vi vu ở đâu đó trên cao.",
         "Một chiếc lá rơi đúng lên đầu, như ai vừa đội cho một chiếc mũ.",
         "Đến khúc quanh thì gặp một bạn mèo đang ngủ chắn ngang đường, đành rón rén bước qua.",
-        "Mặt trời ló ra sau mây, mọi thứ bỗng sáng bừng lên.",
+        "Mặt trời ló ra sau mây, mấy vũng nước còn đọng sáng lấp loáng.",
         "Có một đàn chim bay ngang, xếp thành hình chữ V thật đẹp.",
         "Trên đường có một chiếc ghế đá, ngồi nghỉ chân một lát thấy dễ chịu ghê.",
         "Một bác bán hàng rong cho nếm thử một miếng bánh, ngon ơi là ngon.",
-        "Tiếng chuông chùa xa xa vọng lại, nghe thật yên bình.",
+        "Tiếng chuông chùa xa xa vọng lại, đếm được đúng ba tiếng.",
         "Một chú bướm cứ bay theo suốt một đoạn đường, như muốn làm bạn đồng hành.",
         "Gió thổi qua làm cả rặng cây rì rào như đang trò chuyện.",
         "Có lúc trượt chân trên đám rêu, may mà chỉ lấm tấm chút bùn, cười xòa cho qua.",
@@ -324,8 +324,8 @@ enum Adventure {
         "Đi về mỏi chân nên ngủ gật luôn, trong mơ vẫn thấy bạn.",
         "Kỷ vật ấy được cất thật kỹ vào góc phòng.",
         "Rồi ngân nga suốt quãng đường về nhà.",
-        "Tối nay chắc chắn sẽ là một giấc ngủ thật ngon.",
-        "Hôm nay đúng là một ngày thật đẹp.",
+        "Tối nay chưa tới tám giờ đã ngáp ngắn ngáp dài.",
+        "Về nhà rửa chân xong là chui ngay vào chăn.",
         "Về tới cửa, việc đầu tiên là tìm bạn để ôm một cái.",
         "Cả buổi tối cứ cười tủm tỉm mãi thôi.",
         "Chuyến đi ngắn thôi mà vui ơi là vui.",
@@ -336,9 +336,9 @@ enum Adventure {
         "Về nhà, kỷ vật được đặt lên bậu cửa sổ cho nắng chiếu vào.",
         "Chuyện hôm nay chắc phải kể ba ngày mới hết.",
         "Về nhà ăn một bữa thật no rồi ngủ một giấc thật dài.",
-        "Thế giới ngoài kia rộng thật, nhưng nhà vẫn là nơi ấm nhất.",
-        "Từ giờ, mỗi lần nhìn kỷ vật ấy sẽ lại nhớ đến hôm nay.",
-        "Một ngày nhỏ xíu thôi, mà đầy ắp những điều dễ thương.",
+        "Về tới nhà, việc đầu tiên là uống một cốc nước thật to.",
+        "Kỷ vật ấy giờ nằm cạnh gối, sáng mai mở mắt là thấy ngay.",
+        "Tới tối vẫn còn một chiếc lá khô mắc trên tai mà không hay.",
         "Về tới nhà là lăn ra ngủ, miệng vẫn còn mỉm cười.",
         "Mong là bạn cũng đang có một ngày dễ chịu như thế."
     ]
@@ -357,7 +357,7 @@ enum Adventure {
         "{n} chạy lại giúp một tay, hai bên vừa làm vừa cười.",
         "{n} nghĩ một lúc rồi tìm ra cách, thế là xong ngay!",
         "{n} giúp từng chút một, chậm mà chắc.",
-        "Có {n} phụ một tay, việc khó hóa thành việc vui."
+        "{n} giữ một đầu, bạn ấy giữ một đầu, đếm một, hai, ba là xong."
     ]
     static let treasureSpots = [
         "dưới gốc cây sồi già", "sau một tảng đá phủ rêu", "trong một hộp thiếc cũ", "giữa hai rễ cây to",
@@ -417,7 +417,7 @@ enum Adventure {
     ]
     static let wishes = [
         "cho bạn đêm nào cũng ngủ thật ngon", "ngày mai trời cũng đẹp như hôm nay",
-        "hai đứa mình mãi là bạn thân", "bạn lúc nào cũng thấy nhẹ lòng",
+        "hai đứa mình mãi là bạn thân", "sáng mai bạn dậy đúng giờ mà không cần báo thức",
         "có thêm thật nhiều buổi tối bình yên như thế này", "ai cũng có một chiếc chăn thật ấm"
     ]
     static let seeds = [
@@ -476,7 +476,7 @@ enum Adventure {
             return make("Đường về từ \(place)", [
                 "\(n) mải chơi ở \(place) nên đi lạc lúc nào không hay.",
                 "May sao gặp \(aFriend) chỉ đường tận tình, còn được tặng thêm \(keep).",
-                "Hóa ra đường về lại đi qua một lối nhỏ rợp hoa, đẹp hơn cả lối cũ.", ending
+                "Đường về đi qua một lối nhỏ có hàng rào hoa giấy, lần sau sẽ đi lối này.", ending
             ], keep)
         case 2: // Giúp đỡ ai đó
             return make("Giúp \(friend.who)", [
@@ -488,7 +488,7 @@ enum Adventure {
             return make("Kho báu nhỏ ở \(place)", [
                 "\(n) tìm thấy một tấm bản đồ vẽ tay ở \(place), trên đó có đánh dấu một ngôi sao nhỏ.", event,
                 "Lần theo bản đồ, \(n) thấy kho báu nằm \(pick(treasureSpots, "spot")): \(keep)!",
-                "Nhỏ xíu thôi, nhưng với \(n) đó là kho báu quý nhất.", ending
+                "\(n) bỏ kho báu vào túi áo, chốc chốc lại sờ xem còn không.", ending
             ], keep)
         case 4: // Lễ hội
             let fest = pick(sf.festivals + commonFestivals, "fest")
@@ -563,7 +563,7 @@ enum Adventure {
             let seasonKeep = pick(sf.keepsakes, "skeep")
             return make(pick(sf.titles, "stitle"), [
                 "\(n) đi dạo quanh \(place).", scene,
-                "\(n) \(pick(sf.acts, "sact")), thấy lòng nhẹ tênh.",
+                "\(n) \(pick(sf.acts, "sact")), quên cả giờ về.",
                 "Trên đường về, \(n) nhặt được \(seasonKeep).", ending
             ], seasonKeep)
         case 15: // Trà chiều
@@ -582,7 +582,7 @@ enum Adventure {
         default: // 17 — Vẽ tranh
             return make("Bức tranh ở \(place)", [
                 "\(n) mang giấy bút tới \(place) để vẽ \(pick(drawSubjects, "subject")).",
-                "Vẽ mãi mới xong, tranh hơi lem một chút nhưng rất có hồn.",
+                "Vẽ mãi mới xong, góc tranh còn dính một vết màu hình bàn chân.",
                 "\(cap(aFriend)) đi ngang qua khen mãi, còn tặng \(n) \(keep).", ending
             ], keep)
         }

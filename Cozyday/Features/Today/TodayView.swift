@@ -92,7 +92,7 @@ struct TodayView: View {
                             Button {
                                 sheet = .replan(plan, day)
                             } label: {
-                                Label("Có \(plan.moves.count + plan.unplaced.count) việc trễ giờ — sắp xếp lại?", systemImage: "arrow.triangle.2.circlepath")
+                                Label("Có \(plan.moves.count + plan.unplaced.count) việc trễ giờ. Sắp xếp lại?", systemImage: "arrow.triangle.2.circlepath")
                                     .frame(maxWidth: .infinity, alignment: .leading)
                             }
                             .buttonStyle(SoftButtonStyle(tint: Palette.peach))

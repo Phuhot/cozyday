@@ -153,9 +153,9 @@ struct PetRewardPopup: View {
     @State private var shown = false
 
     private static let cheers = [
-        "Giỏi quá đi!", "Tuyệt vời luôn!", "Mình tự hào về bạn!", "Yay, thêm một việc nữa!",
-        "Cố lên, sắp xong rồi!", "Đáng một cái ôm!", "Hôm nay bạn làm tốt lắm!", "Ăn mừng thôi!",
-        "Từng bước nhỏ một nha!", "Bạn đỉnh thật sự!"
+        "Giỏi quá đi!", "Mình nhảy một cái ăn mừng nè!", "Thêm một dấu tích xanh!", "Yay, thêm một việc nữa!",
+        "Xong rồi, uống ngụm nước nha!", "Đáng một cái ôm!", "Mình vỗ tay bộp bộp!", "Ăn mừng thôi!",
+        "Mình ghi vào sổ rồi nha!", "Gạch được một việc, sướng ghê!"
     ]
 
     var body: some View {

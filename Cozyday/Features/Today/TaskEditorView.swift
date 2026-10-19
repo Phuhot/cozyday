@@ -61,7 +61,7 @@ struct TaskEditorView: View {
                 Section {
                     if isEditingRecurring {
                         LabeledContent("Ngày", value: editingTask?.day.map { DateText.full($0, calendar: store.calendar) } ?? "—")
-                        Text("Muốn chuyển ngày của lần này, dùng \"Đổi ngày/giờ\" trong chi tiết việc.")
+                        Text("Muốn chuyển ngày của lần này, dùng “Đổi ngày/giờ” trong chi tiết việc.")
                             .font(Typography.caption)
                             .foregroundStyle(Palette.inkMuted)
                     } else {
@@ -143,7 +143,7 @@ struct TaskEditorView: View {
                         Text("Lặp lại")
                     } footer: {
                         if isEditingRecurring {
-                            Text("Khi lưu, bạn chọn áp dụng cho chỉ lần này hay lần này và các lần sau. Đổi lịch lặp chỉ có tác dụng với \"các lần sau\". Các lần đã hoàn thành trước đó không bị sửa.")
+                            Text("Khi lưu, bạn chọn áp dụng cho chỉ lần này hay lần này và các lần sau. Đổi lịch lặp chỉ có tác dụng với “các lần sau”. Các lần đã hoàn thành trước đó không bị sửa.")
                         }
                     }
                 }

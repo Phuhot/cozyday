@@ -196,7 +196,7 @@ struct FocusView: View {
                         var reward: LedgerEntry?
                         ui.run { reward = try store.setStatus(id: id, to: .done) }
                         ui.reward(reward)
-                    } label: { Label("Đánh dấu \"\(task.title)\" đã xong", systemImage: "checkmark") }
+                    } label: { Label("Đánh dấu “\(task.title)” đã xong", systemImage: "checkmark") }
                     .buttonStyle(SoftButtonStyle())
                 }
             }

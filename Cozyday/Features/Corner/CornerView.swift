@@ -281,7 +281,7 @@ struct CornerView: View {
                     .foregroundStyle(Palette.inkMuted)
                 Label {
                     if let next = stage.next {
-                        Text("\(stage.label) — lớn thành \"\(next.label)\" ở cấp \(next.startLevel)")
+                        Text("\(stage.label). Lớn thành “\(next.label)” ở cấp \(next.startLevel)")
                     } else {
                         Text(stage.label)
                     }
@@ -382,7 +382,7 @@ struct PetWeekCard: View {
                     }
                 }
                 Text(active.count >= 5 ? "Một tuần thật chăm chỉ! \(store.profile.displayPetName) vui lắm." :
-                        "Ngày nghỉ cũng không sao — \(store.profile.displayPetName) vẫn chờ bạn.")
+                        "Ngày nghỉ cũng không sao, \(store.profile.displayPetName) vẫn chờ bạn.")
                     .font(Typography.caption)
                     .foregroundStyle(Palette.inkMuted)
             }
@@ -464,7 +464,7 @@ struct ShopView: View {
         let inUse = (store.equippedItem(in: item.slot)?.id ?? Catalog.defaultItem(for: item.slot)?.id) == item.id
         if inUse { return ("Đang dùng", Palette.sage) }
         if Catalog.isOwned(item.id, owned: store.ownedIDs) { return ("Đã có", Palette.inkMuted) }
-        if store.wallet.level < item.requiredLevel { return ("🔒 Cấp \(item.requiredLevel)", Palette.inkMuted) }
+        if store.wallet.level < item.requiredLevel { return ("Mở ở cấp \(item.requiredLevel)", Palette.inkMuted) }
         return (item.isFree ? "Miễn phí" : "\(item.price) xu", Palette.honey)
     }
 

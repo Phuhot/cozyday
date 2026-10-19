@@ -22,7 +22,7 @@ enum TaskValidationError: Error, Equatable {
         case .invalidStart:
             return "Giờ bắt đầu không hợp lệ."
         case .crossesMidnight(let end):
-            return "Việc kết thúc lúc \(TimeOfDay.label(end)) của ngày hôm sau. Bản này chưa hỗ trợ việc qua nửa đêm — hãy rút ngắn hoặc tách thành hai việc."
+            return "Việc kết thúc lúc \(TimeOfDay.label(end)) của ngày hôm sau. Bản này chưa hỗ trợ việc kéo qua nửa đêm. Hãy rút ngắn hoặc tách thành hai việc."
         case .weeklyWithoutWeekdays:
             return "Chọn ít nhất một thứ trong tuần để lặp."
         case .repeatNeedsDay:
