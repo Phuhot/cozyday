@@ -12,3 +12,9 @@ room-garden | 1206x2622 | 8.01 | 234 | 29.1 | 2.04
 room-kitchen | 1206x2622 | 7.32 | 203 | 27.6 | 1.80
 today-tick | 1206x2622 | 8.90 | 227 | 25.4 | 1.05
 wardrobe | 1206x2622 | 12.89 | 509 | 39.4 | 2.14
+
+## Run 2
+clip | kích thước | thời lượng (s) | số khung | fps trung bình | khoảng hở lớn nhất (s)
+clean | 1206x2622 | 19.45 | 1603 | 82.4 | 1.82
+cuddle | 1206x2622 | 6.21 | 290 | 46.5 | 0.08
+today-tick | 1206x2622 | 4.67 | 174 | 37.0 | 0.64

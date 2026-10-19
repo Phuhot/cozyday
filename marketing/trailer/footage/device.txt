@@ -1,3 +1,8 @@
 Simulator: iPhone 17 Pro (E839A11B-51B4-4AD3-ACF4-A53B95B7C957) (Booted) 
 Commit: 3d3c9e47fd551d5ecd625f05d49240ce8633e32d
 Bản build: Debug cho simulator, dữ liệu mẫu trong bộ nhớ, -CozyTrailer 1.
+Simulator: iPhone 17 Pro (E839A11B-51B4-4AD3-ACF4-A53B95B7C957) (Booted) 
+Commit: e4d9557560dbdcede760914456f01da3b4d0959a
+Múi giờ: America/Adak
+Clip quay lần này: today-tick clean cuddle
+Bản build: Debug cho simulator, dữ liệu mẫu trong bộ nhớ, -CozyTrailer 1.
