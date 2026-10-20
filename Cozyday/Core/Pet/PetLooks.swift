@@ -73,7 +73,14 @@ enum PetLooks {
         PetLook(id: "look.fairy", name: "Tiên nhỏ", species: .bunny, fur: .mint, items: ["hat.tiara", "back.fairy", "outfit.tutu"]),
         PetLook(id: "look.frogfrog", name: "Ếch đội mũ ếch", species: .frog, fur: .mint, items: ["hat.frog", "neck.ruff"]),
         PetLook(id: "look.catears", name: "Hamster tai mèo", species: .hamster, fur: .peach, items: ["hat.catears", "neck.pearls"]),
-        PetLook(id: "look.nerd", name: "Cáo lập trình viên", species: .fox, fur: .smoke, items: ["glasses.nerd", "outfit.hoodie", "neck.tie"])
+        PetLook(id: "look.nerd", name: "Cáo lập trình viên", species: .fox, fur: .smoke, items: ["glasses.nerd", "outfit.hoodie", "neck.tie"]),
+        PetLook(id: "look.ghostparty", name: "Ma bông dự tiệc", species: .ghost, fur: .snow, items: ["hat.party", "neck.bowtie", "back.balloon"]),
+        PetLook(id: "look.slimechef", name: "Thạch dẻo đầu bếp", species: .slime, fur: .mint, items: ["hat.chef", "outfit.apron"]),
+        PetLook(id: "look.mushroomrain", name: "Nấm nhỏ ngày mưa", species: .mushroom, fur: .ginger, items: ["outfit.raincoat", "back.umbrella"]),
+        PetLook(id: "look.sharksailor", name: "Cá mập thủy thủ", species: .shark, fur: .sky, items: ["outfit.sailor", "glasses.goggles"]),
+        PetLook(id: "look.owlscholar", name: "Cú mèo thông thái", species: .owl, fur: .cocoa, items: ["glasses.round", "hat.beret", "back.backpack"]),
+        PetLook(id: "look.dragonking", name: "Rồng con giữ kho báu", species: .dragon, fur: .mint, items: ["hat.crown", "outfit.cape"]),
+        PetLook(id: "look.unicornfairy", name: "Kỳ lân trong mơ", species: .unicorn, fur: .lilac, items: ["hat.tiara", "back.fairy", "neck.pearls"])
     ]
 
     static func look(_ id: String) -> PetLook? { all.first { $0.id == id } }
@@ -112,6 +119,11 @@ extension PetSpecies {
         case .duck: return .honey
         case .frog: return .mint
         case .penguin: return .midnight
+        case .ghost, .unicorn: return .snow
+        case .slime, .dragon: return .mint
+        case .mushroom: return .ginger
+        case .shark: return .sky
+        case .owl: return .cocoa
         }
     }
 

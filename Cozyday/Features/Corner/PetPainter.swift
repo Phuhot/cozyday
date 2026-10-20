@@ -154,25 +154,27 @@ struct PetPainter {
         let fur = FurPalette.of(appearance.fur)
         let anchor = CGPoint(x: 50, y: 88)
 
-        // Bóng: nhỏ lại khi nhảy lên.
-        let shadowW = 56 * stageScale * max(0.6, 1 - pose.hop / 30)
-        base.ellipse(50 - shadowW / 2, 84, shadowW, 9, Color.black.opacity(0.10))
+        // Bóng: nhỏ lại khi nhảy lên (ma bông bay nên bóng nhỏ và nhạt hơn).
+        let shadow = shadowStyle
+        let shadowW = shadow.width * stageScale * max(0.6, 1 - pose.hop / 30)
+        base.ellipse(50 - shadowW / 2, 84 + (9 - shadow.height) / 2, shadowW, shadow.height, Color.black.opacity(shadow.opacity))
 
         var ctx = base
-        ctx.translateBy(x: 0, y: -pose.hop)
+        ctx.translateBy(x: 0, y: -pose.hop - floatLift * stageScale)
         ctx.translateBy(x: anchor.x, y: anchor.y)
         ctx.rotate(by: .degrees(pose.tilt))
-        ctx.scaleBy(x: stageScale * (1 - pose.breath * 0.008), y: stageScale * (1 + pose.breath * 0.022))
+        let sq = squash
+        ctx.scaleBy(x: stageScale * sq.x, y: stageScale * sq.y)
         ctx.translateBy(x: -anchor.x, y: -anchor.y)
 
         drawTail(ctx, fur)
         if let back = appearance.back { CostumeArt.back(back, ctx, appearance, front: false) }
         if appearance.outfit == "outfit.cape" { drawCapeBack(ctx) }
         drawEars(ctx, fur)
-        let bodyFrame = bodyRect
-        ctx.fill(Path(ellipseIn: bodyFrame), with: .color(fur.base))
-        drawBelly(ctx, fur)
-        if let outfit = appearance.outfit { drawOutfit(ctx, outfit, body: bodyFrame) }
+        let body = bodyPath
+        ctx.fill(body, with: .color(bodyColor(fur)))
+        drawBelly(ctx, fur, body: body)
+        if let outfit = appearance.outfit { drawOutfit(ctx, outfit, body: body) }
         drawSideParts(ctx, fur)
         drawFace(ctx, fur)
         if let glasses = appearance.glasses { drawGlasses(ctx, glasses) }
@@ -191,6 +193,9 @@ struct PetPainter {
     private var bodyRect: CGRect {
         appearance.species == .hamster ? CGRect(x: 13, y: 32, width: 74, height: 56) : CGRect(x: 16, y: 28, width: 68, height: 60)
     }
+
+    /// Đường viền thân: elip chung, hoặc dáng riêng của loài (SpeciesArt.swift). Áo được cắt theo đường này.
+    private var bodyPath: Path { customBodyPath ?? Path(ellipseIn: bodyRect) }
 
     // MARK: Đuôi
 
@@ -237,13 +242,17 @@ struct PetPainter {
             ctx.rotated(Double(t) * 10, around: CGPoint(x: 76, y: 82)) { c in
                 c.polygon([CGPoint(x: 70, y: 80), CGPoint(x: 87, y: 87), CGPoint(x: 72, y: 87)], fur.shade)
             }
+        case .ghost, .slime, .mushroom, .shark, .owl, .dragon, .unicorn:
+            drawShapeTail(ctx, fur)
         }
     }
 
     // MARK: Bụng
 
-    private func drawBelly(_ ctx: GraphicsContext, _ fur: FurPalette) {
+    private func drawBelly(_ ctx: GraphicsContext, _ fur: FurPalette, body: Path) {
         switch appearance.species {
+        case .ghost, .slime, .mushroom, .shark, .owl, .dragon, .unicorn:
+            drawShapeBelly(ctx, fur, body: body)
         case .fox:
             ctx.ellipse(31, 56, 38, 30, rgb(0xFFF8F0))
         case .penguin:
@@ -315,6 +324,8 @@ struct PetPainter {
             ctx.rotated(24 + wave, around: CGPoint(x: 78, y: 64)) { c in
                 c.ellipse(71, 59, 14, 20, dark)
             }
+        case .ghost, .slime, .mushroom, .shark, .owl, .dragon, .unicorn:
+            drawShapeSideParts(ctx, fur)
         default:
             break
         }
@@ -411,6 +422,8 @@ struct PetPainter {
             ctx.circle(73, 31.5, 9.5, dark)
         case .penguin:
             break // không có tai
+        case .ghost, .slime, .mushroom, .shark, .owl, .dragon, .unicorn:
+            drawShapeEars(ctx, fur)
         }
     }
 
@@ -441,11 +454,14 @@ struct PetPainter {
             ctx.rotated(28, around: CGPoint(x: 37.5, y: 51)) { c in c.ellipse(30.5, 42, 14, 18.5, dark) }
             ctx.rotated(-28, around: CGPoint(x: 62.5, y: 51)) { c in c.ellipse(55.5, 42, 14, 18.5, dark) }
             ctx.ellipse(41.5, 52, 17, 10, fur.belly)
+        case .ghost, .slime, .mushroom, .shark, .owl, .dragon, .unicorn:
+            drawShapeFaceMarks(ctx, fur)
         default:
             break
         }
 
-        let f = eyeScale
+        // Cú mèo: mắt to tròn hơn một chút.
+        let f = eyeScale * (appearance.species == .owl ? 1.12 : 1)
         let dx = pose.look * 1.3
         let left = CGPoint(x: 37.5 + dx, y: 50)
         let right = CGPoint(x: 62.5 + dx, y: 50)
@@ -511,6 +527,7 @@ struct PetPainter {
                 }
             }
         }
+        if appearance.species.hasCustomShape { drawShapeEyeExtras(ctx, eyeLine, left: left, right: right) }
         // má hồng
         let blush = Palette.blush.opacity(min(1, (mood == .happy ? 1 : 0.75) + Double(pose.petted) * 0.4))
         let grow = pose.petted * 2
@@ -567,6 +584,8 @@ struct PetPainter {
                     p.addQuadCurve(to: CGPoint(x: 54.5, y: 57.5), control: CGPoint(x: 52.5, y: 60.5))
                 }
             }
+        case .ghost, .slime, .mushroom, .shark, .owl, .dragon, .unicorn:
+            drawShapeMouth(ctx, fur, line: line)
         default:
             let nose: CGFloat = appearance.species == .bear || appearance.species == .puppy ? 1.6 : (appearance.species == .panda ? 1.3 : 1)
             ctx.polygon([CGPoint(x: 50 - 1.5 * nose, y: 55), CGPoint(x: 50 + 1.5 * nose, y: 55), CGPoint(x: 50, y: 55 + 2 * nose)], line)
@@ -701,9 +720,9 @@ struct PetPainter {
         ctx.polygon([CGPoint(x: 22, y: 60), CGPoint(x: 78, y: 60), CGPoint(x: 93, y: 90), CGPoint(x: 7, y: 90)], rgb(0xC2565A))
     }
 
-    private func drawOutfit(_ ctx: GraphicsContext, _ id: String, body: CGRect) {
+    private func drawOutfit(_ ctx: GraphicsContext, _ id: String, body: Path) {
         var clipped = ctx
-        clipped.clip(to: Path(ellipseIn: body))
+        clipped.clip(to: body)
         switch id {
         case "outfit.sweater":
             let green = rgb(0x8DB890)
@@ -743,8 +762,7 @@ struct PetPainter {
     // MARK: Mũ
 
     private func drawHat(_ ctx: GraphicsContext, _ id: String) {
-        let top: CGFloat = appearance.species == .hamster ? 32 : 28
-        let dy = top - 28
+        let dy = hatTop - 28
         var c = ctx
         c.translateBy(x: 0, y: dy)
         switch id {
@@ -844,6 +862,8 @@ struct PetPainter {
             for foot in feet {
                 ctx.ellipse(foot.x - 5.5, foot.y, 11, 7 + dangle / 2, fur.shade)
             }
+        case .ghost, .slime, .mushroom, .shark, .owl, .dragon, .unicorn:
+            drawShapePaws(ctx, fur, feet: feet, dangle: dangle)
         default:
             ctx.ellipse(36, 80 - step + dangle, 10, 7 + dangle / 2, fur.base)
             ctx.ellipse(54, 80 + step + dangle, 10, 7 + dangle / 2, fur.base)

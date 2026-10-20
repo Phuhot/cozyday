@@ -208,6 +208,41 @@ enum Adventure {
                                  loves: "trượt bụng trên cát ướt rồi lao ùm xuống nước",
                                  snack: "một con cá nhỏ", keepsake: "một viên sỏi nhẵn để tặng bạn",
                                  rain: "thích chí trượt bụng trên nền đất ướt, bì bõm như ở nhà")
+        case .ghost:
+            return SpeciesFlavor(title: "Gác mái cũ", place: "gác mái cũ đầy rương gỗ",
+                                 loves: "bay lượn quanh mấy chiếc rương, vạt áo gợn sóng phấp phới",
+                                 snack: "một chiếc bánh bao trắng", keepsake: "một chiếc đèn lồng giấy nhỏ",
+                                 rain: "bay lên trú dưới mái hiên, ngắm hạt mưa xuyên qua vạt áo")
+        case .slime:
+            return SpeciesFlavor(title: "Vườn thạch rau câu", place: "khu vườn có giàn nho mọng",
+                                 loves: "nảy tưng tưng qua từng phiến đá, mỗi lần nảy lại rung rinh",
+                                 snack: "một chén thạch rau câu", keepsake: "một viên bi thủy tinh trong veo",
+                                 rain: "ngồi giữa sân hứng mưa, người căng mọng và bóng loáng hơn")
+        case .mushroom:
+            return SpeciesFlavor(title: "Rừng sau mưa", place: "khu rừng ẩm sau cơn mưa",
+                                 loves: "ngồi dưới gốc cây cổ thụ, đếm từng giọt sương trên lá",
+                                 snack: "một quả mâm xôi dại", keepsake: "một chiếc lá dương xỉ cuộn tròn",
+                                 rain: "mừng rỡ đứng giữa mưa, mũ nấm như cái ô che cho cả bạn kiến")
+        case .shark:
+            return SpeciesFlavor(title: "Rạn san hô", place: "rạn san hô nhiều cá cờ",
+                                 loves: "bơi vòng quanh rạn san hô, vây lưng rẽ nước thành vệt dài",
+                                 snack: "một nắm rong biển giòn", keepsake: "một vỏ ốc xoắn màu hồng",
+                                 rain: "lặn xuống sâu hơn một chút, ngắm mưa rơi lấm tấm trên mặt nước")
+        case .owl:
+            return SpeciesFlavor(title: "Thư viện trên cây", place: "thư viện nhỏ trong thân cây sồi",
+                                 loves: "lật từng trang sách dưới ánh trăng, thỉnh thoảng lại cú cú",
+                                 snack: "một chiếc bánh quy yến mạch", keepsake: "một chiếc lông cú có vằn",
+                                 rain: "rúc vào hốc cây, xù lông lên cho ấm rồi đọc tiếp")
+        case .dragon:
+            return SpeciesFlavor(title: "Hang đá lấp lánh", place: "hang đá có những viên pha lê",
+                                 loves: "đếm lại kho báu gồm toàn cúc áo và nắp chai",
+                                 snack: "một củ khoai nướng thơm lừng", keepsake: "một chiếc cúc áo bằng đồng",
+                                 rain: "phì một hơi khói ấm để hong khô đôi cánh nhỏ")
+        case .unicorn:
+            return SpeciesFlavor(title: "Đồi cầu vồng", place: "ngọn đồi có cầu vồng sau mưa",
+                                 loves: "phi nước kiệu trên cỏ, bờm màu kẹo tung bay theo gió",
+                                 snack: "một viên đường hình ngôi sao", keepsake: "một sợi bờm màu hồng nhạt",
+                                 rain: "đứng chờ mưa tạnh để ngắm cầu vồng hiện ra")
         }
     }
 

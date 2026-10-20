@@ -82,6 +82,30 @@ final class RewardAndShopTests: XCTestCase {
         XCTAssertTrue(unused.count <= 12, "nhiều món chưa có trong bộ nào: \(unused)")
     }
 
+    func testNewSpeciesShapesAreInCatalogWithRarityAndLooks() {
+        let shapes: [PetSpecies] = [.ghost, .slime, .mushroom, .shark, .owl, .dragon, .unicorn]
+        for s in shapes {
+            let item = Catalog.item("species." + s.rawValue)
+            XCTAssertNotNil(item, s.rawValue)
+            XCTAssertEqual(item?.slot, .species)
+            XCTAssertGreaterThan(item?.price ?? 0, 0, "không được miễn phí: \(s)")
+            XCTAssertFalse(s.name.isEmpty)
+            XCTAssertTrue(PetLooks.all.contains { $0.species == s }, "thiếu bộ phối đồ cho \(s)")
+            XCTAssertEqual(PetAppearance(equipped: [.species: "species." + s.rawValue], level: 1).species, s)
+        }
+        // Rồng con và kỳ lân chỉ có trong gacha; các loài còn lại mua được.
+        XCTAssertEqual(Catalog.item("species.dragon")?.gachaOnly, true)
+        XCTAssertEqual(Catalog.item("species.dragon")?.rarity, .epic)
+        XCTAssertEqual(Catalog.item("species.unicorn")?.gachaOnly, true)
+        XCTAssertEqual(Catalog.item("species.unicorn")?.rarity, .secret)
+        XCTAssertEqual(Catalog.item("species.ghost")?.rarity, .rare)
+        for s in shapes where s != .dragon && s != .unicorn {
+            XCTAssertEqual(Catalog.item("species." + s.rawValue)?.gachaOnly, false, s.rawValue)
+        }
+        let reward = LedgerEntry(id: UUID(), key: "task:x", kind: .taskCompleted, xp: 10_000, coins: 10_000, createdAt: Date(), refID: nil, memo: "")
+        XCTAssertEqual(PurchasePolicy.decide(itemID: "species.unicorn", owned: [], ledger: [reward], now: Date()), .gachaOnly)
+    }
+
     func testLookCostAndProgress() {
         let look = PetLook(id: "t", name: "t", species: .bunny, fur: .cream, items: ["hat.bow", "neck.bell"])
         XCTAssertEqual(look.cost(owned: []), 60 + 20 + 30)

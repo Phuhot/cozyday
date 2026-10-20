@@ -107,6 +107,13 @@ enum PetDialogue {
         case .capybara: return ["Thong thả thôi, không vội gì đâu.", "Ước gì được ngâm suối nước nóng…"]
         case .panda: return ["Măng hôm nay giòn ghê.", "Mình lăn một vòng cho \(name) xem nè!"]
         case .penguin: return ["Lạch bạch… mình đến đây!", "Mình để dành một viên sỏi đẹp tặng \(name)."]
+        case .ghost: return ["Hù! Hì, mình chỉ đùa thôi mà.", "Bật đèn ngủ giùm mình nha, mình sợ tối."]
+        case .slime: return ["Mình rung rinh vì vui nè!", "Chọc nhẹ thôi, mình lún mất."]
+        case .mushroom: return ["Trời ẩm thế này mình lớn nhanh ghê.", "Mũ mình có thêm một chấm mới đó!"]
+        case .shark: return ["Mình cười không có răng nào đâu, yên tâm.", "Bơi một vòng quanh bồn tắm không \(name)?"]
+        case .owl: return ["Cú cú… đêm nay mình thức cùng \(name).", "Mình vừa đọc xong một cuốn sách dày."]
+        case .dragon: return ["Hắt xì! Ơ, ra khói ấm nè.", "Cánh mình còn bé, nhưng mình tập bay mỗi ngày."]
+        case .unicorn: return ["Bờm mình hôm nay màu kẹo dâu.", "Mình gõ móng một cái là có sao rơi nè."]
         }
     }
 
@@ -170,6 +177,13 @@ enum PetDialogue {
         case (.petted, .capybara): return ["Thư thái quá…", "Cứ chậm rãi vậy là sướng nhất."]
         case (.petted, .panda): return ["Hihi, mình lăn một vòng nè!", "Ấm như ổ tre luôn…"]
         case (.petted, .penguin): return ["Mình vỗ cánh vì vui đó!", "Ê, nhột bụng mình!"]
+        case (.petted, .ghost): return ["Hì, tay bạn xuyên qua mình nè!", "Mình mềm như mây đúng không?"]
+        case (.petted, .slime): return ["Ui, lún một cái rồi nảy lại!", "Mình dẻo dẻo, mát mát nè."]
+        case (.petted, .mushroom): return ["Xoa mũ nấm của mình đi!", "Đừng làm rơi chấm bi nha."]
+        case (.petted, .shark): return ["Vây mình phe phẩy vì vui nè!", "Cá mập cũng thích được xoa đầu."]
+        case (.petted, .owl): return ["Cú cú… lông mình ấm chưa?", "Mình xoay đầu cho bạn xoa nè."]
+        case (.petted, .dragon): return ["Phì phò… khói hình trái tim!", "Gãi chỗ cái sừng nhỏ đi."]
+        case (.petted, .unicorn): return ["Bờm mình mượt chưa nè?", "Xoa nhẹ, sừng có hơi lấp lánh."]
 
         case (.pickedUp, .cat): return ["Meo? Mình lơ lửng nè!", "Đuôi mình đung đưa nè."]
         case (.pickedUp, .bunny): return ["Hai tai bay phấp phới!", "Thỏ nhảy cao chưa nè?"]
@@ -182,6 +196,13 @@ enum PetDialogue {
         case (.pickedUp, .capybara): return ["Ừm… lên cao cũng thong thả.", "Bay chậm chậm thôi nha."]
         case (.pickedUp, .panda): return ["Ôm mình như ôm gấu bông!", "Ui, gấu trúc biết bay!"]
         case (.pickedUp, .penguin): return ["Cuối cùng mình cũng bay!", "Vỗ cánh, vỗ cánh nào!"]
+        case (.pickedUp, .ghost): return ["Mình vốn biết bay mà, hì!", "Bay cao hơn nữa đi!"]
+        case (.pickedUp, .slime): return ["Ui, mình chảy dài ra nè!", "Cầm chắc kẻo mình tuột!"]
+        case (.pickedUp, .mushroom): return ["Giữ mũ nấm giùm mình!", "Rễ mình rời đất rồi nè!"]
+        case (.pickedUp, .shark): return ["Mình đang bơi trên không!", "Vây lưng rẽ gió vù vù!"]
+        case (.pickedUp, .owl): return ["Cú bay đêm nè, vụt vụt!", "Từ trên này thấy rõ ghê."]
+        case (.pickedUp, .dragon): return ["Rồng con cất cánh nè!", "Cánh mình vỗ đó, thấy không?"]
+        case (.pickedUp, .unicorn): return ["Bay lên cầu vồng nào!", "Bờm mình bay phấp phới!"]
 
         case (.dropped, .cat): return ["Meo, chỗ này để phơi nắng!", "Có cái hộp nào ở đây không?"]
         case (.dropped, .bunny): return ["Nhảy tưng tưng chỗ mới nè!", "Có cà rốt ở đây không ta?"]
@@ -194,6 +215,13 @@ enum PetDialogue {
         case (.dropped, .capybara): return ["Ở đâu cũng thong thả được.", "Chỗ này hợp ngâm mình ghê."]
         case (.dropped, .panda): return ["Có tre ở đây không nhỉ?", "Lăn một vòng chỗ mới nào!"]
         case (.dropped, .penguin): return ["Lạch bạch đi xem chỗ mới!", "Chỗ này trượt bụng được nè!"]
+        case (.dropped, .ghost): return ["Mình lơ lửng ở đây nha.", "Chỗ này hợp hù nhẹ ai đó."]
+        case (.dropped, .slime): return ["Bẹp! Rồi phồng lại nè.", "Chỗ này mát, mình dẻo hơn."]
+        case (.dropped, .mushroom): return ["Mọc ở đây được nè!", "Chỗ này ẩm ẩm, thích ghê."]
+        case (.dropped, .shark): return ["Chỗ này có nước không ta?", "Vây lưng dựng lên canh gác!"]
+        case (.dropped, .owl): return ["Chỗ này đậu được nè.", "Cú cú, ngắm cảnh từ đây."]
+        case (.dropped, .dragon): return ["Rồng con canh kho báu ở đây!", "Hạ cánh, đuôi gai cuộn lại."]
+        case (.dropped, .unicorn): return ["Lộc cộc, chỗ mới xinh ghê!", "Gõ móng một cái cho may mắn."]
         }
     }
 }
