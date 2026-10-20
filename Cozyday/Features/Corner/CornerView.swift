@@ -267,6 +267,8 @@ struct CornerView: View {
                 Text("\(wallet.xpIntoLevel)/\(RewardConfig.xpPerLevel) XP")
                     .font(Typography.caption.monospacedDigit())
                     .foregroundStyle(Palette.inkMuted)
+                    .lineLimit(1)
+                    .fixedSize()
             }
             Group {
                 if let next = stage.next {

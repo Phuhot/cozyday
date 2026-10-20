@@ -16,7 +16,8 @@ extension View {
     @ViewBuilder
     func silhouette(_ on: Bool) -> some View {
         if on {
-            self.colorMultiply(Palette.ink).opacity(0.85)
+            // Tô kín một màu theo đường viền: không lộ mắt, họa tiết hay màu của món.
+            self.hidden().overlay { Palette.ink.opacity(0.82).mask { self } }
         } else {
             self
         }
@@ -43,6 +44,7 @@ struct GachaView: View {
     @Environment(UIState.self) private var ui
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     @State private var spinningSince: Date?
     @State private var results: GachaResults?
@@ -58,13 +60,19 @@ struct GachaView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: Spacing.l) {
-                    HStack {
-                        Text("Mỗi lượt ra một món cho \(store.profile.displayPetName): mũ, kính, áo, phụ kiện hoặc hình dạng mới.")
-                            .font(Typography.callout)
-                            .foregroundStyle(Palette.inkMuted)
-                            .fixedSize(horizontal: false, vertical: true)
-                        Spacer(minLength: Spacing.s)
-                        CoinBadge(coins: store.wallet.coins)
+                    // Chữ cỡ Trợ năng: số xu lên trên, câu giới thiệu chiếm cả bề ngang.
+                    if dynamicTypeSize.isAccessibilitySize {
+                        VStack(alignment: .leading, spacing: Spacing.s) {
+                            CoinBadge(coins: store.wallet.coins)
+                            intro
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    } else {
+                        HStack {
+                            intro
+                            Spacer(minLength: Spacing.s)
+                            CoinBadge(coins: store.wallet.coins)
+                        }
                     }
 
                     machine
@@ -113,6 +121,13 @@ struct GachaView: View {
         }
     }
 
+    private var intro: some View {
+        Text("Mỗi lượt ra một món cho \(store.profile.displayPetName): mũ, kính, áo, phụ kiện hoặc hình dạng mới.")
+            .font(Typography.callout)
+            .foregroundStyle(Palette.inkMuted)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
     // MARK: Máy
 
     private var machine: some View {
@@ -126,7 +141,9 @@ struct GachaView: View {
 
     private var buttons: some View {
         let coins = store.wallet.coins
-        return HStack(spacing: Spacing.m) {
+        let layout = dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(spacing: Spacing.m)) : AnyLayout(HStackLayout(spacing: Spacing.m))
+        return layout {
             Button {
                 spin(1)
             } label: {
