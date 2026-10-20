@@ -21,8 +21,13 @@ xcrun simctl bootstatus "$SIM_ID" -b >/dev/null
 xcrun simctl install "$SIM_ID" "$APP"
 xcrun simctl ui "$SIM_ID" appearance light
 xcrun simctl ui "$SIM_ID" content_size large
-xcrun simctl status_bar "$SIM_ID" override --time "$(TZ=$TZ_NAME date +%H:%M)" \
-  --batteryState charged --batteryLevel 100 --cellularMode active --cellularBars 4 --wifiBars 3
+# Giờ trên thanh trạng thái chỉ để ảnh đẹp: simctl có lúc từ chối chuỗi giờ (ví dụ "00:05" lúc nửa đêm VN),
+# khi đó dùng giờ cố định 9:41, và lỗi ở bước này không được làm hỏng cả lượt chụp.
+status_bar() {
+  xcrun simctl status_bar "$SIM_ID" override --time "$1" \
+    --batteryState charged --batteryLevel 100 --cellularMode active --cellularBars 4 --wifiBars 3
+}
+status_bar "$(TZ=$TZ_NAME date +%H:%M)" || status_bar "9:41" || echo "::warning::Không đặt được thanh trạng thái"
 
 failures=0
 launch() {
