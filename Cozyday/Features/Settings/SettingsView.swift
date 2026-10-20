@@ -7,6 +7,7 @@ struct SettingsView: View {
     @Environment(UIState.self) private var ui
     @Environment(NotificationService.self) private var notifications
     @Environment(CalendarService.self) private var calendarService
+    @Environment(FocusCoordinator.self) private var focus
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
 
@@ -168,6 +169,7 @@ struct SettingsView: View {
 
     private func eraseAll() {
         guard ui.run({ try store.eraseAllData() }) else { return }
+        focus.resetAfterErase()
         Task { await notifications.sync(store: store) }
         ui.showSettings = false
         dismiss()

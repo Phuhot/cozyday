@@ -60,6 +60,11 @@ enum PreviewScreen: String, CaseIterable {
     case gachaResult
     case shopFloor
     case wardrobeSecret
+    // Hẹn giờ Pomodoro (tab Tập trung)
+    case focusIdle
+    case focusSettings
+    case focusFull
+    case focusMini
 }
 
 /// Chế độ xem trước chỉ có trong bản Debug: dữ liệu mẫu nằm trong bộ nhớ, không đụng tới kho dữ liệu thật.
@@ -104,7 +109,9 @@ extension PreviewMode {
         let store = try AppStore(container: PersistenceController.makeContainer(inMemory: true), clock: clock, defaults: defaults)
         let ui = UIState()
         if screen != .onboarding && screen != .tour {
-            try seed(store, clock: clock, activeFocus: screen == .focus, adventureReady: screen == .adventure)
+            try seed(store, clock: clock, activeFocus: [.focus, .focusFull, .focusMini].contains(screen),
+                     adventureReady: screen == .adventure,
+                     morningFocus: [.focus, .focusIdle, .focusSettings, .focusFull].contains(screen))
             try seedCareAndPlay(store, screen: screen)
             if trailer { try seedTrailerHero(store) }
         }
@@ -118,7 +125,7 @@ extension PreviewMode {
             router.selectedTab = .corner
         case .journal, .breathing, .journalEditor: router.selectedTab = .journal
         case .progress: router.selectedTab = .progress
-        case .focus: router.showFocus = true
+        case .focus, .focusIdle, .focusSettings, .focusFull: router.selectedTab = .focus
         case .settings: ui.showSettings = true
         default: router.selectedTab = .today
         }
@@ -203,7 +210,8 @@ extension PreviewMode {
     /// Hai tuần dữ liệu mẫu: việc đã xong, phiên tập trung, nhật ký, đồ đã mua; hôm nay có việc xong,
     /// việc trễ giờ, hai việc trùng giờ, việc chưa xếp giờ và Hộp chờ. Tên người dùng là tên giả.
     @MainActor
-    private static func seed(_ store: AppStore, clock: PreviewClock, activeFocus: Bool, adventureReady: Bool) throws {
+    private static func seed(_ store: AppStore, clock: PreviewClock, activeFocus: Bool, adventureReady: Bool,
+                             morningFocus: Bool = false) throws {
         let cal = store.calendar
         let today = store.today
         let habit = HabitSuggestion.all.filter { $0.id == "read" }
@@ -322,6 +330,18 @@ extension PreviewMode {
             _ = try store.reconcileFocus()
             clock.reset()
             try store.completeBreathing(day: today)
+        }
+
+        if morningFocus {
+            // Hai phiên Pomodoro đã xong trước đó trong ngày (chấm vòng và số phiên hôm nay).
+            let base = Date()
+            for back in [3.0, 2.0] {
+                clock.set(base.addingTimeInterval(-back * 3600))
+                try store.startFocus(kind: .focus, minutes: 25, occurrenceID: nil)
+                clock.set(base.addingTimeInterval(-back * 3600 + 25 * 60 + 5))
+                _ = try store.reconcileFocus()
+            }
+            clock.reset()
         }
 
         if activeFocus {

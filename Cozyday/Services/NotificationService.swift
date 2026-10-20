@@ -98,6 +98,25 @@ final class NotificationService {
         center.add(UNNotificationRequest(identifier: ReminderIDs.focusEnd, content: content, trigger: trigger))
     }
 
+    /// Nhắc quay lại khi rời app giữa phiên tập trung. Hủy khi quay lại hoặc khi khóa máy.
+    func scheduleFocusNudge(petName: String, strict: Bool, after seconds: TimeInterval) {
+        guard permission == .authorized else { return }
+        let content = UNMutableNotificationContent()
+        content.title = "\(petName) vẫn đang tập trung cùng bạn"
+        content.body = strict
+            ? "Chế độ nghiêm: rời app quá 1 phút thì phiên sẽ dừng và không có thưởng."
+            : "Quay lại CozyDay để giữ nhịp phiên này nhé."
+        content.sound = .default
+        content.userInfo = ["route": "focus"]
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: max(1, seconds), repeats: false)
+        center.add(UNNotificationRequest(identifier: ReminderIDs.focusNudge, content: content, trigger: trigger))
+    }
+
+    func cancelFocusNudge() {
+        center.removePendingNotificationRequests(withIdentifiers: [ReminderIDs.focusNudge])
+        center.removeDeliveredNotifications(withIdentifiers: [ReminderIDs.focusNudge])
+    }
+
     private func add(_ r: ReminderRequest, calendar: Calendar) {
         let content = UNMutableNotificationContent()
         content.title = r.title

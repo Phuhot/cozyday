@@ -257,6 +257,20 @@ Luật nằm trong `Cozyday/Core/Shop/Gacha.swift` (`GachaConfig`, `GachaPolicy`
   hiển thị (ảnh đại diện, phòng đang xem, tùy chọn Sân chơi), tạo lại hồ sơ trống rồi app quay về màn giới thiệu. Không hoàn tác.
 - Mã quà: chạm 7 lần vào dòng *Phiên bản* trong Cài đặt để hiện ô nhập. Mã đúng ghi một dòng `gift:<id>`; nhập lại được.
 
+## 3g. Hẹn giờ Pomodoro (tab Tập trung)
+
+- **Nhịp:** tập trung 5–120 phút (mặc định 25), nghỉ ngắn 5–15 phút, nghỉ dài 10–30 phút sau 2–6 phiên (mặc định 15 phút sau 4 phiên), mục tiêu 1–12 phiên mỗi ngày. Chọn nhanh 25/5, 50/10, 90/15.
+- **Đếm vòng:** tính lại từ các phiên đã lưu, không có bộ đếm riêng. Phiên tập trung chạy hết giờ trong ngày thứ N mà N chia hết cho số phiên một vòng → giờ nghỉ kế tiếp là nghỉ dài.
+- **Tự chạy tiếp:** tự bắt đầu giờ nghỉ (mặc định bật) và tự bắt đầu phiên tập trung kế tiếp (mặc định tắt). Chỉ tự chạy khi phiên vừa hết giờ chưa tới 1 phút; mở app sau khi hết giờ đã lâu thì app chờ bạn bấm.
+- **Rời app:** chuyển sang app khác từ 10 giây trở lên khi phiên tập trung đang chạy thì tính một lần rời app (hiện trong tổng kết phiên). Khóa máy không tính nếu iPhone có đặt mật mã. iOS chỉ báo cho app lúc khóa máy khi có mật mã, nên máy không đặt mật mã thì khóa máy cũng bị tính là rời app.
+- **Nhắc quay lại:** sau 15 giây ở app khác, thú cưng gửi một thông báo nhắc (cần bật thông báo). Quay lại hoặc khóa máy thì hủy thông báo này.
+- **Chế độ nghiêm:** không có nút tạm dừng trong phiên tập trung; muốn dừng sớm phải giữ nút 3 giây; rời app quá 1 phút thì phiên dừng tại thời điểm vượt 1 phút (không phải lúc mở lại app), không có thưởng. Nếu phiên đã hết giờ trước thời điểm đó thì vẫn tính là hoàn thành.
+- **Ghi nhanh:** trong phiên tập trung, nút "Ghi nhanh" cất một ý nghĩ chen ngang vào Hộp chờ (việc chưa xếp lịch, ghi chú "Ghi lúc đang tập trung").
+- **Âm nền:** mưa nhẹ, tiếng ồn nâu, sóng biển. App tự tổng hợp âm, không có tệp âm thanh. Chỉ phát khi phiên tập trung đang chạy (kể cả lúc khóa máy), trộn với nhạc khác chứ không ngắt. Chuông hết giờ phát khi app đang mở.
+- **Thưởng:** không đổi so với mục 3. Phiên tập trung ≥ 10 phút chạy hết giờ: +2 XP và +2 xu mỗi 5 phút (tối đa 120 phút). Giờ nghỉ không có thưởng.
+- **Lưu trữ:** cài đặt hẹn giờ (`focus.settings`) và số lần rời app của 30 phiên gần nhất (`focus.awayCounts`) nằm trong UserDefaults trên máy, không vào bản sao lưu, bị xóa khi "Xóa toàn bộ dữ liệu".
+- **Giới hạn:** CozyDay không chặn được app khác (cần quyền Screen Time của Apple, app cài ngoài App Store không xin được). Không có Live Activity / Dynamic Island.
+
 ## 4. Sao lưu và khôi phục
 
 ### Xuất

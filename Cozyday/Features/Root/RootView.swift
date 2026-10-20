@@ -8,6 +8,7 @@ struct RootView: View {
     @Environment(NotificationService.self) private var notifications
     @Environment(CalendarService.self) private var calendarService
     @Environment(AppRouter.self) private var router
+    @Environment(FocusCoordinator.self) private var focus
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -36,9 +37,11 @@ struct RootView: View {
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { appBecameActive() }
+            if phase == .background { focus.sceneEnteredBackground() }
         }
         .onChange(of: store.changeCounter) { _, _ in
             notifications.scheduleSync(store: store)
+            focus.storeChanged()
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification)) { _ in
             // Qua nửa đêm, đổi múi giờ hoặc giờ mùa hè khi app đang mở.
@@ -52,10 +55,9 @@ struct RootView: View {
     private func appBecameActive() {
         dayClock.refresh()
         calendarService.refreshAccess()
-        // Phiên tập trung đã hết giờ khi app ở nền/đóng → chốt đúng một lần.
-        var reward: LedgerEntry?
-        ui.run { reward = try store.reconcileFocus() }
-        ui.reward(reward)
+        // Phiên tập trung đã hết giờ khi app ở nền/đóng → chốt đúng một lần; tính lần rời app (chế độ nghiêm).
+        focus.attach(store: store, ui: ui, notifications: notifications)
+        focus.sceneBecameActive()
         ui.run { try store.ensureUpcomingOccurrences() }
         notifications.scheduleSync(store: store)
     }
@@ -63,12 +65,16 @@ struct RootView: View {
 
 struct MainTabView: View {
     @Environment(AppRouter.self) private var router
+    @Environment(AppStore.self) private var store
 
     var body: some View {
         TabView(selection: Binding(get: { router.selectedTab }, set: { router.selectedTab = $0 })) {
             TodayView()
                 .tabItem { Label("Hôm nay", systemImage: "sun.max") }
                 .tag(AppTab.today)
+            FocusView(isSheet: false)
+                .tabItem { Label("Tập trung", systemImage: "timer") }
+                .tag(AppTab.focus)
             CornerView()
                 .tabItem { Label("Góc nhỏ", systemImage: "pawprint") }
                 .tag(AppTab.corner)
@@ -79,6 +85,16 @@ struct MainTabView: View {
                 .tabItem { Label("Tiến bộ", systemImage: "chart.bar") }
                 .tag(AppTab.progress)
         }
+        .overlay(alignment: .bottomTrailing) {
+            // Đang có phiên mà bạn ở tab khác: đồng hồ nhỏ nổi trên thanh tab, chạm để quay lại.
+            if let session = store.activeFocus, router.selectedTab != .focus {
+                FocusMiniBar(session: session) { router.selectedTab = .focus }
+                    .padding(.trailing, Spacing.l)
+                    .padding(.bottom, 92)
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
+            }
+        }
+        .animation(Motion.gentle, value: store.activeFocus?.id)
     }
 }
 

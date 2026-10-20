@@ -38,6 +38,19 @@ extension AppStore {
         return try finish(s)
     }
 
+    /// Chế độ nghiêm: rời app quá lâu thì phiên dừng ở thời điểm vượt giới hạn (không phải lúc mở lại app).
+    /// Nếu phiên đã hết giờ trước thời điểm đó thì vẫn tính là hoàn thành.
+    @discardableResult
+    func breakFocus(at moment: Date) throws -> LedgerEntry? {
+        guard var s = activeFocus else { return nil }
+        s.endEarly(at: min(max(moment, s.startedAt), now))
+        return try finish(s)
+    }
+
+    func pomodoroDay(settings: PomodoroSettings) -> PomodoroDay {
+        PomodoroDay.compute(sessions: focusSessions, day: today, calendar: calendar, settings: settings)
+    }
+
     /// Gọi khi mở lại app / khi đồng hồ trên màn hình về 0. Kết thúc + thưởng đúng một lần.
     @discardableResult
     func reconcileFocus() throws -> LedgerEntry? {

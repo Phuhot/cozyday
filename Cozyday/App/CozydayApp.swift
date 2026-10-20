@@ -38,6 +38,7 @@ struct CozydayApp: App {
             .environment(env.dayClock)
             .environment(env.notifications)
             .environment(env.calendar)
+            .environment(env.focus)
             .environment(AppRouter.shared)
             .tint(Palette.lavender)
     }
@@ -49,6 +50,16 @@ struct AppEnvironment {
     let dayClock: DayClock
     let notifications: NotificationService
     let calendar: CalendarService
+    let focus: FocusCoordinator
+
+    init(store: AppStore, ui: UIState, dayClock: DayClock, notifications: NotificationService, calendar: CalendarService) {
+        self.store = store
+        self.ui = ui
+        self.dayClock = dayClock
+        self.notifications = notifications
+        self.calendar = calendar
+        focus = FocusCoordinator(defaults: store.defaults)
+    }
 }
 
 enum AppBoot {

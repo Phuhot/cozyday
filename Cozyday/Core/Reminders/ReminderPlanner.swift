@@ -13,6 +13,7 @@ struct ReminderRequest: Equatable {
 enum ReminderIDs {
     static let taskPrefix = "task."
     static let focusEnd = "focus.end"
+    static let focusNudge = "focus.nudge"
     static let journalDaily = "journal.daily"
 
     static func task(_ occurrenceID: UUID) -> String { taskPrefix + occurrenceID.uuidString.lowercased() }

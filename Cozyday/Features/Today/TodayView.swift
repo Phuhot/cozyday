@@ -194,7 +194,7 @@ struct TodayView: View {
                 }
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     Button {
-                        sheet = .focus(nil)
+                        router.selectedTab = .focus
                     } label: {
                         Image(systemName: store.activeFocus == nil ? "timer" : "timer.circle.fill")
                             .frame(minWidth: HitTarget.min, minHeight: HitTarget.min)
@@ -224,11 +224,6 @@ struct TodayView: View {
                 } else {
                     selectedDay = nil
                 }
-            }
-            .onChange(of: router.showFocus, initial: true) { _, show in
-                guard show else { return }
-                router.showFocus = false
-                sheet = .focus(nil)
             }
             .task { await openPreviewSheet() }
         }

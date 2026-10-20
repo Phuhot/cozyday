@@ -162,3 +162,17 @@ Xem `PROJECT_STATUS.md` — mục "Kết quả kiểm tra thực tế". Mục n�
 - [ ] Cài đặt: chạm *Phiên bản* 7 lần → hiện ô *Mã quà*; nhập mã thử nghiệm → nhận xu
 - [ ] Đồng xu mới (dấu chân) ở mọi chỗ hiện số xu
 
+
+## Hẹn giờ Pomodoro (phiên 8)
+
+- [ ] Tab "Tập trung" nằm giữa Hôm nay và Góc nhỏ; nút đồng hồ ở Hôm nay chuyển sang tab này.
+- [ ] Bắt đầu phiên, chuyển sang tab khác: đồng hồ nhỏ hiện phía trên thanh tab và đếm ngược; chạm vào thì quay lại tab Tập trung.
+- [ ] Đặt tập trung 5 phút, bật "Tự bắt đầu giờ nghỉ": hết giờ có chuông + rung, giờ nghỉ tự chạy. Sau 4 phiên, giờ nghỉ là nghỉ dài.
+- [ ] Hết giờ khi app ở nền rồi mở lại sau vài phút: phiên được chốt một lần, không tự bật giờ nghỉ.
+- [ ] Chuyển sang app khác 20 giây rồi quay lại: có dòng "Bạn đã rời app 20 giây"; tổng kết phiên ghi "Rời app 1 lần". Sau 15 giây có thông báo nhắc (nếu đã bật thông báo).
+- [ ] Khóa máy giữa phiên (iPhone có mật mã) 2 phút rồi mở: không bị tính rời app, không có thông báo nhắc.
+- [ ] Chế độ nghiêm: không có nút tạm dừng; giữ nút đỏ 3 giây mới dừng; sang app khác hơn 1 phút rồi quay lại thì phiên dừng, không có thưởng.
+- [ ] "Ghi nhanh" cất ý nghĩ vào Hộp chờ ở Hôm nay.
+- [ ] Âm nền: chọn Mưa nhẹ, bắt đầu phiên, khóa máy: vẫn nghe tiếng mưa; tạm dừng thì tắt; đang nghe nhạc app khác thì nhạc không bị ngắt.
+- [ ] "Toàn màn hình": nền tối, đồng hồ lớn, màn hình không tự tắt khi bật "Giữ màn hình sáng".
+- [ ] Xóa toàn bộ dữ liệu: cài đặt hẹn giờ về mặc định.

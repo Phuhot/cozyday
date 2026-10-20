@@ -126,3 +126,10 @@ Các ảnh trên do CI chụp ở lần chạy có `[ui-preview]` kế tiếp; n
 | ![Máy gacha](screenshots/46-gacha.jpg) Máy gacha: giá, tỉ lệ, bộ đếm bảo đảm | ![Kết quả 10 lượt](screenshots/47-gacha-result.jpg) Kết quả quay 10 lượt | ![Mua sàn](screenshots/48-shop-floor.jpg) Cửa hàng, mục Sàn nhà |
 | ![Đồ bí mật](screenshots/49-wardrobe-secret.jpg) Tủ đồ: món Bí mật chỉ hiện bóng | ![Gacha — tối](screenshots/dark-46-gacha.jpg) Máy gacha, chế độ tối | ![Gacha — chữ lớn](screenshots/large-46-gacha.jpg) Máy gacha, chữ lớn |
 | ![Góc nhỏ — chữ lớn](screenshots/large-07-corner.jpg) Góc nhỏ bố cục mới, chữ lớn | | |
+
+## Hẹn giờ Pomodoro (phiên 8)
+
+| | | |
+|---|---|---|
+| ![Tab Tập trung](screenshots/50-focus-idle.jpg) Tab Tập trung, chưa chạy | ![Đang chạy](screenshots/06-focus.jpg) Đang tập trung, vòng 3/4 | ![Cài đặt hẹn giờ](screenshots/51-focus-settings.jpg) Cài đặt hẹn giờ |
+| ![Toàn màn hình](screenshots/52-focus-full.jpg) Toàn màn hình | ![Đồng hồ nhỏ](screenshots/53-focus-mini.jpg) Đồng hồ nhỏ khi ở tab khác | ![Chữ lớn](screenshots/large-06-focus.jpg) Chữ lớn |

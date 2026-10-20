@@ -130,6 +130,10 @@ burst 40-basket-frames basket 7 4 0.7
 shot 41-avatar avatar 5
 shot 42-avatar-outfit avatarOutfit 5
 shot 43-blocks blocks 12
+shot 50-focus-idle focusIdle 4
+shot 51-focus-settings focusSettings 5
+shot 52-focus-full focusFull 5
+shot 53-focus-mini focusMini 4
 shot 44-merge merge 12
 shot 45-tour tour 4
 shot 46-gacha gacha 5
@@ -162,6 +166,7 @@ shot dark-37-result result 17
 shot dark-41-avatar avatar 5
 shot dark-28-clean clean
 shot dark-46-gacha gacha 5
+shot dark-52-focus-full focusFull 5
 xcrun simctl ui "$SIM_ID" appearance light
 
 log "Cỡ chữ rất lớn (Trợ năng)"
@@ -176,6 +181,7 @@ shot large-41-avatar avatar 5
 shot large-28-clean clean
 shot large-46-gacha gacha 5
 shot large-07-corner corner
+shot large-06-focus focus
 xcrun simctl ui "$SIM_ID" content_size large
 
 xcrun simctl terminate "$SIM_ID" "$EXPECTED_BUNDLE_ID" 2>/dev/null || true

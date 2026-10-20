@@ -3,6 +3,7 @@ import Observation
 
 enum AppTab: Hashable {
     case today
+    case focus
     case corner
     case journal
     case progress
@@ -17,12 +18,10 @@ final class AppRouter {
     var selectedTab: AppTab = .today
     /// Task cần mở sau khi bấm thông báo nhắc việc.
     var pendingTaskID: UUID?
-    var showFocus = false
 
     func handle(route: String) {
         if route == "focus" {
-            selectedTab = .today
-            showFocus = true
+            selectedTab = .focus
         } else if route == "journal" {
             selectedTab = .journal
         } else if route.hasPrefix("task:"), let id = UUID(uuidString: String(route.dropFirst(5))) {

@@ -101,7 +101,8 @@ extension AppStore {
 
     /// Tùy chọn hiển thị lưu ngoài SwiftData, xóa cùng khi xóa dữ liệu.
     static let localPreferenceKeys = [avatarKey, "corner.room", "playground.species", "playground.tutorialsSeen",
-                                      "playground.memoryLevel", "playground.sound", "playground.haptics", "today.layout"]
+                                      "playground.memoryLevel", "playground.sound", "playground.haptics", "today.layout",
+                                      "focus.settings", "focus.awayCounts"]
 
     private func deleteAll<T: PersistentModel>(_ type: T.Type) throws {
         for model in try context.fetch(FetchDescriptor<T>()) {
