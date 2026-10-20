@@ -257,9 +257,10 @@ enum Catalog {
     private static let byID: [String: CatalogItem] = Dictionary(items.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
     private static let bySlot: [ItemSlot: [CatalogItem]] = Dictionary(grouping: items, by: \.slot)
 
-    /// Vị trí của món gốc khi tạo biến thể (chỉ đọc mảng gốc, tránh vòng lặp khởi tạo).
+    /// Vị trí của món gốc khi tạo biến thể: lấy từ tiền tố ID ("bed.wood" → .bed), không đọc danh mục
+    /// (tránh vòng lặp khởi tạo và đúng cả với món nằm ở các file Catalog+…).
     static func baseSlot(_ id: String) -> ItemSlot {
-        (roomItems + petItems).first { $0.id == id }?.slot ?? .wall
+        id.split(separator: ".", maxSplits: 1).first.flatMap { ItemSlot(rawValue: String($0)) } ?? .wall
     }
 
     static let roomItems: [CatalogItem] = [
