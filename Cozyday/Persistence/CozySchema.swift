@@ -177,8 +177,8 @@ enum CozySchemaV1: VersionedSchema {
 }
 
 enum CozyMigrationPlan: SchemaMigrationPlan {
-    static var schemas: [any VersionedSchema.Type] { [CozySchemaV1.self, CozySchemaV2.self, CozySchemaV3.self] }
-    static var stages: [MigrationStage] { [v1ToV2, v2ToV3] }
+    static var schemas: [any VersionedSchema.Type] { [CozySchemaV1.self, CozySchemaV2.self, CozySchemaV3.self, CozySchemaV4.self] }
+    static var stages: [MigrationStage] { [v1ToV2, v2ToV3, v3ToV4] }
 
     /// V1 → V2: chỉ thêm cột `subtasksJSON` (mặc định rỗng) → migration nhẹ, không đụng dữ liệu cũ.
     static let v1ToV2 = MigrationStage.lightweight(fromVersion: CozySchemaV1.self, toVersion: CozySchemaV2.self)
@@ -186,17 +186,22 @@ enum CozyMigrationPlan: SchemaMigrationPlan {
     /// V2 → V3: chỉ thêm bảng mới (chăm thú cưng, Sân chơi) → migration nhẹ. Hồ sơ chăm sóc và gói đồ ăn
     /// chào mừng được tạo một lần khi mở app (`AppStore.ensurePetCare`), không phải trong migration.
     static let v2ToV3 = MigrationStage.lightweight(fromVersion: CozySchemaV2.self, toVersion: CozySchemaV3.self)
+
+    /// V3 → V4: thêm cột `tickets` (mặc định 0) vào sổ cái và bảng kỷ vật → migration nhẹ.
+    /// Các dấu dữ liệu một lần (cấp tối thiểu, bù mã t3ster) chạy sau khi mở kho, xem `AppStore.runDataMigrations`.
+    static let v3ToV4 = MigrationStage.lightweight(fromVersion: CozySchemaV3.self, toVersion: CozySchemaV4.self)
 }
 
-typealias ProfileModel = CozySchemaV3.ProfileModel
-typealias TaskTemplateModel = CozySchemaV3.TaskTemplateModel
-typealias TaskOccurrenceModel = CozySchemaV3.TaskOccurrenceModel
-typealias LedgerEntryModel = CozySchemaV3.LedgerEntryModel
-typealias OwnedItemModel = CozySchemaV3.OwnedItemModel
-typealias EquippedSlotModel = CozySchemaV3.EquippedSlotModel
-typealias FocusSessionModel = CozySchemaV3.FocusSessionModel
-typealias JournalEntryModel = CozySchemaV3.JournalEntryModel
-typealias PetCareStateModel = CozySchemaV3.PetCareStateModel
-typealias FoodStockModel = CozySchemaV3.FoodStockModel
-typealias CareActionModel = CozySchemaV3.CareActionModel
-typealias MinigameResultModel = CozySchemaV3.MinigameResultModel
+typealias ProfileModel = CozySchemaV4.ProfileModel
+typealias TaskTemplateModel = CozySchemaV4.TaskTemplateModel
+typealias TaskOccurrenceModel = CozySchemaV4.TaskOccurrenceModel
+typealias LedgerEntryModel = CozySchemaV4.LedgerEntryModel
+typealias OwnedItemModel = CozySchemaV4.OwnedItemModel
+typealias EquippedSlotModel = CozySchemaV4.EquippedSlotModel
+typealias FocusSessionModel = CozySchemaV4.FocusSessionModel
+typealias JournalEntryModel = CozySchemaV4.JournalEntryModel
+typealias PetCareStateModel = CozySchemaV4.PetCareStateModel
+typealias FoodStockModel = CozySchemaV4.FoodStockModel
+typealias CareActionModel = CozySchemaV4.CareActionModel
+typealias MinigameResultModel = CozySchemaV4.MinigameResultModel
+typealias KeepsakeModel = CozySchemaV4.KeepsakeModel

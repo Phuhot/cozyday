@@ -217,7 +217,7 @@ struct CatalogItem: Identifiable, Equatable {
     let name: String
     let price: Int
     let blurb: String
-    /// Cấp của thú cưng cần đạt để mở khóa (cấp = XP / 100 + 1).
+    /// Cấp của thú cưng cần đạt để mở khóa (theo `LevelCurve`, tối đa 30).
     var requiredLevel: Int = 1
     var rarity: ItemRarity = .common
     /// Chỉ có từ máy gacha, không bán trong cửa hàng. Món bí mật chưa có chỉ hiện bóng đen.
@@ -230,12 +230,22 @@ struct CatalogItem: Identifiable, Equatable {
     /// Chưa sở hữu thì chỉ thấy bóng (món bí mật).
     var isHiddenUntilOwned: Bool { rarity == .secret }
 
-    /// Biến thể màu của một món có sẵn: ID "<gốc>~<tên màu>", giá và cấp lấy từ tham số.
+    /// Biến thể màu của một món có sẵn: ID "<gốc>~<tên màu>", cấp lấy từ tham số.
+    /// `price` là giá niêm yết cũ; đồ đổi màu bán trong cửa hàng được giảm 30% (xem `variantPrice`).
+    /// `gachaOnly`: biến thể chỉ có trong máy gacha (không bán, không áp giá).
     static func variant(of base: String, _ tag: String, name: String, hue: Double, price: Int, blurb: String,
-                        requiredLevel: Int = 1, rarity: ItemRarity = .common) -> CatalogItem {
+                        requiredLevel: Int = 1, rarity: ItemRarity = .common, gachaOnly: Bool = false) -> CatalogItem {
         let slot = Catalog.baseSlot(base)
-        return CatalogItem(id: "\(base)~\(tag)", slot: slot, name: name, price: price, blurb: blurb,
-                           requiredLevel: requiredLevel, rarity: rarity, variantOf: base, hue: hue)
+        return CatalogItem(id: "\(base)~\(tag)", slot: slot, name: name, price: gachaOnly ? price : variantPrice(price),
+                           blurb: blurb, requiredLevel: requiredLevel, rarity: rarity, gachaOnly: gachaOnly,
+                           variantOf: base, hue: hue)
+    }
+
+    /// Giá đồ đổi màu từ phiên 9: 70% giá niêm yết cũ, làm tròn tới bội số 5 xu gần nhất (0,5 làm tròn lên), tối thiểu 5 xu.
+    /// Đồ miễn phí giữ 0 xu. Không áp cho đồ gốc. Giao dịch cũ không được hoàn tiền.
+    static func variantPrice(_ listed: Int) -> Int {
+        guard listed > 0 else { return 0 }
+        return max(5, Int((Double(listed) * 0.7 / 5).rounded()) * 5)
     }
     /// Lựa chọn mặc định (mèo, lông kem): luôn thuộc về bạn, đang dùng khi vị trí đó trống. Không ghi vào kho.
     var isDefault: Bool { Catalog.defaultIDs.contains(id) }

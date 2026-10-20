@@ -137,11 +137,38 @@ extension LedgerEntryModel {
         createdAt = r.createdAt
         refID = r.refID
         memo = r.memo
+        tickets = r.tickets
     }
 
     var record: LedgerEntry? {
         guard let kind = LedgerKind(rawValue: kindRaw) else { return nil }
-        return LedgerEntry(id: id, key: key, kind: kind, xp: xp, coins: coins, createdAt: createdAt, refID: refID, memo: memo)
+        return LedgerEntry(id: id, key: key, kind: kind, xp: xp, coins: coins, createdAt: createdAt, refID: refID, memo: memo,
+                           tickets: tickets)
+    }
+}
+
+extension KeepsakeModel {
+    convenience init(record r: KeepsakeRecord) {
+        self.init(id: r.id)
+        apply(r)
+    }
+
+    func apply(_ r: KeepsakeRecord) {
+        sourceKey = r.sourceKey
+        artID = r.artID
+        title = r.title
+        story = r.story
+        dayRaw = r.day.string
+        petName = r.petName
+        species = r.species
+        createdAt = r.createdAt
+        placedRoom = r.placedRoom
+    }
+
+    var record: KeepsakeRecord? {
+        guard let day = DayKey(string: dayRaw) else { return nil }
+        return KeepsakeRecord(id: id, sourceKey: sourceKey, artID: artID, title: title, story: story, day: day,
+                              petName: petName, species: species, createdAt: createdAt, placedRoom: placedRoom)
     }
 }
 

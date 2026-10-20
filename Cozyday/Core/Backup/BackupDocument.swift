@@ -5,8 +5,9 @@ import Foundation
 struct BackupDocument: Codable, Equatable {
     static let formatID = "cozyday.backup"
     /// 1: bản đầu. 2: thêm chăm thú cưng (nhu cầu, khay đồ ăn, lịch sử chăm sóc) và kết quả Sân chơi.
-    /// Bản 1 vẫn đọc được: các phần mới để trống → dùng giá trị mặc định khi khôi phục.
-    static let currentSchemaVersion = 2
+    /// 3: vé máy gacha trong từng dòng sổ cái (`tickets`) và kỷ vật chuyến đi.
+    /// Bản 1, 2 vẫn đọc được: các phần mới để trống → dùng giá trị mặc định khi khôi phục.
+    static let currentSchemaVersion = 3
 
     var format: String
     var schemaVersion: Int
@@ -27,6 +28,8 @@ struct BackupDocument: Codable, Equatable {
     var minigameResults: [MinigameResultRecord]?
     /// Ảnh đại diện (thêm sau, vẫn là bản 2 vì là trường tùy chọn; file cũ không có → ảnh mặc định).
     var avatar: AvatarConfig?
+    // V3 (có thể thiếu trong file cũ)
+    var keepsakes: [KeepsakeRecord]?
 
     var counts: BackupCounts {
         BackupCounts(
@@ -179,6 +182,8 @@ enum BackupValidator {
         try unique(d.occurrences.map(\.id), "việc")
         try unique(d.occurrences.map(\.occurrenceKey), "khóa việc")
         try unique(d.ledger.map(\.id), "sổ cái")
+        try unique((d.keepsakes ?? []).map(\.id), "kỷ vật")
+        try unique((d.keepsakes ?? []).map(\.sourceKey), "nguồn kỷ vật")
         try unique(d.ledger.map(\.key), "khóa sổ cái")
         try unique(d.ownedItems.map(\.itemID), "đồ đã sở hữu")
         try unique(d.equipped.map(\.slot), "vị trí đồ")
@@ -227,11 +232,13 @@ enum BackupValidator {
         }
         let wallet = Wallet(entries: d.ledger)
         if wallet.coins < 0 { throw BackupError.invalidValue("số xu âm") }
+        if wallet.tickets < 0 { throw BackupError.invalidValue("số vé âm") }
         for e in d.ledger {
             switch e.kind {
             case .gacha:
-                // Một lượt quay: trừ giá, cộng lại xu hoàn khi trùng (có thể dương nếu món Bí mật trùng).
-                guard e.coins <= GachaConfig.duplicateRefund(.secret), e.coins >= -GachaConfig.singlePrice, e.xp == 0 else {
+                // Một lượt quay: trừ giá (hoặc 1 vé), cộng lại xu hoàn khi trùng (có thể dương nếu món Bí mật trùng).
+                guard e.coins <= GachaConfig.duplicateRefund(.secret), e.coins >= -GachaConfig.singlePrice, e.xp == 0,
+                      (-1...0).contains(e.tickets) else {
                     throw BackupError.invalidValue("dòng máy gacha")
                 }
             case .purchase, .foodPurchase:
@@ -251,9 +258,24 @@ enum BackupValidator {
             case .adventure:
                 guard (0...RewardConfig.adventureXP).contains(e.xp), (0...RewardConfig.adventureCoins).contains(e.coins) else { throw BackupError.invalidValue("dòng thưởng chuyến đi") }
             case .gift:
-                guard e.xp == 0, (0...(GiftCodes.codes.values.max() ?? 0)).contains(e.coins) else { throw BackupError.invalidValue("dòng mã quà") }
+                guard e.xp == 0, e.tickets == 0, (0...GiftCodes.t3sterCoins).contains(e.coins) else { throw BackupError.invalidValue("dòng mã quà") }
+            case .quest:
+                guard e.xp == 0, (0...max(DailyQuests.setRewardCoins, WeeklyChest.coins)).contains(e.coins),
+                      (0...WeeklyChest.tickets).contains(e.tickets) else { throw BackupError.invalidValue("dòng nhiệm vụ") }
+            case .levelReward:
+                guard e.xp == 0, (0...LevelMilestones.maxCoins).contains(e.coins),
+                      (0...LevelMilestones.maxTickets).contains(e.tickets) else { throw BackupError.invalidValue("dòng quà mốc cấp") }
+            case .badge, .event:
+                guard (0...100).contains(e.xp), (0...200).contains(e.coins), (0...2).contains(e.tickets) else {
+                    throw BackupError.invalidValue("dòng thưởng huy hiệu/sự kiện")
+                }
+            case .system:
+                guard e.xp == 0, e.coins == 0, e.tickets == 0 else { throw BackupError.invalidValue("dòng hệ thống") }
+            case .tester:
+                // Dữ liệu thử nghiệm: chỉ cộng xu/vé, không bao giờ cộng XP.
+                guard e.xp == 0, e.coins >= 0, e.tickets >= 0 else { throw BackupError.invalidValue("dòng thử nghiệm") }
             default:
-                guard e.coins >= 0, e.xp >= 0 else { throw BackupError.invalidValue("dòng thưởng âm") }
+                guard e.coins >= 0, e.xp >= 0, e.tickets == 0 else { throw BackupError.invalidValue("dòng thưởng âm") }
             }
         }
         let owned = Set(d.ownedItems.map(\.itemID))

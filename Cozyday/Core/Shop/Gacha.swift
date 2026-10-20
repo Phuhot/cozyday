@@ -1,45 +1,53 @@
 import Foundation
 
-/// Máy gacha "Mây Mây": quay ra trang phục / hình dạng cho thú cưng. Toàn bộ là luật thuần (không đụng lưu trữ),
-/// ngẫu nhiên qua RNG truyền vào để test được. Tỉ lệ và giá hiện công khai trong màn máy gacha.
+/// Máy gacha "Mây Mây": quay ra đồ CHỈ có trong máy (không trùng đồ bán ở cửa hàng — so bằng ID).
+/// Toàn bộ là luật thuần (không đụng lưu trữ), ngẫu nhiên qua RNG truyền vào để test được.
+/// Tỉ lệ, bảo đảm và giá hiện công khai trong màn máy gacha.
 enum GachaConfig {
     static let singlePrice = 60
     static let tenPrice = 540
     static let tenCount = 10
 
-    /// Trọng số theo độ hiếm (tổng 100).
-    static let weights: [(ItemRarity, Int)] = [(.common, 60), (.rare, 28), (.epic, 10), (.secret, 2)]
+    /// Trọng số ở một lượt thường (tổng 100): Thường 57, Hiếm 30, Quý 10, Bí mật 3.
+    static let weights: [(ItemRarity, Int)] = [(.common, 57), (.rare, 30), (.epic, 10), (.secret, 3)]
 
     /// Chắc chắn ra món Quý trở lên nếu 9 lượt liền trước đó không có.
     static let epicPity = 10
-    /// Chắc chắn ra món Bí mật ở lượt thứ 60 kể từ món Bí mật gần nhất.
-    static let secretPity = 60
+    /// 39 lượt liền không có Bí mật → lượt thứ 40 chắc chắn ra Bí mật. Ra Bí mật thì đếm lại từ đầu.
+    static let secretPity = 40
 
-    /// Món trùng (đã có) đổi lại thành xu.
+    /// Món trùng (đã có hết cả nhóm) đổi lại thành xu.
     static func duplicateRefund(_ r: ItemRarity) -> Int {
         switch r {
-        case .common: return 15
-        case .rare: return 25
-        case .epic: return 50
-        case .secret: return 120
+        case .common: return 20
+        case .rare: return 30
+        case .epic: return 60
+        case .secret: return 150
         }
     }
 
-    static let pullSlots: Set<ItemSlot> = [.species, .hat, .glasses, .neck, .outfit, .back]
+    static var rulesText: [String] {
+        [
+            "Một lượt \(singlePrice) xu hoặc 1 vé. 10 lượt \(tenPrice) xu (bớt 60 xu, chắc chắn có ít nhất một món Hiếm).",
+            "Tỉ lệ mỗi lượt thường: Thường 57%, Hiếm 30%, Quý 10%, Bí mật 3%.",
+            "Bảo đảm: cứ \(epicPity) lượt chắc chắn có một món Quý trở lên; 39 lượt liền không có Bí mật thì lượt thứ \(secretPity) chắc chắn ra Bí mật. Vì có bảo đảm, tỉ lệ thực tế nhận Bí mật sau nhiều lượt cao hơn mức 3% của một lượt (trung bình khoảng 1 món mỗi 23 lượt).",
+            "Máy chỉ có đồ riêng của máy, không có đồ bán ở cửa hàng. Máy ưu tiên món bạn chưa có trong nhóm.",
+            "Đã có đủ cả nhóm thì món trùng đổi thành xu: Thường \(duplicateRefund(.common)), Hiếm \(duplicateRefund(.rare)), Quý \(duplicateRefund(.epic)), Bí mật \(duplicateRefund(.secret)) xu.",
+            "Món Bí mật chỉ hiện bóng cho tới khi bạn quay được."
+        ]
+    }
+}
 
-    static let rulesText: [String] = [
-        "Một lượt \(singlePrice) xu, 10 lượt \(tenPrice) xu (bớt 60 xu, chắc chắn có ít nhất một món Hiếm).",
-        "Tỉ lệ: Thường 60%, Hiếm 28%, Quý 10%, Bí mật 2%.",
-        "Cứ \(epicPity) lượt chắc chắn có một món Quý trở lên. Lượt thứ \(secretPity) kể từ món Bí mật gần nhất chắc chắn ra Bí mật.",
-        "Máy ưu tiên món bạn chưa có. Nếu cả nhóm đã có đủ, món trùng đổi thành xu: Thường \(duplicateRefund(.common)), Hiếm \(duplicateRefund(.rare)), Quý \(duplicateRefund(.epic)), Bí mật \(duplicateRefund(.secret)) xu.",
-        "Món Bí mật chỉ có trong máy và chỉ hiện bóng đen cho tới khi bạn quay được."
-    ]
+enum GachaPayment: Equatable {
+    case coins
+    case tickets
 }
 
 extension CatalogItem {
-    /// Độ hiếm hiệu lực: món có độ hiếm riêng giữ nguyên, món cửa hàng thường xếp theo giá.
+    /// Độ hiếm dùng trong máy gacha và nhãn hiển thị. Đồ của máy dùng đúng độ hiếm đã đặt;
+    /// đồ cửa hàng không có độ hiếm riêng thì xếp theo giá (chỉ để hiển thị).
     var tier: ItemRarity {
-        if rarity != .common { return rarity }
+        if gachaOnly || rarity != .common { return rarity }
         if price >= 90 { return .epic }
         if price >= 50 { return .rare }
         return .common
@@ -56,11 +64,13 @@ struct GachaPull: Equatable {
 
 enum GachaError: Error, Equatable, LocalizedError {
     case insufficientCoins(needed: Int, available: Int)
+    case insufficientTickets(needed: Int, available: Int)
     case emptyPool
 
     var errorDescription: String? {
         switch self {
         case .insufficientCoins(let needed, let available): return "Cần \(needed) xu, bạn đang có \(available) xu."
+        case .insufficientTickets(let needed, let available): return "Cần \(needed) vé, bạn đang có \(available) vé."
         case .emptyPool: return "Máy gacha đang trống."
         }
     }
@@ -80,10 +90,18 @@ struct SeededRNG: RandomNumberGenerator {
 }
 
 enum GachaPolicy {
-    /// Các món có thể ra, theo độ hiếm (bỏ món mặc định).
+    /// Các món có thể ra, theo độ hiếm: chỉ đồ riêng của máy (`gachaOnly`), không có đồ bán ở cửa hàng.
     static func pool() -> [ItemRarity: [CatalogItem]] {
-        let items = Catalog.items.filter { GachaConfig.pullSlots.contains($0.slot) && !$0.isDefault }
+        let items = Catalog.items.filter { $0.gachaOnly && !$0.isDefault }
         return Dictionary(grouping: items, by: \.tier)
+    }
+
+    /// Nhóm gần nhất còn món (ưu tiên hạ xuống, rồi mới nâng lên) — chỉ dùng khi một nhóm trống.
+    static func nearestTier(_ tier: ItemRarity, in pool: [ItemRarity: [CatalogItem]]) -> ItemRarity? {
+        let all = ItemRarity.allCases
+        guard let i = all.firstIndex(of: tier) else { return nil }
+        let order = all[...i].reversed() + all[(i + 1)...]
+        return order.first { !(pool[$0] ?? []).isEmpty }
     }
 
     /// Số lượt kể từ món Quý trở lên / Bí mật gần nhất, đọc từ sổ cái (không cần lưu bộ đếm riêng).
@@ -116,12 +134,18 @@ enum GachaPolicy {
         return max(tier, minimum)
     }
 
-    /// Quay `count` lượt (1 hoặc 10). Trả về từng lượt với dòng sổ cái đã tính sẵn (giá trừ đi, cộng hoàn xu nếu trùng).
+    /// Quay `count` lượt (1 hoặc 10) bằng xu hoặc vé (mỗi lượt 1 vé). Từng lượt xử lý tuần tự: bộ đếm bảo đảm
+    /// cập nhật sau mỗi lượt. Trả về từng lượt với dòng sổ cái đã tính sẵn (giá/vé trừ đi, cộng hoàn xu nếu trùng).
     static func pull<R: RandomNumberGenerator>(count: Int, ledger: [LedgerEntry], owned: Set<String>, now: Date,
-                                               rng: inout R) throws -> [GachaPull] {
-        let price = count >= GachaConfig.tenCount ? GachaConfig.tenPrice : GachaConfig.singlePrice * count
+                                               payment: GachaPayment = .coins, rng: inout R) throws -> [GachaPull] {
+        let price = payment == .tickets ? 0 : (count >= GachaConfig.tenCount ? GachaConfig.tenPrice : GachaConfig.singlePrice * count)
         let wallet = Wallet(entries: ledger)
-        guard wallet.coins >= price else { throw GachaError.insufficientCoins(needed: price, available: wallet.coins) }
+        switch payment {
+        case .coins:
+            guard wallet.coins >= price else { throw GachaError.insufficientCoins(needed: price, available: wallet.coins) }
+        case .tickets:
+            guard wallet.tickets >= count else { throw GachaError.insufficientTickets(needed: count, available: wallet.tickets) }
+        }
         let pool = pool()
         guard !pool.isEmpty else { throw GachaError.emptyPool }
 
@@ -132,13 +156,9 @@ enum GachaPolicy {
         let each = price / count
         for i in 0..<count {
             let guaranteeRare = count >= GachaConfig.tenCount && i == count - 1 && !results.contains { $0.tier >= .rare }
-            var tier = rollTier(sinceEpic: sinceEpic, sinceSecret: sinceSecret, minimum: guaranteeRare ? .rare : .common, rng: &rng)
-            // Nhóm trống (ví dụ chưa có món Bí mật nào): hạ dần xuống nhóm có món.
-            while (pool[tier] ?? []).isEmpty, tier != .common {
-                tier = ItemRarity.allCases[max(0, ItemRarity.allCases.firstIndex(of: tier)! - 1)]
-            }
+            let rolled = rollTier(sinceEpic: sinceEpic, sinceSecret: sinceSecret, minimum: guaranteeRare ? .rare : .common, rng: &rng)
+            guard let tier = nearestTier(rolled, in: pool) else { throw GachaError.emptyPool }
             let group = pool[tier] ?? []
-            guard !group.isEmpty else { throw GachaError.emptyPool }
             let fresh = group.filter { !Catalog.isOwned($0.id, owned: have) }
             let pickFrom = fresh.isEmpty ? group : fresh
             let item = pickFrom[Int.random(in: 0..<pickFrom.count, using: &rng)]
@@ -148,7 +168,8 @@ enum GachaPolicy {
             let id = UUID()
             let entry = LedgerEntry(id: id, key: LedgerKeys.gacha(id), kind: .gacha, xp: 0, coins: refund - cost,
                                     createdAt: now.addingTimeInterval(Double(i) * 0.001), refID: item.id,
-                                    memo: "\(tier.label): \(item.name)\(duplicate ? " (trùng, +\(refund) xu)" : "")")
+                                    memo: "\(tier.label): \(item.name)\(duplicate ? " (trùng, +\(refund) xu)" : "")",
+                                    tickets: payment == .tickets ? -1 : 0)
             results.append(GachaPull(itemID: item.id, tier: tier, isDuplicate: duplicate, refund: refund, entry: entry))
             have.insert(item.id)
             sinceEpic = tier >= .epic ? 0 : sinceEpic + 1

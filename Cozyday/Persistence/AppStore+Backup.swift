@@ -28,7 +28,8 @@ extension AppStore {
             foodStock: foodStock,
             careActions: careActions,
             minigameResults: minigameResults,
-            avatar: avatar
+            avatar: avatar,
+            keepsakes: keepsakes
         )
     }
 
@@ -49,6 +50,7 @@ extension AppStore {
             try self.deleteAll(FoodStockModel.self)
             try self.deleteAll(CareActionModel.self)
             try self.deleteAll(MinigameResultModel.self)
+            try self.deleteAll(KeepsakeModel.self)
 
             self.context.insert(ProfileModel(record: document.profile))
             document.templates.forEach { self.context.insert(TaskTemplateModel(record: $0)) }
@@ -64,8 +66,11 @@ extension AppStore {
             (document.foodStock ?? []).filter { $0.count > 0 }.forEach { self.context.insert(FoodStockModel(record: $0)) }
             (document.careActions ?? []).forEach { self.context.insert(CareActionModel(record: $0)) }
             (document.minigameResults ?? []).forEach { self.context.insert(MinigameResultModel(record: $0)) }
+            (document.keepsakes ?? []).forEach { self.context.insert(KeepsakeModel(record: $0)) }
         }
         try reloadAll()
+        // Bản sao lưu từ bản cũ: chạy dấu dữ liệu một lần (bản mới đã có dấu → bỏ qua).
+        try? runDataMigrations()
         // Ảnh đại diện nằm ngoài SwiftData: chỉ ghi sau khi phần dữ liệu chính đã khôi phục xong.
         try? saveAvatar(document.avatar ?? .standard)
         // Phiên tập trung quá hạn trong bản sao lưu: chốt một lần (khóa sổ cái chống thưởng trùng).
@@ -89,6 +94,7 @@ extension AppStore {
             try self.deleteAll(FoodStockModel.self)
             try self.deleteAll(CareActionModel.self)
             try self.deleteAll(MinigameResultModel.self)
+            try self.deleteAll(KeepsakeModel.self)
         }
         for store in [defaults, UserDefaults.standard] {
             for key in Self.localPreferenceKeys { store.removeObject(forKey: key) }
@@ -102,7 +108,8 @@ extension AppStore {
     /// Tùy chọn hiển thị lưu ngoài SwiftData, xóa cùng khi xóa dữ liệu.
     static let localPreferenceKeys = [avatarKey, "corner.room", "playground.species", "playground.tutorialsSeen",
                                       "playground.memoryLevel", "playground.sound", "playground.haptics", "today.layout",
-                                      "focus.settings", "focus.awayCounts"]
+                                      "focus.settings", "focus.awayCounts", "focus.leftAt", "focus.lockedAt",
+                                      AppStore.unseenGachaKey]
 
     private func deleteAll<T: PersistentModel>(_ type: T.Type) throws {
         for model in try context.fetch(FetchDescriptor<T>()) {

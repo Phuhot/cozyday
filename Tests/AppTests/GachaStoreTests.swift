@@ -24,7 +24,8 @@ final class GachaStoreTests: XCTestCase {
     func testGiftCodeAndGachaPersist() throws {
         let store = try makeStore()
         XCTAssertThrowsError(try store.redeemGiftCode("sai-ma"))
-        XCTAssertEqual(try store.redeemGiftCode("T3STER"), 1000)
+        XCTAssertEqual(try store.redeemGiftCode("T3STER"), .coins(GiftCodes.t3sterCoins))
+        XCTAssertThrowsError(try store.redeemGiftCode("t3ster"), "mỗi bộ dữ liệu nhận một lần")
         let before = store.wallet.coins
         let pulls = try store.pullGacha(count: 10)
         XCTAssertEqual(pulls.count, 10)

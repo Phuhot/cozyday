@@ -2,13 +2,19 @@ import Foundation
 import SwiftData
 
 extension AppStore {
-    /// Tập ID đồ đã có, nhớ tạm theo số món và món mới nhất (kho chỉ thêm món hoặc được nạp lại).
+    /// Tập ID đồ dùng được: đồ đã có, cộng toàn bộ danh mục khi đang bật Dữ liệu thử nghiệm
+    /// (ảo, không ghi vào kho — tắt chế độ là trở lại đúng kho thật; đồ thêm ở bản sau cũng tự có trong chế độ này).
     var ownedIDs: Set<String> {
-        if let c = ownedIDsCache, c.count == owned.count, c.last == owned.last?.itemID { return c.value }
-        let value = Set(owned.map(\.itemID))
-        ownedIDsCache = (owned.count, owned.last?.itemID, value)
+        let tester = isTesterMode
+        if let c = ownedIDsCache, c.count == owned.count, c.last == owned.last?.itemID, c.tester == tester { return c.value }
+        var value = realOwnedIDs
+        if tester { value.formUnion(Catalog.items.map(\.id)) }
+        ownedIDsCache = (owned.count, owned.last?.itemID, tester, value)
         return value
     }
+
+    /// Đồ thật sự có trong kho (không tính chế độ thử nghiệm).
+    var realOwnedIDs: Set<String> { Set(owned.map(\.itemID)) }
 
     func equippedItem(in slot: ItemSlot) -> CatalogItem? {
         equipped.first { $0.slot == slot }.flatMap { Catalog.item($0.itemID) }

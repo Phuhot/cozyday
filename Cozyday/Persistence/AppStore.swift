@@ -58,6 +58,7 @@ final class AppStore {
     var careActions: [CareActionRecord] = []
     /// Sân chơi (V3): các lượt đã kết thúc.
     var minigameResults: [MinigameResultRecord] = []
+    var keepsakes: [KeepsakeRecord] = []
     /// Ảnh đại diện: chỉ là lựa chọn hiển thị nên lưu trong UserDefaults (không đổi lược đồ SwiftData),
     /// vẫn có trong bản sao lưu. Ghi qua `saveAvatar`.
     var avatar: AvatarConfig = .standard
@@ -65,7 +66,7 @@ final class AppStore {
 
     @ObservationIgnored private var walletCache: (key: LedgerCacheKey, value: Wallet)?
     @ObservationIgnored private var ledgerKeysCache: (key: LedgerCacheKey, value: Set<String>)?
-    @ObservationIgnored var ownedIDsCache: (count: Int, last: String?, value: Set<String>)?
+    @ObservationIgnored var ownedIDsCache: (count: Int, last: String?, tester: Bool, value: Set<String>)?
 
     /// Tăng sau mỗi lần ghi thành công — dùng để đồng bộ lại thông báo.
     private(set) var changeCounter = 0
@@ -90,6 +91,8 @@ final class AppStore {
         self.avatar = Self.loadAvatar(from: defaults)
         try reloadAll()
         try repairDuplicateOccurrences()
+        // Dấu dữ liệu một lần của phiên 9 (cấp tối thiểu, bù t3ster). Lỗi lưu không chặn mở app: lần mở sau thử lại.
+        try? runDataMigrations()
     }
 
     var now: Date { clock.now }
@@ -114,6 +117,8 @@ final class AppStore {
             .sorted { $0.performedAt < $1.performedAt }
         minigameResults = try context.fetch(FetchDescriptor<MinigameResultModel>()).compactMap(\.record)
             .sorted { $0.finishedAt < $1.finishedAt }
+        keepsakes = try context.fetch(FetchDescriptor<KeepsakeModel>()).compactMap(\.record)
+            .sorted { $0.createdAt < $1.createdAt }
     }
 
     /// Tạo hồ sơ mặc định đúng một lần (idempotent). Không bao giờ ghi đè hồ sơ đang có.

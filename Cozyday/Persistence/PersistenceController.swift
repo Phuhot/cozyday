@@ -25,7 +25,7 @@ enum PersistenceController {
 
     /// `url`: chỉ dùng trong test (mở một file store cụ thể, ví dụ để thử migration).
     static func makeContainer(inMemory: Bool = false, url: URL? = nil) throws -> ModelContainer {
-        let schema = Schema(versionedSchema: CozySchemaV3.self)
+        let schema = Schema(versionedSchema: CozySchemaV4.self)
         let configuration: ModelConfiguration
         if let url {
             configuration = ModelConfiguration(schema: schema, url: url, cloudKitDatabase: .none)

@@ -41,7 +41,7 @@ extension Catalog {
     private static func floorVariant(_ slot: ItemSlot, _ pattern: String, _ tag: String, name: String, hue: Double, price: Int,
                                      blurb: String, level: Int = 1) -> CatalogItem {
         let base = "\(slot.rawValue).\(pattern)"
-        return CatalogItem(id: "\(base)~\(tag)", slot: slot, name: name, price: price, blurb: blurb,
+        return CatalogItem(id: "\(base)~\(tag)", slot: slot, name: name, price: CatalogItem.variantPrice(price), blurb: blurb,
                            requiredLevel: level, variantOf: base, hue: hue)
     }
 

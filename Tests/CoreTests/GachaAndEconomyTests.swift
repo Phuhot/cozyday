@@ -50,7 +50,7 @@ final class GachaAndEconomyTests: XCTestCase {
         XCTAssertEqual(p.entry.coins, -GachaConfig.singlePrice)
         XCTAssertEqual(p.entry.kind, .gacha)
         XCTAssertNotNil(Catalog.item(p.itemID))
-        XCTAssertTrue(GachaConfig.pullSlots.contains(Catalog.item(p.itemID)!.slot))
+        XCTAssertTrue(Catalog.item(p.itemID)!.gachaOnly, "máy chỉ ra đồ riêng của máy")
         XCTAssertEqual(Wallet(entries: ledger + [p.entry]).coins, 40)
     }
 
@@ -63,13 +63,18 @@ final class GachaAndEconomyTests: XCTestCase {
             XCTAssertEqual(-pulls.reduce(0) { $0 + $1.entry.coins } + refunds, GachaConfig.tenPrice)
             XCTAssertTrue(pulls.contains { $0.tier >= .rare }, "seed \(seed)")
             XCTAssertEqual(Set(pulls.map(\.entry.key)).count, 10)
-            // Ưu tiên món chưa có: trong 10 lượt đầu không trùng.
-            XCTAssertEqual(Set(pulls.map(\.itemID)).count, 10, "seed \(seed)")
+            // Ưu tiên món chưa có: còn món chưa có trong nhóm thì không ra món trùng.
+            var seen = Set<String>()
+            for p in pulls {
+                let unseenLeft = (GachaPolicy.pool()[p.tier] ?? []).contains { !seen.contains($0.id) }
+                if unseenLeft { XCTAssertFalse(seen.contains(p.itemID), "seed \(seed)") }
+                seen.insert(p.itemID)
+            }
         }
     }
 
     func testEpicPityAfterNineMisses() throws {
-        let common = GachaPolicy.pool()[.common]!.first!
+        let common = try XCTUnwrap(GachaPolicy.pool()[.common]?.first ?? GachaPolicy.pool()[.rare]?.first)
         var ledger = [gift(5000)]
         for i in 0..<(GachaConfig.epicPity - 1) {
             let id = UUID()
@@ -115,12 +120,39 @@ final class GachaAndEconomyTests: XCTestCase {
 }
 
 final class GiftCodeTests: XCTestCase {
-    func testAdminCode() {
-        XCTAssertEqual(GiftCodes.coins(for: " T3STER "), 1000)
-        XCTAssertNil(GiftCodes.coins(for: "tester"))
-        let e = GiftCodes.entry(code: "t3ster", now: Date())!
-        XCTAssertEqual(e.kind, .gift)
-        XCTAssertEqual(e.coins, 1000)
-        XCTAssertNotEqual(e.key, GiftCodes.entry(code: "t3ster", now: Date())!.key, "nhập lại được nhiều lần")
+    private func legacyRedemption(_ i: Int) -> LedgerEntry {
+        let id = UUID()
+        return LedgerEntry(id: id, key: LedgerKeys.gift(id), kind: .gift, xp: 0, coins: 1000,
+                           createdAt: Date().addingTimeInterval(Double(i)), refID: nil, memo: "Mã quà")
+    }
+
+    func testCodeKinds() {
+        XCTAssertEqual(GiftCodes.kind(of: " T3STER "), .coins)
+        XCTAssertEqual(GiftCodes.kind(of: "PhuHotDz"), .testerMode)
+        XCTAssertNil(GiftCodes.kind(of: "tester"))
+    }
+
+    func testT3sterGivesTenThousandOncePerDataset() {
+        let first = GiftCodes.t3sterEntry(ledger: [], existingKeys: [], now: Date(), isTopUp: false)!
+        XCTAssertEqual(first.coins, 10_000)
+        XCTAssertEqual(first.key, LedgerKeys.giftT3ster)
+        XCTAssertNil(GiftCodes.t3sterEntry(ledger: [first], existingKeys: [first.key], now: Date(), isTopUp: false),
+                     "khóa cố định: nhập lại không nhận thêm")
+    }
+
+    func testLegacyRedemptionTopsUpToTenThousand() {
+        let once = [legacyRedemption(0)]
+        XCTAssertEqual(GiftCodes.legacyT3sterReceived(once), 1000)
+        XCTAssertEqual(GiftCodes.t3sterEntry(ledger: once, existingKeys: [], now: Date(), isTopUp: true)?.coins, 9_000)
+        // Bản cũ cho nhập lại: đã nhận 3 lần → bù 7.000; đã nhận 12 lần → không bù thêm, vẫn khóa mã (0 xu), không thu hồi.
+        let three = (0..<3).map(legacyRedemption)
+        XCTAssertEqual(GiftCodes.t3sterEntry(ledger: three, existingKeys: [], now: Date(), isTopUp: true)?.coins, 7_000)
+        let twelve = (0..<12).map(legacyRedemption)
+        let lock = GiftCodes.t3sterEntry(ledger: twelve, existingKeys: [], now: Date(), isTopUp: true)
+        XCTAssertEqual(lock?.coins, 0)
+        XCTAssertEqual(lock?.key, LedgerKeys.giftT3ster)
+        // Dòng gift khác (không đúng dấu vết 1.000 xu "Mã quà") không bị coi là t3ster cũ.
+        let other = LedgerEntry(id: UUID(), key: "gift:x", kind: .gift, xp: 0, coins: 500, createdAt: Date(), refID: nil, memo: "Quà")
+        XCTAssertEqual(GiftCodes.legacyT3sterReceived([other]), 0)
     }
 }
