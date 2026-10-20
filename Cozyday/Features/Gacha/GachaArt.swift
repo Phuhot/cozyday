@@ -5,7 +5,8 @@ enum GachaMachineArt {
     private static let capsuleColors: [UInt32] = [0xF4A6B8, 0xA9D3F5, 0xC7B4F0, 0xFFD27F, 0xA8DDB5, 0xFFB38A]
 
     /// `spin` < 0: đứng yên. Đang quay: núm xoay, viên nang lắc, một viên lăn ra máng.
-    static func draw(_ ctx: GraphicsContext, size: CGSize, spin: Double) {
+    /// `dropsCapsule` = false: không vẽ viên lăn ra máng (màn mở viên nang tự vẽ viên nang riêng).
+    static func draw(_ ctx: GraphicsContext, size: CGSize, spin: Double, dropsCapsule: Bool = true) {
         let s = min(size.width / 200, size.height / 260)
         var c = ctx
         c.translateBy(x: (size.width - 200 * s) / 2, y: (size.height - 260 * s) / 2)
@@ -55,7 +56,7 @@ enum GachaMachineArt {
         star(c, center: CGPoint(x: 100, y: 6), r: 9, color: rgb(0xFFD27F))
 
         // Viên nang lăn ra máng khi gần quay xong.
-        if spin > 0.55 {
+        if dropsCapsule && spin > 0.55 {
             let k = min(1, (spin - 0.55) / 0.45)
             let y = 196 + 18 * k - (k > 0.7 ? sin((k - 0.7) / 0.3 * .pi) * 6 : 0)
             capsule(c, center: CGPoint(x: 86, y: y), radius: 11, color: rgb(0xC7B4F0), tilt: k * 200)
