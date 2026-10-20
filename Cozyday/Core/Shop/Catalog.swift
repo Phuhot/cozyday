@@ -44,6 +44,13 @@ enum ItemSlot: String, Codable, CaseIterable, Identifiable {
     case pond
     case gardenDeco
 
+    // Sàn riêng của từng phòng (vẽ đè lên phần sàn của "Tường & sàn"; trống = giữ sàn của tường & sàn)
+    case studyFloor
+    case bedroomFloor
+    case kitchenFloor
+    case bathFloor
+    case gardenFloor
+
     // Thú cưng
     case species
     case fur
@@ -61,6 +68,9 @@ enum ItemSlot: String, Codable, CaseIterable, Identifiable {
 
     var isPet: Bool { ItemSlot.pet.contains(self) }
     var isTheme: Bool { RoomKind.allCases.contains { $0.themeSlot == self } }
+    var isFloor: Bool { RoomKind.allCases.contains { $0.floorSlot == self } }
+    /// Vẽ trên cả căn phòng 125×100 (tường & sàn, sàn) thay vì một ô đồ 100×100.
+    var isScene: Bool { isTheme || isFloor }
     /// Phòng chứa vị trí này (nil với vị trí của thú cưng).
     var roomKind: RoomKind? { RoomKind.allCases.first { $0.slots.contains(self) } }
 
@@ -73,6 +83,8 @@ enum ItemSlot: String, Codable, CaseIterable, Identifiable {
         case .seat: return "Ghế / thảm"
         case .studyTheme, .bedroomTheme, .kitchenTheme, .bathTheme: return "Tường & sàn"
         case .gardenTheme: return "Bầu trời"
+        case .studyFloor, .bedroomFloor, .kitchenFloor, .bathFloor: return "Sàn"
+        case .gardenFloor: return "Nền đất"
         case .bed: return "Giường"
         case .nightstand: return "Đầu giường"
         case .bedroomWall: return "Trang trí tường"
@@ -157,14 +169,24 @@ enum RoomKind: String, CaseIterable, Identifiable {
         }
     }
 
-    /// Vị trí trong phòng, vị trí tường & sàn đứng đầu.
+    var floorSlot: ItemSlot {
+        switch self {
+        case .study: return .studyFloor
+        case .bedroom: return .bedroomFloor
+        case .kitchen: return .kitchenFloor
+        case .bath: return .bathFloor
+        case .garden: return .gardenFloor
+        }
+    }
+
+    /// Vị trí trong phòng, vị trí tường & sàn đứng đầu, rồi tới sàn.
     var slots: [ItemSlot] {
         switch self {
-        case .study: return [.studyTheme, .wall, .lamp, .desk, .plant, .seat]
-        case .bedroom: return [.bedroomTheme, .bed, .nightstand, .bedroomWall, .closet, .bedroomRug, .plush]
-        case .kitchen: return [.kitchenTheme, .stove, .fridge, .dining, .kitchenWall, .treat]
-        case .bath: return [.bathTheme, .tub, .sink, .bathShelf, .bathMat, .bathToy]
-        case .garden: return [.gardenTheme, .tree, .flowerBed, .gardenSeat, .pond, .gardenDeco]
+        case .study: return [.studyTheme, .studyFloor, .wall, .lamp, .desk, .plant, .seat]
+        case .bedroom: return [.bedroomTheme, .bedroomFloor, .bed, .nightstand, .bedroomWall, .closet, .bedroomRug, .plush]
+        case .kitchen: return [.kitchenTheme, .kitchenFloor, .stove, .fridge, .dining, .kitchenWall, .treat]
+        case .bath: return [.bathTheme, .bathFloor, .tub, .sink, .bathShelf, .bathMat, .bathToy]
+        case .garden: return [.gardenTheme, .gardenFloor, .tree, .flowerBed, .gardenSeat, .pond, .gardenDeco]
         }
     }
 
@@ -229,7 +251,7 @@ enum Catalog {
 
     /// Toàn bộ danh mục. Các mảng `…More` nằm ở các file Catalog+… (đồ thêm theo phòng, trang phục, món gacha).
     static let items: [CatalogItem] = roomItems + petItems
-        + studyMore + bedroomMore + kitchenMore + bathMore + gardenMore + costumeMore + speciesMore
+        + studyMore + bedroomMore + kitchenMore + bathMore + gardenMore + floorItems + costumeMore + speciesMore
 
     /// Tra cứu nhanh theo ID và theo vị trí (danh mục gọi rất nhiều lần mỗi khung hình khi vẽ).
     private static let byID: [String: CatalogItem] = Dictionary(items.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })

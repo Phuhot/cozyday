@@ -86,6 +86,7 @@ for line in jobs.split(separator: "\n") {
             if let item = Catalog.item(id), room.slots.contains(item.slot) || item.slot == room.themeSlot { equipped[item.slot] = id }
         }
         ItemPainter.draw(equipped[room.themeSlot] ?? Catalog.defaultItem(for: room.themeSlot)?.id ?? "", in: clipped)
+        if let floor = equipped[room.floorSlot] { ItemPainter.draw(floor, in: clipped) }
         for slot in RoomLayout.drawOrder(room) {
             guard let id = equipped[slot], let s = RoomLayout.spot(slot) else { continue }
             var c = clipped

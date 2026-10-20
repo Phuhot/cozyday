@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Vẽ một món đồ theo ID: đồ thường trong 100×100, tường & sàn / bầu trời trong 125×100.
 enum ItemPainter {
-    static func isScene(_ id: String) -> Bool { Catalog.item(id)?.slot.isTheme ?? false }
+    static func isScene(_ id: String) -> Bool { Catalog.item(id)?.slot.isScene ?? false }
 
     static func draw(_ id: String, in ctx: GraphicsContext) {
         // Biến thể màu: vẽ lại món gốc qua bộ lọc xoay sắc độ.
@@ -12,7 +12,7 @@ enum ItemPainter {
             draw(base, in: tinted)
             return
         }
-        if StudyArt.draw(id, in: ctx) || BedroomArt.draw(id, in: ctx) || KitchenArt.draw(id, in: ctx)
+        if FloorArt.draw(id, in: ctx) || StudyArt.draw(id, in: ctx) || BedroomArt.draw(id, in: ctx) || KitchenArt.draw(id, in: ctx)
             || BathArt.draw(id, in: ctx) || GardenArt.draw(id, in: ctx) {
             return
         }

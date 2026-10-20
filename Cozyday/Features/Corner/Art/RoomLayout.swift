@@ -49,7 +49,7 @@ enum RoomLayout {
 
     /// Thứ tự vẽ: đồ ở xa (trên cao) trước, đồ ở gần (đáy thấp hơn) sau.
     static func drawOrder(_ room: RoomKind) -> [ItemSlot] {
-        room.slots.filter { !$0.isTheme }.sorted {
+        room.slots.filter { !$0.isScene }.sorted {
             guard let a = spot($0), let b = spot($1) else { return false }
             return a.y + a.size < b.y + b.size
         }

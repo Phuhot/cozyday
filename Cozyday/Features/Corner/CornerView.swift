@@ -424,7 +424,7 @@ struct ShopView: View {
                             .foregroundStyle(Palette.inkMuted)
                     }
 
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: slot.isTheme ? 160 : 104), spacing: Spacing.m)], spacing: Spacing.m) {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: slot.isScene ? 160 : 104), spacing: Spacing.m)], spacing: Spacing.m) {
                         ForEach(Catalog.items(in: slot)) { item in
                             itemCard(item)
                         }
@@ -453,10 +453,10 @@ struct ShopView: View {
         }
         .onAppear {
             room = initialSlot?.roomKind ?? initialRoom
-            slot = initialSlot ?? room.slots.first(where: { !$0.isTheme }) ?? room.themeSlot
+            slot = initialSlot ?? room.slots.first(where: { !$0.isScene }) ?? room.themeSlot
         }
         .onChange(of: room) { _, newRoom in
-            if slot.roomKind != newRoom { slot = newRoom.slots.first(where: { !$0.isTheme }) ?? newRoom.themeSlot }
+            if slot.roomKind != newRoom { slot = newRoom.slots.first(where: { !$0.isScene }) ?? newRoom.themeSlot }
         }
     }
 
@@ -474,10 +474,16 @@ struct ShopView: View {
         let locked = store.wallet.level < item.requiredLevel && !Catalog.isOwned(item.id, owned: store.ownedIDs)
         return Button { preview = item } label: {
             VStack(alignment: .leading, spacing: Spacing.xs) {
-                ItemArt(itemID: item.id)
-                    .aspectRatio(item.slot.isTheme ? RoomLayout.aspect : 1, contentMode: .fit)
+                ZStack {
+                    // Sàn: xem trên nền tường & sàn đang dùng của phòng đó.
+                    if item.slot.isFloor, let room = item.slot.roomKind {
+                        ItemArt(itemID: store.equippedItem(in: room.themeSlot)?.id ?? Catalog.defaultItem(for: room.themeSlot)?.id ?? "")
+                    }
+                    ItemArt(itemID: item.id)
+                }
+                    .aspectRatio(item.slot.isScene ? RoomLayout.aspect : 1, contentMode: .fit)
                     .frame(maxWidth: .infinity)
-                    .padding(item.slot.isTheme ? 0 : Spacing.xs)
+                    .padding(item.slot.isScene ? 0 : Spacing.xs)
                     .background(Palette.roomWall, in: RoundedRectangle(cornerRadius: Radius.m, style: .continuous))
                     .clipShape(RoundedRectangle(cornerRadius: Radius.m, style: .continuous))
                     .opacity(locked ? 0.55 : 1)

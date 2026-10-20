@@ -76,6 +76,11 @@ struct RoomView: View {
                 ItemArt(itemID: equipped[room.themeSlot] ?? Catalog.defaultItem(for: room.themeSlot)?.id ?? "")
                     .frame(width: w, height: h)
                     .allowsHitTesting(false)
+                if let floor = equipped[room.floorSlot] {
+                    ItemArt(itemID: floor)
+                        .frame(width: w, height: h)
+                        .allowsHitTesting(false)
+                }
 
                 ForEach(RoomLayout.drawOrder(room)) { slot in
                     if let spot = RoomLayout.spot(slot) {
