@@ -4,7 +4,7 @@ import SwiftUI
 enum BedroomArt {
     static func draw(_ id: String, in ctx: GraphicsContext) -> Bool {
         switch id {
-        case "bedroomTheme.lilac", "bedroomTheme.cloud", "bedroomTheme.candy", "bedroomTheme.galaxy":
+        case "bedroomTheme.lilac", "bedroomTheme.cloud", "bedroomTheme.candy", "bedroomTheme.galaxy", "bedroomTheme.forest":
             theme(id, ctx)
         case "bed.mat": bedMat(ctx)
         case "bed.wood": bedWood(ctx)
@@ -30,7 +30,7 @@ enum BedroomArt {
         case "plush.ball": plushBall(ctx)
         case "plush.teddy": plushTeddy(ctx)
         case "plush.dino": plushDino(ctx)
-        default: return false
+        default: return drawMore(id, in: ctx)
         }
         return true
     }
@@ -92,6 +92,11 @@ enum BedroomArt {
             floor = rgb(0x544C86); plank = rgb(0x463F78)
             curtain = rgb(0x9C8BDB); curtainFold = rgb(0x8473CC); tie = rgb(0xF7D27A)
             frame = rgb(0xE6E0F7); sky = rgb(0x241F4A)
+        case "bedroomTheme.forest":
+            wall = rgb(0xE6F1DE); deco = rgb(0xB9D9AE); trim = rgb(0xA8CC9C)
+            floor = rgb(0xEEDCC2); plank = rgb(0xDCC4A3)
+            curtain = rgb(0xFFF6E6); curtainFold = rgb(0xEADCC4); tie = rgb(0xF2A98F)
+            sky = rgb(0xFFE6CF)
         default: break
         }
 
@@ -134,6 +139,24 @@ enum BedroomArt {
                 p.move(to: pt(4, 20)); p.addLine(to: pt(12, 24))
             }
             ctx.circle(12.5, 24.2, 0.9, deco)
+        case "bedroomTheme.forest":
+            // Hàng thông nhỏ so le, xen chấm nấm đỏ
+            for row in 0..<3 {
+                for col in 0..<9 {
+                    let x = CGFloat(col) * 14 + 6 + (row % 2 == 0 ? 0 : 7)
+                    let y = CGFloat(row) * 18 + 9
+                    if (row + col) % 3 == 1 {
+                        ctx.ellipse(x - 2.6, y - 0.5, 5.2, 3, rgb(0xF2A98F))
+                        ctx.rect(x - 0.9, y + 2, 1.8, 2.4, rgb(0xFFF6E6), radius: 0.6)
+                        ctx.circle(x - 0.8, y + 0.4, 0.5, Color.white.opacity(0.9))
+                    } else {
+                        let c = (row + col) % 2 == 0 ? deco : trim
+                        ctx.polygon([pt(x, y - 6), pt(x - 3.6, y), pt(x + 3.6, y)], c)
+                        ctx.polygon([pt(x, y - 3), pt(x - 4.8, y + 4), pt(x + 4.8, y + 4)], c)
+                        ctx.rect(x - 0.7, y + 4, 1.4, 2, rgb(0xCDB08E))
+                    }
+                }
+            }
         default:
             for row in 0..<6 {
                 for col in 0..<12 {
@@ -188,6 +211,16 @@ enum BedroomArt {
             ctx.circle(53, 25, 0.5, rgb(0xFFF1C2))
             ctx.circle(63, 26, 0.5, rgb(0xFFF1C2))
             sparkle(ctx, 50.5, 24, 3, rgb(0xFFF1C2))
+        } else if id == "bedroomTheme.forest" {
+            var w = ctx
+            w.clip(to: Path(roundedRect: CGRect(x: 46, y: 12, width: 20, height: 18), cornerRadius: 1.5))
+            w.circle(57, 21, 3.6, rgb(0xFFC98F))
+            w.ellipse(40, 22, 22, 12, rgb(0xA8CC9C))
+            w.ellipse(52, 24, 22, 12, rgb(0x8FBF85))
+            for x in [CGFloat(49), 61] {
+                w.polygon([pt(x, 19), pt(x - 2.6, 26), pt(x + 2.6, 26)], rgb(0x6FA77A))
+            }
+            puff(w, 47.5, 12.5, 0.4, Color.white.opacity(0.9))
         } else {
             puff(ctx, 47.5, 13, 0.45, Color.white)
             puff(ctx, 57, 22, 0.4, Color.white.opacity(0.9))
@@ -929,5 +962,978 @@ enum BedroomArt {
         // Tay nhỏ
         ctx.ellipse(64, 52, 12, 8, shade)
         ctx.ellipse(56, 18, 12, 7, Color.white.opacity(0.35))
+    }
+}
+
+// MARK: - Đồ thêm (bộ 2)
+
+extension BedroomArt {
+    fileprivate static func drawMore(_ id: String, in ctx: GraphicsContext) -> Bool {
+        switch id {
+        case "bedroomTheme.attic": themeAttic(ctx)
+        case "bed.bunk": bedBunk(ctx)
+        case "bed.cat": bedCat(ctx)
+        case "bed.hammock": bedHammock(ctx)
+        case "nightstand.books": standBooks(ctx)
+        case "nightstand.lantern": standLantern(ctx)
+        case "nightstand.clock": standClock(ctx)
+        case "bedroomWall.mobile": wallMobile(ctx)
+        case "bedroomWall.photos": wallPhotos(ctx)
+        case "bedroomWall.hoops": wallHoops(ctx)
+        case "closet.bunny": closetBunny(ctx)
+        case "closet.bookcase": closetBookcase(ctx)
+        case "closet.rack": closetRack(ctx)
+        case "bedroomRug.star": rugStar(rugSpace(ctx))
+        case "bedroomRug.fluffy": rugFluffy(rugSpace(ctx))
+        case "bedroomRug.cat": rugCatFace(rugSpace(ctx))
+        case "plush.whale": plushWhale(ctx)
+        case "plush.octopus": plushOctopus(ctx)
+        case "plush.egg": plushEgg(ctx)
+        default: return false
+        }
+        return true
+    }
+
+    // MARK: Tiện ích thêm
+
+    /// Ngôi sao năm cánh bo tròn.
+    private static func star(_ ctx: GraphicsContext, _ cx: CGFloat, _ cy: CGFloat, _ r: CGFloat, _ color: Color) {
+        var pts: [CGPoint] = []
+        for i in 0..<10 {
+            let a = Double(i) * Double.pi / 5 - Double.pi / 2
+            let rr = i % 2 == 0 ? r : r * 0.5
+            pts.append(pt(cx + rr * CGFloat(cos(a)), cy + rr * CGFloat(sin(a))))
+        }
+        ctx.polygon(pts, color)
+        ctx.strokePath(color, width: r * 0.22) { p in
+            p.addLines(pts); p.closeSubpath()
+        }
+    }
+
+    /// Trăng khuyết quay lưng sang trái.
+    private static func crescent(_ ctx: GraphicsContext, _ cx: CGFloat, _ cy: CGFloat, _ r: CGFloat, _ color: Color) {
+        var p = Path()
+        p.move(to: pt(cx + r * 0.35, cy - r))
+        p.addQuadCurve(to: pt(cx + r * 0.35, cy + r), control: pt(cx - r * 1.55, cy))
+        p.addQuadCurve(to: pt(cx + r * 0.35, cy - r), control: pt(cx - r * 0.35, cy))
+        ctx.fill(p, with: .color(color))
+    }
+
+    /// Bông hoa năm cánh.
+    private static func flower(_ ctx: GraphicsContext, _ cx: CGFloat, _ cy: CGFloat, _ r: CGFloat, _ petal: Color, _ middle: Color) {
+        for i in 0..<5 {
+            let a = Double(i) / 5 * 2 * Double.pi - Double.pi / 2
+            ctx.circle(cx + r * 0.62 * CGFloat(cos(a)), cy + r * 0.62 * CGFloat(sin(a)), r * 0.48, petal)
+        }
+        ctx.circle(cx, cy, r * 0.36, middle)
+    }
+
+    /// Mắt nhắm cong (ngủ/cười).
+    private static func sleepyEye(_ ctx: GraphicsContext, _ x: CGFloat, _ y: CGFloat, _ w: CGFloat, width: CGFloat = 1.3) {
+        ctx.strokePath(ink, width: width) { p in
+            p.move(to: pt(x - w / 2, y)); p.addQuadCurve(to: pt(x + w / 2, y), control: pt(x, y + w * 0.55))
+        }
+    }
+
+    // MARK: Tường & sàn: gác mái gỗ
+
+    private static func themeAttic(_ ctx: GraphicsContext) {
+        let wall = rgb(0xF5E4CE)
+        let seam = rgb(0xE6CCAB)
+        let roof = rgb(0xE6C7A2)
+        let beam = rgb(0xC99A6E)
+        let beamDark = rgb(0xAE8259)
+        ctx.rect(0, 0, 125, 62, wall)
+        // Ván dọc và mắt gỗ
+        ctx.strokePath(seam, width: 0.7) { p in
+            var x: CGFloat = 8
+            while x < 125 {
+                p.move(to: pt(x, 0)); p.addLine(to: pt(x, 58))
+                x += 9
+            }
+        }
+        for (x, y) in [(CGFloat(12.5), CGFloat(40)), (39.5, 46), (84.5, 48), (111.5, 36), (66.5, 54), (21.5, 54)] {
+            ctx.ellipse(x - 1.6, y - 0.9, 3.2, 1.8, seam)
+        }
+        // Mái dốc hai bên
+        for flip in [false, true] {
+            let fx: (CGFloat) -> CGFloat = { x in flip ? 125 - x : x }
+            ctx.polygon([pt(fx(0), 0), pt(fx(40), 0), pt(fx(0), 34)], roof)
+            ctx.strokePath(beamDark.opacity(0.3), width: 0.6) { p in
+                for k in [CGFloat(0.3), 0.55, 0.8] {
+                    p.move(to: pt(fx(0), 34 * k)); p.addLine(to: pt(fx(40 * k), 0))
+                }
+            }
+            ctx.strokePath(beam, width: 4) { p in
+                p.move(to: pt(fx(-1), 35)); p.addLine(to: pt(fx(41), -1))
+            }
+            ctx.strokePath(Color.white.opacity(0.3), width: 0.8) { p in
+                p.move(to: pt(fx(0), 32.6)); p.addLine(to: pt(fx(38), 0.2))
+            }
+        }
+        ctx.rect(0, 0, 125, 3.2, beamDark)
+        // Đèn treo bóng tròn
+        ctx.strokePath(rgb(0x8F7A66), width: 0.7) { p in
+            p.move(to: pt(91, 3)); p.addLine(to: pt(91, 15))
+        }
+        ctx.circle(91, 18.5, 6, rgb(0xFFE7A0).opacity(0.35))
+        ctx.rect(89.4, 14, 3.2, 2.6, rgb(0x8F7A66), radius: 0.8)
+        ctx.circle(91, 18.8, 2.8, rgb(0xFFF1C2))
+        ctx.circle(90.2, 18, 0.8, Color.white)
+        // Cửa sổ tròn
+        let c = pt(56, 20)
+        ctx.circle(c.x, c.y, 12.5, rgb(0xFFFAF2))
+        ctx.circle(c.x, c.y, 10, rgb(0xC9E2F6))
+        var w = ctx
+        w.clip(to: Path(ellipseIn: CGRect(x: c.x - 10, y: c.y - 10, width: 20, height: 20)))
+        puff(w, 46.5, 14, 0.5, Color.white)
+        w.ellipse(44, 24, 30, 14, rgb(0xB9DDB0))
+        w.circle(61, 15, 2.2, rgb(0xFFE7A0))
+        ctx.rect(c.x - 0.7, c.y - 10, 1.4, 20, rgb(0xFFFAF2))
+        ctx.rect(c.x - 10, c.y - 0.7, 20, 1.4, rgb(0xFFFAF2))
+        ctx.strokePath(beam.opacity(0.5), width: 0.8) { p in
+            p.addEllipse(in: CGRect(x: c.x - 12.5, y: c.y - 12.5, width: 25, height: 25))
+        }
+        ctx.strokePath(Color.white.opacity(0.7), width: 0.8) { p in
+            p.addArc(center: c, radius: 7.5, startAngle: .degrees(195), endAngle: .degrees(245), clockwise: false)
+        }
+        ctx.rect(43.5, 33.5, 25, 3, beam, radius: 1.5)
+        // Len chân tường
+        ctx.rect(0, 57.5, 125, 4.5, beam)
+        ctx.rect(0, 57.5, 125, 0.8, Color.white.opacity(0.35))
+        // Sàn gỗ ấm
+        ctx.rect(0, 62, 125, 38, rgb(0xE8CFAE))
+        ctx.rect(0, 62, 125, 1.6, Color.black.opacity(0.07))
+        let plank = rgb(0xD3B48E)
+        let rows: [CGFloat] = [62, 70.5, 80, 90.5]
+        for (i, y) in rows.enumerated() {
+            if i > 0 { ctx.rect(0, y, 125, 0.7, plank) }
+            let next = i + 1 < rows.count ? rows[i + 1] : 100
+            var x: CGFloat = (i % 2 == 0 ? 0 : 16) + 8
+            while x < 125 {
+                ctx.rect(x, y, 0.7, next - y, plank)
+                x += 32
+            }
+        }
+    }
+
+    // MARK: Giường
+
+    private static func bedBunk(_ ctx: GraphicsContext) {
+        let wood = rgb(0xE3BD92)
+        let woodDark = rgb(0xC69A6C)
+        shadow(ctx, 2, 89, 98, 9)
+        ctx.rect(10, 44, 80, 30, Color.black.opacity(0.06))
+        // Tầng dưới
+        ctx.rect(8, 82, 84, 7, woodDark, radius: 3)
+        ctx.rect(10, 70, 80, 14, rgb(0xFFFBF5), radius: 5)
+        ctx.ellipse(12, 59, 24, 14, rgb(0xFFFDFB))
+        ctx.ellipse(15, 68, 18, 4, rgb(0xEEE6F2))
+        ctx.ellipse(16, 62, 7, 3, shine)
+        ctx.rect(36, 67, 54, 18, rgb(0xF6B3C6), radius: 5)
+        ctx.rect(36, 67, 54, 5, rgb(0xFBD0DC), radius: 4)
+        for x in stride(from: CGFloat(44), to: 90, by: 9) {
+            ctx.rect(x, 72, 2, 13, Color.white.opacity(0.45))
+        }
+        ctx.rect(32, 66, 7, 19, rgb(0xFFF4F7), radius: 3.5)
+        // Tầng trên
+        ctx.rect(8, 40, 84, 6, woodDark, radius: 3)
+        ctx.rect(10, 30, 80, 11, rgb(0xFFFBF5), radius: 4)
+        ctx.ellipse(12, 20, 22, 12, rgb(0xFFFDFB))
+        ctx.rect(34, 27, 56, 14, rgb(0xAFCFF2), radius: 5)
+        ctx.rect(34, 27, 56, 4.5, rgb(0xCDE2F8), radius: 4)
+        for (x, y) in [(CGFloat(44), CGFloat(36)), (57, 34.5), (88, 36)] {
+            star(ctx, x, y, 2.6, rgb(0xFFF1C2))
+        }
+        // Lan can tầng trên
+        ctx.rect(8, 16, 54, 3.6, wood, radius: 1.8)
+        for x in [CGFloat(20), 32, 44, 56] {
+            ctx.rect(x, 17, 3, 13, wood, radius: 1.5)
+        }
+        // Cột
+        ctx.rect(3, 6, 8, 88, wood, radius: 3.5)
+        ctx.rect(89, 6, 8, 88, wood, radius: 3.5)
+        ctx.rect(5, 10, 2, 76, Color.white.opacity(0.3), radius: 1)
+        ctx.circle(7, 6, 4.5, wood)
+        ctx.circle(93, 6, 4.5, wood)
+        ctx.circle(5.8, 4.8, 1.4, Color.white.opacity(0.35))
+        // Thang
+        for x in [CGFloat(67), 81] {
+            ctx.rect(x, 17, 3.2, 71, woodDark, radius: 1.6)
+        }
+        for y in stride(from: CGFloat(26), to: 88, by: 13) {
+            ctx.rect(67, y, 17, 3, wood, radius: 1.5)
+        }
+    }
+
+    private static func bedCat(_ ctx: GraphicsContext) {
+        let fur = rgb(0xF6C9A0)
+        let furDark = rgb(0xE5A475)
+        let cream = rgb(0xFFF1E0)
+        let pink = rgb(0xF6B3C6)
+        shadow(ctx, 2, 89, 98, 9)
+        // Đầu giường: đầu mèo trên cột tròn
+        ctx.rect(3, 30, 22, 64, fur, radius: 9)
+        ctx.rect(6, 50, 3, 36, Color.white.opacity(0.3), radius: 1.5)
+        ctx.polygon([pt(1, 24), pt(3, 3), pt(16, 13)], fur)
+        ctx.polygon([pt(27, 24), pt(25, 3), pt(12, 13)], fur)
+        ctx.polygon([pt(4, 18), pt(5, 8), pt(12, 13.5)], pink)
+        ctx.polygon([pt(24, 18), pt(23, 8), pt(16, 13.5)], pink)
+        ctx.circle(14, 26, 14, fur)
+        for dx in [CGFloat(-4.5), 0, 4.5] {
+            ctx.rect(14 + dx - 0.9, 13, 1.8, 5.5, furDark, radius: 0.9)
+        }
+        ctx.ellipse(7, 26, 14, 11, cream)
+        sleepyEye(ctx, 8.5, 25, 5)
+        sleepyEye(ctx, 19.5, 25, 5)
+        ctx.polygon([pt(12.6, 28.4), pt(15.4, 28.4), pt(14, 30)], pink)
+        ctx.strokePath(ink, width: 1) { p in
+            p.move(to: pt(14, 30)); p.addQuadCurve(to: pt(11.5, 31.5), control: pt(13.4, 32))
+            p.move(to: pt(14, 30)); p.addQuadCurve(to: pt(16.5, 31.5), control: pt(14.6, 32))
+        }
+        ctx.ellipse(3.5, 28.5, 5, 3, Palette.blush.opacity(0.9))
+        ctx.ellipse(19.5, 28.5, 5, 3, Palette.blush.opacity(0.9))
+        ctx.strokePath(furDark, width: 0.8) { p in
+            p.move(to: pt(4, 30)); p.addLine(to: pt(-2, 29))
+            p.move(to: pt(24, 30)); p.addLine(to: pt(30, 29))
+        }
+        ctx.rect(10, 74, 82, 8, furDark, radius: 3)
+        mattress(ctx, blanket: rgb(0xC9B8EE), blanketTop: rgb(0xDCD0F5), cuff: rgb(0xFFFFFF)) { b in
+            for (x, y) in [(CGFloat(50), CGFloat(66)), (64, 60), (78, 70), (60, 76), (84, 56)] {
+                b.circle(x, y, 2.6, Color.white.opacity(0.75))
+                for (dx, dy) in [(CGFloat(-3), CGFloat(-3.2)), (0, -4.4), (3, -3.2)] {
+                    b.circle(x + dx, y + dy, 1.1, Color.white.opacity(0.75))
+                }
+            }
+        }
+        // Chân giường cuối: chiếc đuôi cong
+        ctx.strokePath(fur, width: 9) { p in
+            p.move(to: pt(90, 92))
+            p.addQuadCurve(to: pt(93, 50), control: pt(99, 72))
+            p.addQuadCurve(to: pt(82, 41), control: pt(91, 38))
+        }
+        ctx.circle(82, 41.5, 4.8, cream)
+        ctx.strokePath(furDark, width: 2) { p in
+            p.move(to: pt(91, 80)); p.addLine(to: pt(98, 79))
+            p.move(to: pt(92, 66)); p.addLine(to: pt(99, 64))
+            p.move(to: pt(91, 53)); p.addLine(to: pt(97, 49))
+        }
+    }
+
+    private static func bedHammock(_ ctx: GraphicsContext) {
+        let wood = rgb(0xCFA175)
+        let woodDark = rgb(0xB3845A)
+        let rope = rgb(0xF2E6D2)
+        shadow(ctx, 2, 89, 98, 9)
+        // Khung gỗ
+        ctx.rect(6, 85, 88, 5, woodDark, radius: 2.5)
+        ctx.polygon([pt(7, 90), pt(10, 20), pt(15, 20), pt(15, 90)], wood)
+        ctx.polygon([pt(93, 90), pt(90, 20), pt(85, 20), pt(85, 90)], wood)
+        ctx.circle(12.5, 20, 4.2, wood)
+        ctx.circle(87.5, 20, 4.2, wood)
+        ctx.circle(11.3, 18.8, 1.3, Color.white.opacity(0.35))
+        ctx.circle(86.3, 18.8, 1.3, Color.white.opacity(0.35))
+        ctx.rect(1, 88, 20, 6, wood, radius: 3)
+        ctx.rect(79, 88, 20, 6, wood, radius: 3)
+        // Dây buộc
+        ctx.strokePath(rope, width: 1.2) { p in
+            for (from, tos) in [(pt(12.5, 22), [pt(17, 39), pt(22, 37.5), pt(19, 42)]),
+                                (pt(87.5, 22), [pt(83, 39), pt(78, 37.5), pt(81, 42)])] {
+                for to in tos {
+                    p.move(to: from); p.addLine(to: to)
+                }
+            }
+        }
+        // Lưới võng
+        let a = pt(16, 38), b = pt(84, 38)
+        var h = Path()
+        h.move(to: a)
+        h.addQuadCurve(to: b, control: pt(50, 96))
+        h.addQuadCurve(to: a, control: pt(50, 64))
+        ctx.fill(h, with: .color(rgb(0xF7C59F)))
+        var g = ctx
+        g.clip(to: h)
+        for (k, color) in [(CGFloat(0.28), rgb(0xFFF3E4)), (0.6, rgb(0xA9DDB8)), (0.86, rgb(0xFFF3E4))] {
+            g.strokePath(color, width: 4) { p in
+                p.move(to: a); p.addQuadCurve(to: b, control: pt(50, 64 + 32 * k))
+            }
+        }
+        // Gối + chăn vắt qua
+        ctx.ellipse(18, 38, 24, 13, rgb(0xFFFDFB))
+        ctx.ellipse(22, 41, 8, 3.4, shine)
+        ctx.rect(46, 52, 24, 27, rgb(0xC9B8EE), radius: 3)
+        ctx.rect(46, 52, 24, 6, rgb(0xDCD0F5), radius: 3)
+        for x in stride(from: CGFloat(48), to: 70, by: 3.5) {
+            ctx.rect(x, 79, 1.4, 4, rgb(0xC9B8EE), radius: 0.7)
+        }
+        ctx.heart(center: pt(58, 68), size: 7, Color.white.opacity(0.75))
+        // Tua rua mép võng
+        ctx.strokePath(rope, width: 1.2) { p in
+            for i in 1..<10 {
+                let t = CGFloat(i) / 10
+                if t > 0.4 && t < 0.72 { continue }
+                let m = quad(a, pt(50, 96), b, t)
+                p.move(to: m); p.addLine(to: pt(m.x, m.y + 4.5))
+            }
+        }
+    }
+
+    // MARK: Đầu giường
+
+    private static func standBooks(_ ctx: GraphicsContext) {
+        shadow(ctx, 12, 90, 76, 8)
+        let books: [(CGFloat, CGFloat, CGFloat, CGFloat, UInt32)] = [
+            (16, 84, 68, 11, 0xB9A6EA), (21, 74, 60, 10, 0xA9D8BA), (14, 64, 66, 10, 0xF4A9A0),
+            (22, 55, 57, 9, 0xF7D27A), (18, 46, 62, 9, 0xAFCFF2)
+        ]
+        for (x, y, w, h, c) in books {
+            ctx.rect(x, y, w, h, rgb(c), radius: 2)
+            ctx.rect(x + w - 7, y + 1.4, 6, h - 2.8, rgb(0xFFFBF5), radius: 1)
+            ctx.strokePath(Color.black.opacity(0.08), width: 0.5) { p in
+                p.move(to: pt(x + w - 6.5, y + h / 2)); p.addLine(to: pt(x + w - 1.5, y + h / 2))
+            }
+            ctx.rect(x + 5, y + 1.8, 3, h - 3.6, Color.white.opacity(0.55), radius: 1)
+            ctx.rect(x + 10, y + 1.8, 1.4, h - 3.6, Color.white.opacity(0.4))
+        }
+        // Cốc ca cao
+        ctx.strokePath(rgb(0xF6B3C6), width: 2.8) { p in
+            p.addEllipse(in: CGRect(x: 40, y: 32, width: 10, height: 10))
+        }
+        ctx.rect(25, 29, 19, 17, rgb(0xF6B3C6), radius: 4)
+        ctx.ellipse(25, 27, 19, 5, rgb(0xFFF4E8))
+        ctx.ellipse(27, 28, 15, 3.4, rgb(0xB98A62))
+        ctx.heart(center: pt(34.5, 38), size: 6, Color.white.opacity(0.8))
+        ctx.strokePath(Color.white.opacity(0.85), width: 1.6) { p in
+            for x in [CGFloat(30), 38] {
+                p.move(to: pt(x, 25)); p.addQuadCurve(to: pt(x, 13), control: pt(x - 4, 19))
+            }
+        }
+        // Kính đọc sách
+        ctx.strokePath(ink, width: 1.4) { p in
+            p.addEllipse(in: CGRect(x: 55, y: 38, width: 10, height: 8))
+            p.addEllipse(in: CGRect(x: 68, y: 38, width: 10, height: 8))
+            p.move(to: pt(65, 41)); p.addQuadCurve(to: pt(68, 41), control: pt(66.5, 39.2))
+        }
+        ctx.ellipse(56, 39, 8, 6, Color.white.opacity(0.35))
+        ctx.ellipse(69, 39, 8, 6, Color.white.opacity(0.35))
+    }
+
+    private static func standLantern(_ ctx: GraphicsContext) {
+        let wood = rgb(0xD9B087)
+        let dark = rgb(0xBE915F)
+        let paper = rgb(0xF7B89A)
+        let rib = rgb(0xE8957A)
+        shadow(ctx, 14, 90, 72, 8)
+        // Ghế đẩu tròn
+        ctx.polygon([pt(25, 52), pt(32, 52), pt(25, 95), pt(18, 95)], dark)
+        ctx.polygon([pt(75, 52), pt(68, 52), pt(75, 95), pt(82, 95)], dark)
+        ctx.rect(46.5, 54, 7, 40, dark, radius: 2)
+        ctx.rect(24, 76, 52, 3, dark, radius: 1.5)
+        ctx.ellipse(16, 46, 68, 13, dark)
+        ctx.ellipse(16, 43, 68, 12, wood)
+        ctx.ellipse(26, 45, 22, 3.6, Color.white.opacity(0.3))
+        // Quầng sáng
+        ctx.circle(50, 25, 27, rgb(0xFFD9A0).opacity(0.22))
+        ctx.circle(50, 25, 20, rgb(0xFFD9A0).opacity(0.25))
+        // Đèn lồng giấy
+        let body = CGRect(x: 29, y: 8, width: 42, height: 37)
+        ctx.ellipse(body.minX, body.minY, body.width, body.height, paper)
+        var g = ctx
+        g.clip(to: Path(ellipseIn: body))
+        g.ellipse(37, 13, 26, 26, rgb(0xFFDDB8).opacity(0.7))
+        g.strokePath(rib, width: 0.9) { p in
+            for y in stride(from: CGFloat(14), to: 44, by: 6) {
+                p.move(to: pt(28, y)); p.addQuadCurve(to: pt(72, y), control: pt(50, y + 2.4))
+            }
+        }
+        ctx.heart(center: pt(50, 27), size: 9, Color.white.opacity(0.7))
+        ctx.ellipse(33, 15, 5, 12, Color.white.opacity(0.4))
+        ctx.rect(39, 4.5, 22, 6, rgb(0x9C7458), radius: 2)
+        ctx.rect(39, 41.5, 22, 5, rgb(0x9C7458), radius: 2)
+        ctx.strokePath(rgb(0x9C7458), width: 1.2) { p in
+            p.move(to: pt(44, 5)); p.addQuadCurve(to: pt(56, 5), control: pt(50, -2))
+        }
+    }
+
+    private static func standClock(_ ctx: GraphicsContext) {
+        cabinet(ctx, body: rgb(0xBFE3CF), top: rgb(0x9DCDB3), front: rgb(0xDDF1E5), knob: rgb(0xF4A9A0))
+        let red = rgb(0xF4A9A0)
+        let bell = rgb(0xF7D27A)
+        let metal = rgb(0x9A93A8)
+        // Chân
+        ctx.polygon([pt(35, 36), pt(39, 38), pt(34, 47), pt(30, 47)], metal)
+        ctx.polygon([pt(61, 36), pt(57, 38), pt(62, 47), pt(66, 47)], metal)
+        // Chuông + búa
+        ctx.rect(46.5, 4, 3, 7, metal, radius: 1.5)
+        ctx.circle(48, 4, 2.4, metal)
+        for x in [CGFloat(34), 62] {
+            ctx.circle(x, 13, 7, bell)
+            ctx.rect(x - 1.2, 4.5, 2.4, 3, metal, radius: 1)
+            ctx.circle(x - 2.4, 10.5, 1.6, shine)
+        }
+        // Thân
+        ctx.circle(48, 27, 16, red)
+        ctx.circle(48, 27, 12.5, rgb(0xFFFBF5))
+        for i in 0..<12 {
+            let a = Double(i) / 12 * 2 * Double.pi
+            ctx.circle(48 + 10 * CGFloat(cos(a)), 27 + 10 * CGFloat(sin(a)), i % 3 == 0 ? 1 : 0.6, rgb(0xC9BEDA))
+        }
+        ctx.strokePath(ink, width: 1.6) { p in
+            p.move(to: pt(48, 27)); p.addLine(to: pt(48, 19.5))
+            p.move(to: pt(48, 27)); p.addLine(to: pt(53.5, 29.5))
+        }
+        ctx.circle(48, 27, 1.5, red)
+        ctx.strokePath(Color.white.opacity(0.6), width: 1.4) { p in
+            p.addArc(center: pt(48, 27), radius: 14.2, startAngle: .degrees(200), endAngle: .degrees(245), clockwise: false)
+        }
+        // Cốc sữa
+        ctx.rect(70, 30, 12, 16, rgb(0xEAF4FB), radius: 3)
+        ctx.rect(71.5, 35, 9, 9.5, Color.white, radius: 2.2)
+        ctx.rect(72.5, 32, 1.8, 11, Color.white.opacity(0.8), radius: 0.9)
+        sparkle(ctx, 20, 18, 6, rgb(0xF7D27A))
+    }
+
+    // MARK: Trang trí tường
+
+    private static func wallMobile(_ ctx: GraphicsContext) {
+        let wood = rgb(0xCFA175)
+        let thread = rgb(0xA593B8)
+        func barY(_ x: CGFloat) -> CGFloat {
+            let t = (x - 14) / 72
+            return 24 - 16 * t * (1 - t) * 2
+        }
+        ctx.strokePath(thread, width: 1.1) { p in
+            p.move(to: pt(50, 3)); p.addLine(to: pt(50, 12))
+            p.move(to: pt(50, 12)); p.addLine(to: pt(24, barY(24)))
+            p.move(to: pt(50, 12)); p.addLine(to: pt(76, barY(76)))
+        }
+        ctx.circle(50, 3, 2.2, wood)
+        let hangs: [(CGFloat, CGFloat)] = [(20, 43), (38, 62), (60, 52), (80, 38)]
+        ctx.strokePath(thread, width: 0.8) { p in
+            for (x, y) in hangs {
+                p.move(to: pt(x, barY(x))); p.addLine(to: pt(x, y))
+            }
+        }
+        ctx.strokePath(wood, width: 3.2) { p in
+            p.move(to: pt(14, 24)); p.addQuadCurve(to: pt(86, 24), control: pt(50, 8))
+        }
+        for (x, y) in hangs {
+            ctx.circle(x, (barY(x) + y) / 2, 1.5, rgb(0xF6AFC4))
+        }
+        // Trăng ngủ
+        crescent(ctx, 22, 53, 10, rgb(0xFFE7A0))
+        sleepyEye(ctx, 15.5, 53, 3.4, width: 1)
+        ctx.ellipse(13, 55.5, 4, 2.2, Palette.blush.opacity(0.85))
+        // Sao
+        star(ctx, 38, 69, 7, rgb(0xF7D27A))
+        ctx.circle(36, 67, 1.2, shine)
+        star(ctx, 80, 45, 6, rgb(0xF6AFC4))
+        // Mây
+        ctx.ellipse(48, 56, 25, 10, rgb(0xD7E6F6))
+        ctx.ellipse(48, 54, 25, 10, Color.white)
+        ctx.circle(55, 54, 6, Color.white)
+        ctx.circle(63, 53, 7, Color.white)
+        ctx.circle(56, 52, 1.6, shine)
+        for x in [CGFloat(53), 60, 67] {
+            ctx.ellipse(x - 1, 68, 2, 3.4, rgb(0xAFCFF2))
+        }
+    }
+
+    private static func wallPhotos(_ ctx: GraphicsContext) {
+        let a = pt(4, 14), c = pt(50, 40), b = pt(96, 14)
+        ctx.strokePath(rgb(0xA593B8), width: 1.1) { p in
+            p.move(to: a); p.addQuadCurve(to: b, control: c)
+        }
+        let photos: [(CGFloat, Double)] = [(0.13, -8), (0.38, 5), (0.63, -4), (0.88, 8)]
+        for (i, (t, tilt)) in photos.enumerated() {
+            let m = quad(a, c, b, t)
+            ctx.rotated(tilt, around: m) { r in
+                r.rect(m.x - 9, m.y + 3, 19, 23, Color.black.opacity(0.08), radius: 1)
+                r.rect(m.x - 9.5, m.y + 2, 19, 23, rgb(0xFFFDF8), radius: 1)
+                let pic = CGRect(x: m.x - 7.5, y: m.y + 4, width: 15, height: 14)
+                var g = r
+                g.clip(to: Path(pic))
+                switch i {
+                case 0:
+                    g.rect(pic.minX, pic.minY, pic.width, pic.height, rgb(0xCFE7F8))
+                    g.circle(pic.maxX - 4, pic.minY + 4, 2.4, rgb(0xFFD98A))
+                    g.ellipse(pic.minX - 4, pic.minY + 8, 14, 10, rgb(0xA9DDB8))
+                    g.ellipse(pic.minX + 5, pic.minY + 9, 16, 10, rgb(0x8FCB9E))
+                case 1:
+                    g.rect(pic.minX, pic.minY, pic.width, pic.height, rgb(0xFBD3DE))
+                    g.heart(center: pt(pic.midX, pic.midY), size: 9, rgb(0xEC8FAE))
+                case 2:
+                    g.rect(pic.minX, pic.minY, pic.width, pic.height, rgb(0xE4DBF6))
+                    g.polygon([pt(pic.midX - 5, pic.midY - 1), pt(pic.midX - 4, pic.midY - 7), pt(pic.midX - 1, pic.midY - 3)], Palette.catCream)
+                    g.polygon([pt(pic.midX + 5, pic.midY - 1), pt(pic.midX + 4, pic.midY - 7), pt(pic.midX + 1, pic.midY - 3)], Palette.catCream)
+                    g.circle(pic.midX, pic.midY + 1.5, 5, Palette.catCream)
+                    g.circle(pic.midX - 2, pic.midY + 1, 0.7, ink)
+                    g.circle(pic.midX + 2, pic.midY + 1, 0.7, ink)
+                default:
+                    g.rect(pic.minX, pic.minY, pic.width, pic.height, rgb(0xDDF1E5))
+                    flower(g, pic.midX, pic.midY, 4, rgb(0xFFFFFF), rgb(0xF7D27A))
+                }
+                r.rect(m.x - 1.6, m.y - 3, 3.2, 8, rgb(0xCFA175), radius: 1)
+            }
+        }
+        ctx.circle(a.x, a.y, 2.4, rgb(0xCFA175))
+        ctx.circle(b.x, b.y, 2.4, rgb(0xCFA175))
+    }
+
+    private static func hoop(_ ctx: GraphicsContext, _ c: CGPoint, _ r: CGFloat, fabric: Color,
+                             _ content: (GraphicsContext) -> Void) {
+        let wood = rgb(0xD9B087)
+        ctx.strokePath(rgb(0xA593B8), width: 0.9) { p in
+            p.move(to: pt(c.x, c.y - r - 7)); p.addLine(to: pt(c.x, c.y - r))
+        }
+        ctx.circle(c.x, c.y - r - 7, 1.8, rgb(0xCFA175))
+        ctx.circle(c.x, c.y, r, fabric)
+        var g = ctx
+        g.clip(to: Path(ellipseIn: CGRect(x: c.x - r, y: c.y - r, width: r * 2, height: r * 2)))
+        content(g)
+        ctx.strokePath(wood, width: 3) { p in
+            p.addEllipse(in: CGRect(x: c.x - r, y: c.y - r, width: r * 2, height: r * 2))
+        }
+        ctx.rect(c.x - 2.6, c.y - r - 3.4, 5.2, 4.6, rgb(0xC6D2DA), radius: 1)
+        ctx.strokePath(Color.white.opacity(0.45), width: 0.9) { p in
+            p.addArc(center: c, radius: r, startAngle: .degrees(150), endAngle: .degrees(200), clockwise: false)
+        }
+    }
+
+    private static func wallHoops(_ ctx: GraphicsContext) {
+        hoop(ctx, pt(36, 42), 22, fabric: rgb(0xFFF8EE)) { g in
+            g.strokePath(rgb(0x8FC79C), width: 1.3) { p in
+                p.move(to: pt(36, 60)); p.addQuadCurve(to: pt(26, 38), control: pt(28, 50))
+                p.move(to: pt(36, 60)); p.addLine(to: pt(37, 33))
+                p.move(to: pt(36, 60)); p.addQuadCurve(to: pt(47, 41), control: pt(44, 52))
+            }
+            g.ellipse(27, 47, 6, 3.4, rgb(0xA9DDB8))
+            g.ellipse(39, 50, 6, 3.4, rgb(0xA9DDB8))
+            flower(g, 26, 37, 5.5, rgb(0xF6AFC4), rgb(0xF7D27A))
+            flower(g, 37, 31, 6, rgb(0xB9A6EA), rgb(0xFFF1C2))
+            flower(g, 47, 40, 5, rgb(0xF7D27A), rgb(0xF4A9A0))
+            g.rect(31, 57, 10, 3, rgb(0xF4A9C0), radius: 1.5)
+        }
+        hoop(ctx, pt(77, 27), 14, fabric: rgb(0xE4F0FA)) { g in
+            g.heart(center: pt(77, 28), size: 15, rgb(0xF4A9C0))
+            g.strokePath(Color.white.opacity(0.8), width: 0.7) { p in
+                p.move(to: pt(72, 25)); p.addLine(to: pt(74, 23))
+            }
+        }
+        hoop(ctx, pt(75, 67), 13, fabric: rgb(0xF6EEDF)) { g in
+            g.rect(72.5, 66, 5, 9, rgb(0xFFF6EC), radius: 2)
+            var cap = Path()
+            cap.move(to: pt(66, 68))
+            cap.addQuadCurve(to: pt(84, 68), control: pt(75, 54))
+            cap.closeSubpath()
+            g.fill(cap, with: .color(rgb(0xF4A3A8)))
+            g.circle(71, 63.5, 1.5, Color.white)
+            g.circle(77.5, 61.5, 1.8, Color.white)
+            g.circle(80.5, 66, 1.2, Color.white)
+            g.ellipse(64, 75, 22, 5, rgb(0xA9DDB8))
+        }
+    }
+
+    // MARK: Tủ
+
+    private static func closetBunny(_ ctx: GraphicsContext) {
+        let body = rgb(0xFBE4EC)
+        let door = rgb(0xFFF5F8)
+        let trim = rgb(0xF0BCCD)
+        let inner = rgb(0xF6AFC4)
+        shadow(ctx, 4, 95, 92, 7)
+        ctx.rect(16, 90, 9, 9, trim, radius: 3)
+        ctx.rect(75, 90, 9, 9, trim, radius: 3)
+        // Tai thỏ
+        ctx.rotated(-12, around: pt(32, 30)) { c in
+            c.ellipse(23, -2, 18, 40, body)
+            c.ellipse(28, 4, 8, 26, inner)
+        }
+        ctx.rotated(12, around: pt(68, 30)) { c in
+            c.ellipse(59, -2, 18, 40, body)
+            c.ellipse(64, 4, 8, 26, inner)
+        }
+        // Thân tủ
+        ctx.rect(8, 22, 84, 72, body, radius: 20)
+        ctx.rect(12, 34, 3, 50, Color.white.opacity(0.45), radius: 1.5)
+        // Mặt thỏ
+        ctx.circle(37, 33, 3, ink)
+        ctx.circle(63, 33, 3, ink)
+        ctx.circle(36, 32, 1, Color.white.opacity(0.9))
+        ctx.circle(62, 32, 1, Color.white.opacity(0.9))
+        ctx.ellipse(47.5, 35.5, 5, 3.4, inner)
+        ctx.strokePath(ink, width: 1.2) { p in
+            p.move(to: pt(50, 39)); p.addQuadCurve(to: pt(46, 41), control: pt(49, 42))
+            p.move(to: pt(50, 39)); p.addQuadCurve(to: pt(54, 41), control: pt(51, 42))
+        }
+        ctx.ellipse(25, 37, 8, 4.5, Palette.blush.opacity(0.85))
+        ctx.ellipse(67, 37, 8, 4.5, Palette.blush.opacity(0.85))
+        // Hai cánh tủ
+        ctx.rect(14, 47, 35, 42, door, radius: 6)
+        ctx.rect(51, 47, 35, 42, door, radius: 6)
+        ctx.circle(45, 68, 2.6, rgb(0xF7D27A))
+        ctx.circle(55, 68, 2.6, rgb(0xF7D27A))
+        ctx.circle(44.3, 67.3, 0.9, shine)
+        ctx.circle(54.3, 67.3, 0.9, shine)
+        // Cà rốt và trái tim dán cửa
+        ctx.polygon([pt(25, 58), pt(35, 58), pt(30, 78)], rgb(0xF7B27A))
+        ctx.strokePath(rgb(0xE5935A), width: 0.9) { p in
+            p.move(to: pt(27.5, 63)); p.addLine(to: pt(30.5, 63))
+            p.move(to: pt(29, 69)); p.addLine(to: pt(31.5, 69))
+        }
+        ctx.ellipse(25.5, 52, 4, 7, rgb(0x8FC79C))
+        ctx.ellipse(30.5, 51, 4, 7, rgb(0xA9DDB8))
+        ctx.heart(center: pt(69, 66), size: 13, inner)
+        ctx.heart(center: pt(67.5, 64.5), size: 4, Color.white.opacity(0.6))
+    }
+
+    private static func closetBookcase(_ ctx: GraphicsContext) {
+        let wood = rgb(0xD9B087)
+        let dark = rgb(0xB98A62)
+        let back = rgb(0xF4E5D1)
+        shadow(ctx, 4, 95, 92, 7)
+        ctx.rect(12, 90, 8, 9, dark, radius: 2)
+        ctx.rect(80, 90, 8, 9, dark, radius: 2)
+        ctx.rect(8, 6, 84, 88, wood, radius: 4)
+        ctx.rect(13, 11, 74, 78, back, radius: 2)
+        ctx.rect(5, 3, 90, 6, dark, radius: 3)
+        ctx.rect(8, 4, 40, 1.4, Color.white.opacity(0.3), radius: 0.7)
+        func book(_ x: CGFloat, _ bottom: CGFloat, _ w: CGFloat, _ h: CGFloat, _ c: UInt32) {
+            ctx.rect(x, bottom - h, w, h, rgb(c), radius: 1.2)
+            ctx.rect(x + 1, bottom - h + 3, w - 2, 1.4, Color.white.opacity(0.6))
+        }
+        // Tầng 1: sách đứng + chậu cây
+        for (x, w, h, c) in [(CGFloat(15), CGFloat(6), CGFloat(16), UInt32(0xB9A6EA)), (21.5, 5, 14, 0xF4A9A0),
+                             (27, 7, 17, 0xA9D8BA), (34.5, 5, 13, 0xF7D27A), (40, 6, 15, 0xAFCFF2)] {
+            book(x, 31, w, h, c)
+        }
+        ctx.polygon([pt(47, 30), pt(53, 13), pt(56, 14), pt(51, 31)], rgb(0xF6B3C6))
+        ctx.rect(68, 22, 13, 9, rgb(0xF4B0A0), radius: 2.5)
+        ctx.ellipse(63, 11, 11, 12, rgb(0x8FC79C))
+        ctx.ellipse(72, 8, 10, 15, rgb(0xA9DDB8))
+        ctx.ellipse(77, 13, 10, 10, rgb(0x8FC79C))
+        ctx.rect(13, 31, 74, 3.6, wood)
+        // Tầng 2: quả địa cầu + sách
+        ctx.rect(26, 50, 12, 2.6, dark, radius: 1.3)
+        ctx.rect(31, 46, 2, 5, dark)
+        ctx.circle(32, 41, 7, rgb(0xAFD3F2))
+        ctx.ellipse(27, 37, 6, 4, rgb(0xA9DDB8))
+        ctx.ellipse(32, 42, 5, 5, rgb(0xA9DDB8))
+        ctx.circle(29.5, 38.5, 1.4, shine)
+        for (x, w, h, c) in [(CGFloat(48), CGFloat(6), CGFloat(15), UInt32(0xF7C59F)), (54.5, 5, 13, 0xC9B8EE),
+                             (60, 7, 16, 0xF4A9C0), (67.5, 5, 14, 0xA9D8BA)] {
+            book(x, 52.5, w, h, c)
+        }
+        ctx.polygon([pt(73, 52.5), pt(80, 38), pt(83.5, 39.5), pt(77.5, 52.5)], rgb(0xAFCFF2))
+        ctx.rect(13, 52.5, 74, 3.6, wood)
+        // Tầng 3: chồng sách nằm + khung ảnh
+        for (i, c) in [UInt32(0xB9A6EA), 0xF7D27A, 0xA9D8BA].enumerated() {
+            ctx.rect(17 + CGFloat(i % 2) * 2, 69 - CGFloat(i) * 4.5, 26, 4.5, rgb(c), radius: 1)
+        }
+        ctx.rect(53, 57, 18, 16, rgb(0xFFFBF5), radius: 1.5)
+        ctx.rect(56, 60, 12, 10, rgb(0xFBD3DE), radius: 1)
+        ctx.heart(center: pt(62, 65), size: 6, rgb(0xEC8FAE))
+        ctx.rect(13, 73.5, 74, 3.6, wood)
+        // Tầng 4: hai giỏ mây
+        for x in [CGFloat(17), 51] {
+            ctx.rect(x, 78, 32, 11, rgb(0xE9C79C), radius: 2.5)
+            ctx.strokePath(rgb(0xCFA175), width: 0.8) { p in
+                for k in 0..<5 {
+                    let xx = x + 4 + CGFloat(k) * 6
+                    p.move(to: pt(xx, 79)); p.addLine(to: pt(xx, 88))
+                }
+                p.move(to: pt(x, 83.5)); p.addLine(to: pt(x + 32, 83.5))
+            }
+        }
+    }
+
+    private static func closetRack(_ ctx: GraphicsContext) {
+        let wood = rgb(0xD9B087)
+        let dark = rgb(0xB98A62)
+        shadow(ctx, 4, 95, 92, 7)
+        // Khung
+        ctx.rect(10, 13, 4, 80, wood, radius: 2)
+        ctx.rect(86, 13, 4, 80, wood, radius: 2)
+        ctx.rect(6, 13, 88, 4, dark, radius: 2)
+        ctx.circle(12, 12, 3.4, dark)
+        ctx.circle(88, 12, 3.4, dark)
+        ctx.rect(12, 80, 76, 3.4, dark, radius: 1.5)
+        ctx.rect(4, 91, 20, 5, dark, radius: 2.5)
+        ctx.rect(76, 91, 20, 5, dark, radius: 2.5)
+        func hanger(_ x: CGFloat) {
+            ctx.strokePath(rgb(0x9A93A8), width: 1.2) { p in
+                p.move(to: pt(x, 22)); p.addQuadCurve(to: pt(x + 2.5, 15), control: pt(x - 1, 15))
+                p.move(to: pt(x, 22)); p.addLine(to: pt(x - 9, 27))
+                p.move(to: pt(x, 22)); p.addLine(to: pt(x + 9, 27))
+            }
+        }
+        // Váy chấm bi
+        hanger(26)
+        ctx.rect(19, 25, 14, 14, rgb(0xF6B3C6), radius: 3)
+        ctx.polygon([pt(19, 37), pt(33, 37), pt(39, 66), pt(13, 66)], rgb(0xF6B3C6))
+        ctx.rect(19, 36, 14, 3, rgb(0xFFFFFF), radius: 1.5)
+        for (x, y) in [(CGFloat(19), CGFloat(46)), (27, 44), (33, 52), (22, 57), (30, 60), (17, 63)] {
+            ctx.circle(x, y, 1.3, Color.white.opacity(0.85))
+        }
+        // Áo len sọc
+        hanger(50)
+        ctx.rect(38, 25, 24, 34, rgb(0xA9D8BA), radius: 5)
+        ctx.rect(35, 26, 7, 28, rgb(0x93CCA6), radius: 3.5)
+        ctx.rect(58, 26, 7, 28, rgb(0x93CCA6), radius: 3.5)
+        for y in [CGFloat(34), 42, 50] {
+            ctx.rect(38, y, 24, 3, Color.white.opacity(0.75))
+        }
+        ctx.ellipse(45, 24, 10, 5, rgb(0x93CCA6))
+        // Áo mưa vàng
+        hanger(74)
+        ctx.polygon([pt(65, 25), pt(83, 25), pt(86, 70), pt(62, 70)], rgb(0xF7D27A))
+        ctx.rect(65, 25, 18, 5, rgb(0xF0C255), radius: 2)
+        ctx.rect(73.3, 30, 1.4, 40, rgb(0xE5B347))
+        for y in [CGFloat(38), 48, 58] {
+            ctx.circle(76.8, y, 1.4, rgb(0xFFFBF5))
+        }
+        ctx.rect(66, 52, 6, 5, rgb(0xF0C255), radius: 1.5)
+        // Mũ cói trên thanh
+        ctx.ellipse(56, 9, 30, 7, rgb(0xF2D49A))
+        ctx.ellipse(63, 2, 16, 11, rgb(0xF2D49A))
+        ctx.rect(63, 8, 16, 2.6, rgb(0xF4A9A0), radius: 1.2)
+        // Đôi ủng
+        for x in [CGFloat(24), 36] {
+            ctx.rect(x, 69, 7, 11, rgb(0xF4A3A8), radius: 2)
+            ctx.rect(x, 76, 11, 4, rgb(0xF4A3A8), radius: 2)
+            ctx.rect(x + 1, 70.5, 1.6, 6, Color.white.opacity(0.5), radius: 0.8)
+        }
+    }
+
+    // MARK: Thảm
+
+    private static func rugStar(_ ctx: GraphicsContext) {
+        var c = ctx
+        c.translateBy(x: 53, y: 77)
+        c.scaleBy(x: 1, y: 0.56)
+        star(c, 0, 6, 34, rgb(0xE9C46F))
+        star(c, 0, 0, 34, rgb(0xF9DD8F))
+        star(c, 0, 2, 22, rgb(0xFFEDBB))
+        for (x, y) in [(CGFloat(-22), CGFloat(-6)), (22, -7), (0, -24), (-12, 18), (13, 18)] {
+            c.circle(x, y, 1.8, Color.white.opacity(0.75))
+        }
+        sleepyEye(c, -6, 0, 5)
+        sleepyEye(c, 6, 0, 5)
+        c.ellipse(-13, 4, 6, 4, Palette.blush.opacity(0.85))
+        c.ellipse(7, 4, 6, 4, Palette.blush.opacity(0.85))
+    }
+
+    private static func rugFluffy(_ ctx: GraphicsContext) {
+        let fur = rgb(0xD9EED3)
+        let shade = rgb(0xB3D7AE)
+        let n = 30
+        for (dy, color, grow) in [(CGFloat(2.5), shade, CGFloat(1)), (0, fur, 0)] {
+            for i in 0..<n {
+                let a = Double(i) / Double(n) * 2 * Double.pi
+                ctx.circle(53 + (34 + grow) * CGFloat(cos(a)), 77 + dy + (17 + grow) * CGFloat(sin(a)), 4.4, color)
+            }
+            ctx.ellipse(19, 60 + dy, 68, 34, color)
+        }
+        ctx.ellipse(27, 64, 52, 26, rgb(0xEAF6E6))
+        ctx.strokePath(Color.white, width: 1.2) { p in
+            for i in 0..<14 {
+                let a = Double(i) / 14 * 2 * Double.pi
+                let x = 53 + 24 * CGFloat(cos(a)), y = 77 + 12 * CGFloat(sin(a))
+                p.move(to: pt(x - 1.6, y + 1)); p.addQuadCurve(to: pt(x + 1.6, y + 1), control: pt(x, y - 2))
+            }
+            for (x, y) in [(CGFloat(44), CGFloat(74)), (60, 72), (52, 82), (38, 82), (68, 81)] {
+                p.move(to: pt(x - 1.6, y + 1)); p.addQuadCurve(to: pt(x + 1.6, y + 1), control: pt(x, y - 2))
+            }
+        }
+        ctx.strokePath(shade, width: 1) { p in
+            for (x, y) in [(CGFloat(48), CGFloat(68)), (64, 77), (44, 87), (58, 88), (34, 74), (72, 70)] {
+                p.move(to: pt(x - 1.4, y + 1)); p.addQuadCurve(to: pt(x + 1.4, y + 1), control: pt(x, y - 1.6))
+            }
+        }
+    }
+
+    private static func rugCatFace(_ ctx: GraphicsContext) {
+        let fur = rgb(0xF7C59F)
+        let dark = rgb(0xE6A579)
+        let light = rgb(0xFFF1E0)
+        let pink = rgb(0xF6B3C6)
+        // Tai
+        ctx.polygon([pt(22, 72), pt(25, 52), pt(42, 63)], dark)
+        ctx.polygon([pt(84, 72), pt(81, 52), pt(64, 63)], dark)
+        ctx.polygon([pt(23, 70), pt(26, 51), pt(42, 61)], fur)
+        ctx.polygon([pt(83, 70), pt(80, 51), pt(64, 61)], fur)
+        ctx.polygon([pt(27, 64), pt(28, 56), pt(36, 61)], pink)
+        ctx.polygon([pt(79, 64), pt(78, 56), pt(70, 61)], pink)
+        // Mặt
+        ctx.ellipse(18, 62, 70, 35, dark)
+        ctx.ellipse(18, 59, 70, 35, fur)
+        for dx in [CGFloat(-6), 0, 6] {
+            ctx.ellipse(53 + dx - 1.4, 61, 2.8, 7, dark)
+        }
+        ctx.ellipse(39, 76, 28, 15, light)
+        sleepyEye(ctx, 39, 74, 7, width: 1.6)
+        sleepyEye(ctx, 67, 74, 7, width: 1.6)
+        ctx.polygon([pt(50.5, 78.5), pt(55.5, 78.5), pt(53, 81)], pink)
+        ctx.strokePath(ink, width: 1.3) { p in
+            p.move(to: pt(53, 81)); p.addQuadCurve(to: pt(48.5, 83.5), control: pt(52, 84.5))
+            p.move(to: pt(53, 81)); p.addQuadCurve(to: pt(57.5, 83.5), control: pt(54, 84.5))
+        }
+        ctx.ellipse(28, 78, 9, 5, Palette.blush.opacity(0.9))
+        ctx.ellipse(69, 78, 9, 5, Palette.blush.opacity(0.9))
+        ctx.strokePath(dark, width: 1) { p in
+            p.move(to: pt(30, 84)); p.addLine(to: pt(14, 82))
+            p.move(to: pt(30, 87)); p.addLine(to: pt(16, 89))
+            p.move(to: pt(76, 84)); p.addLine(to: pt(92, 82))
+            p.move(to: pt(76, 87)); p.addLine(to: pt(90, 89))
+        }
+    }
+
+    // MARK: Đồ chơi
+
+    private static func plushWhale(_ ctx: GraphicsContext) {
+        let blue = rgb(0x9CC8EE)
+        let shade = rgb(0x7FB2E0)
+        let belly = rgb(0xEAF4FC)
+        shadow(ctx, 8, 86, 82, 10)
+        // Đuôi vểnh
+        ctx.strokePath(blue, width: 11) { p in
+            p.move(to: pt(70, 70)); p.addQuadCurve(to: pt(86, 44), control: pt(84, 64))
+        }
+        ctx.rotated(-35, around: pt(84, 42)) { c in c.ellipse(72, 36, 16, 10, blue) }
+        ctx.rotated(35, around: pt(88, 42)) { c in c.ellipse(84, 36, 16, 10, blue) }
+        // Thân
+        let body = CGRect(x: 6, y: 36, width: 76, height: 56)
+        ctx.ellipse(body.minX, body.minY, body.width, body.height, blue)
+        var g = ctx
+        g.clip(to: Path(ellipseIn: body))
+        g.ellipse(0, 68, 80, 34, belly)
+        g.strokePath(rgb(0xCFE2F4), width: 1.2) { p in
+            for y in [CGFloat(76), 82, 88] {
+                p.move(to: pt(14, y)); p.addLine(to: pt(70, y))
+            }
+        }
+        star(ctx, 58, 50, 5, rgb(0xFFF1C2))
+        star(ctx, 70, 60, 3, rgb(0xFFF1C2))
+        ctx.ellipse(18, 42, 16, 8, Color.white.opacity(0.35))
+        // Mặt
+        sleepyEye(ctx, 26, 60, 7, width: 1.6)
+        ctx.ellipse(18, 64, 9, 5, Palette.blush.opacity(0.9))
+        ctx.strokePath(ink, width: 1.3) { p in
+            p.move(to: pt(12, 70)); p.addQuadCurve(to: pt(20, 70), control: pt(16, 73.5))
+        }
+        ctx.rotated(25, around: pt(46, 76)) { c in c.ellipse(38, 72, 18, 9, shade) }
+        // Vòi nước hình tim
+        ctx.strokePath(rgb(0xAFD8F2), width: 2.2) { p in
+            p.move(to: pt(34, 36)); p.addLine(to: pt(34, 26))
+        }
+        ctx.heart(center: pt(34, 20), size: 14, rgb(0xAFD8F2))
+        ctx.circle(22, 26, 2, rgb(0xAFD8F2))
+        ctx.circle(46, 26, 2, rgb(0xAFD8F2))
+    }
+
+    private static func plushOctopus(_ ctx: GraphicsContext) {
+        let pink = rgb(0xF6B3C6)
+        let shade = rgb(0xE897B1)
+        let spot = rgb(0xFCD9E3)
+        shadow(ctx, 6, 86, 88, 10)
+        let arms: [(CGFloat, CGPoint, CGPoint)] = [
+            (30, pt(10, 82), pt(14, 64)), (40, pt(28, 92), pt(28, 80)), (50, pt(52, 94), pt(48, 84)),
+            (60, pt(74, 92), pt(70, 80)), (70, pt(91, 80), pt(88, 64))
+        ]
+        for (sx, end, c) in arms {
+            ctx.strokePath(pink, width: 10) { p in
+                p.move(to: pt(sx, 60)); p.addQuadCurve(to: end, control: c)
+            }
+            ctx.circle(end.x, end.y - 3.5, 4.2, shade)
+            for t in [CGFloat(0.55), 0.8] {
+                let m = quad(pt(sx, 60), c, end, t)
+                ctx.circle(m.x, m.y + 2, 1.3, spot)
+            }
+        }
+        // Đầu tròn
+        ctx.ellipse(20, 10, 60, 60, pink)
+        ctx.circle(34, 24, 3.6, spot)
+        ctx.circle(62, 20, 2.6, spot)
+        ctx.circle(68, 32, 2, spot)
+        ctx.ellipse(30, 14, 12, 7, Color.white.opacity(0.4))
+        // Mặt
+        ctx.circle(40, 46, 3.4, ink)
+        ctx.circle(60, 46, 3.4, ink)
+        ctx.circle(39, 45, 1.1, Color.white.opacity(0.9))
+        ctx.circle(59, 45, 1.1, Color.white.opacity(0.9))
+        ctx.ellipse(29, 50, 8, 4.5, Palette.blush.opacity(0.95))
+        ctx.ellipse(63, 50, 8, 4.5, Palette.blush.opacity(0.95))
+        ctx.ellipse(47.5, 51, 5, 5, shade)
+        ctx.ellipse(48.5, 52, 3, 3, ink.opacity(0.75))
+        // Nơ
+        ctx.polygon([pt(70, 16), pt(60, 9), pt(62, 22)], rgb(0xB9A6EA))
+        ctx.polygon([pt(70, 16), pt(80, 9), pt(79, 23)], rgb(0xB9A6EA))
+        ctx.circle(70, 16, 3, rgb(0x9F8BDB))
+    }
+
+    private static func plushEgg(_ ctx: GraphicsContext) {
+        let shell = rgb(0xFFF6E6)
+        let shellShade = rgb(0xF1E2C8)
+        let spot = rgb(0xA9DDB8)
+        let green = rgb(0xA9DDB8)
+        let greenShade = rgb(0x86C79A)
+        shadow(ctx, 16, 86, 68, 10)
+        // Bé khủng long ló đầu
+        for (x, y) in [(CGFloat(40), CGFloat(22)), (50, 19), (60, 22)] {
+            ctx.polygon([pt(x - 4, y + 4), pt(x, y - 4), pt(x + 4, y + 4)], rgb(0xF7C59F))
+        }
+        ctx.ellipse(28, 20, 44, 40, green)
+        ctx.circle(41, 38, 3.2, ink)
+        ctx.circle(59, 38, 3.2, ink)
+        ctx.circle(40, 37, 1.1, Color.white.opacity(0.9))
+        ctx.circle(58, 37, 1.1, Color.white.opacity(0.9))
+        ctx.ellipse(31, 42, 7, 4, Palette.blush.opacity(0.9))
+        ctx.ellipse(62, 42, 7, 4, Palette.blush.opacity(0.9))
+        ctx.strokePath(ink, width: 1.3) { p in
+            p.move(to: pt(45, 45)); p.addQuadCurve(to: pt(55, 45), control: pt(50, 49))
+        }
+        ctx.polygon([pt(48, 46.5), pt(51, 46.8), pt(49.5, 49.5)], Color.white)
+        // Nửa vỏ dưới, mép răng cưa
+        var low = Path()
+        low.move(to: pt(18, 54))
+        var x: CGFloat = 18
+        var up = true
+        while x < 82 {
+            x += 8
+            low.addLine(to: pt(min(x, 82), up ? 47 : 54))
+            up.toggle()
+        }
+        low.addCurve(to: pt(50, 95), control1: pt(84, 78), control2: pt(70, 95))
+        low.addCurve(to: pt(18, 54), control1: pt(30, 95), control2: pt(16, 78))
+        low.closeSubpath()
+        ctx.fill(low, with: .color(shell))
+        var g = ctx
+        g.clip(to: low)
+        g.ellipse(18, 78, 70, 30, shellShade)
+        g.ellipse(26, 60, 10, 7, spot)
+        g.ellipse(58, 66, 13, 9, spot)
+        g.ellipse(40, 80, 9, 6, spot)
+        g.ellipse(70, 52, 8, 6, spot)
+        ctx.ellipse(22, 60, 5, 12, Color.white.opacity(0.6))
+        // Tay bám mép vỏ
+        ctx.ellipse(28, 48, 10, 7, greenShade)
+        ctx.ellipse(62, 48, 10, 7, greenShade)
+        // Nửa vỏ trên làm mũ
+        ctx.rotated(-14, around: pt(50, 22)) { c in
+            var cap = Path()
+            cap.move(to: pt(30, 22))
+            var xx: CGFloat = 30
+            var dn = true
+            while xx < 69 {
+                xx += 6.66
+                cap.addLine(to: pt(min(xx, 70), dn ? 27 : 22))
+                dn.toggle()
+            }
+            cap.addCurve(to: pt(30, 22), control1: pt(68, 0), control2: pt(32, 0))
+            cap.closeSubpath()
+            c.fill(cap, with: .color(shell))
+            c.ellipse(44, 10, 9, 6, spot)
+            c.ellipse(36, 8, 5, 4, Color.white.opacity(0.7))
+        }
     }
 }
