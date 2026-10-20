@@ -5,8 +5,14 @@ export function playCloudJump(seed: number, maxTicks = 60 * 60 * 3, skill = 1): 
   const e = new CloudJump(seed)
   while (!e.over && e.time < maxTicks + 60 * 60) {
     if (e.time >= maxTicks) {
-      // hết giờ chơi: lái ra mép để rơi, kết thúc lượt
-      e.setTarget(e.petX < CJ.W / 2 ? 1 : 0)
+      // hết giờ chơi: lái tới chỗ xa mọi tầng mây bên dưới để rơi, kết thúc lượt
+      const below = e.platforms.filter(p => p.y <= e.petY)
+      let best = 0, bestD = -1
+      for (let x = CJ.FOOT; x <= CJ.W - CJ.FOOT; x += 2000) {
+        const d = Math.min(...below.map(p => Math.abs(platformX(p, e.time) - x) - p.w / 2), Infinity)
+        if (d > bestD) { bestD = d; best = x }
+      }
+      e.setTarget(best / CJ.W)
       e.tick()
       continue
     }

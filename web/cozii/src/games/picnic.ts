@@ -174,22 +174,30 @@ export class PicnicBoard {
   }
 }
 
-/** Bộ giải (dùng trong test): kiểm tra đề có lời giải bằng quay lui. */
+/** Bộ giải (dùng trong test): kiểm tra đề có lời giải bằng quay lui, luôn lấp ô trống đầu tiên (đọc theo hàng). */
 export function solvable(p: Puzzle): boolean {
   const b = new PicnicBoard(p)
-  const pieces = [...p.pieces].sort((x, y) => y.cells.length - x.cells.length)
-  const go = (k: number): boolean => {
-    if (k === pieces.length) return b.solved
-    const piece = pieces[k]
-    for (let rot = 0; rot < 4; rot++) for (let row = 0; row < p.rows; row++) for (let col = 0; col < p.cols; col++) {
-      const pl = { piece: piece.id, rot, col, row }
-      if (b.fits(pl)) {
+  const used = new Set<number>()
+  const go = (): boolean => {
+    const occ = b.occupied()
+    const first = p.mask.findIndex((m, i) => m && !occ.has(i))
+    if (first < 0) return used.size === p.pieces.length
+    const fc = first % p.cols, fr = Math.floor(first / p.cols)
+    for (const piece of p.pieces) {
+      if (used.has(piece.id)) continue
+      for (let rot = 0; rot < 4; rot++) {
+        // ô đầu tiên của hình (đã chuẩn hóa, theo hàng) phải nằm đúng ô trống đầu tiên
+        const [c0, r0] = normalize(rotate(piece.cells, rot))[0]
+        const pl = { piece: piece.id, rot, col: fc - c0, row: fr - r0 }
+        if (!b.fits(pl)) continue
         b.placements.set(piece.id, pl)
-        if (go(k + 1)) return true
+        used.add(piece.id)
+        if (go()) return true
+        used.delete(piece.id)
         b.placements.delete(piece.id)
       }
     }
     return false
   }
-  return go(0)
+  return go()
 }
