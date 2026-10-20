@@ -64,7 +64,8 @@ extension AppStore {
             try self.focusModel(s.id).apply(s)
             self.replaceFocus(s)
             if s.isRewardEligible,
-               let entry = RewardPolicy.forFocus(sessionID: s.id, plannedMinutes: s.plannedMinutes, existingKeys: self.ledgerKeys, now: self.now) {
+               let entry = RewardPolicy.forFocus(sessionID: s.id, plannedMinutes: s.plannedMinutes, existingKeys: self.ledgerKeys, now: self.now,
+                                                 rewardedMinutesToday: RewardPolicy.focusRewardedMinutesToday(self.ledger, now: self.now, calendar: self.calendar)) {
                 self.insertLedger(entry)
                 granted = entry
             }

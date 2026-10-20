@@ -156,7 +156,7 @@ struct WardrobeView: View {
             } else if level < item.requiredLevel {
                 Label("Cấp \(item.requiredLevel)", systemImage: "lock.fill").foregroundStyle(Palette.inkMuted)
             } else {
-                Text(item.isFree ? "Miễn phí" : "\(item.price) xu").foregroundStyle(Palette.honey)
+                Text(item.isFree ? "Miễn phí" : "\(item.price) xu").foregroundStyle(Palette.honeyText)
             }
         } else {
             Text(" ")

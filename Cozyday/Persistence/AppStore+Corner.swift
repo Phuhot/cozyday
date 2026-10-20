@@ -137,7 +137,8 @@ extension AppStore {
             }
             self.journal.removeAll { $0.day == day }
             self.journal.append(record)
-            if day <= self.today, let entry = RewardPolicy.forJournal(day: day, existingKeys: self.ledgerKeys, now: self.now) {
+            if let entry = RewardPolicy.forJournal(day: day, today: self.today, calendar: self.calendar,
+                                                   existingKeys: self.ledgerKeys, now: self.now) {
                 self.insertLedger(entry)
                 granted = entry
             }

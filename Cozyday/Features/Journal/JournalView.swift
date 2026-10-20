@@ -189,7 +189,8 @@ struct JournalView: View {
                     .fill(mood.map(MoodFace.color) ?? (d == dayClock.today ? Palette.lavenderSoft : Palette.surface))
                 Text("\(d.day)")
                     .font(Typography.callout.monospacedDigit())
-                    .foregroundStyle(future ? Palette.inkMuted.opacity(0.5) : Palette.ink)
+                    // Ô có màu tâm trạng là màu pastel cố định: chữ tối cố định để đọc được cả ở chế độ tối.
+                    .foregroundStyle(future ? Palette.inkMuted.opacity(0.5) : (mood != nil ? Palette.catInk : Palette.ink))
             }
             .frame(minHeight: HitTarget.min)
         }

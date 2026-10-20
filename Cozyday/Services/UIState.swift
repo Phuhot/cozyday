@@ -44,6 +44,12 @@ final class UIState {
             showReward("Xong rồi! Hôm nay đã đủ \(RewardConfig.taskRewardsPerDay) việc có thưởng, việc này vẫn được ghi nhận.")
             return
         }
+        if entry.kind == .focusCompleted, entry.memo.hasPrefix(RewardPolicy.focusCapMemo) {
+            showReward(entry.coins > 0
+                       ? "\(entry.rewardText). Hôm nay đã đủ \(RewardConfig.focusDailyRewardMinutes / 60) giờ tập trung có thưởng."
+                       : "Xong phiên! Hôm nay đã đủ \(RewardConfig.focusDailyRewardMinutes / 60) giờ tập trung có thưởng, phiên này vẫn được tính vào thống kê.")
+            return
+        }
         guard !entry.rewardText.isEmpty else { return }
         showReward(entry.rewardText)
     }

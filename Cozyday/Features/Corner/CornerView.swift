@@ -515,7 +515,7 @@ struct ShopView: View {
         if inUse { return ("Đang dùng", Palette.sage) }
         if Catalog.isOwned(item.id, owned: store.ownedIDs) { return ("Đã có", Palette.inkMuted) }
         if store.wallet.level < item.requiredLevel { return ("Mở ở cấp \(item.requiredLevel)", Palette.inkMuted) }
-        return (item.isFree ? "Miễn phí" : "\(item.price) xu", Palette.honey)
+        return (item.isFree ? "Miễn phí" : "\(item.price) xu", Palette.honeyText)
     }
 
     private func itemCard(_ item: CatalogItem) -> some View {

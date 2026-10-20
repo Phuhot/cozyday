@@ -139,7 +139,7 @@ struct PlaygroundView: View {
                     HStack {
                         Text("Xu sân chơi hôm nay").font(Typography.callout.weight(.semibold)).foregroundStyle(Palette.ink)
                         Spacer()
-                        Text("\(todayCoins)/\(MinigameConfig.dailyCoinCap)").font(Typography.headline.monospacedDigit()).foregroundStyle(Palette.honey)
+                        Text("\(todayCoins)/\(MinigameConfig.dailyCoinCap)").font(Typography.headline.monospacedDigit()).foregroundStyle(Palette.honeyText)
                     }
                     ProgressView(value: Double(min(todayCoins, MinigameConfig.dailyCoinCap)), total: Double(MinigameConfig.dailyCoinCap))
                         .tint(Palette.honey)
@@ -168,7 +168,7 @@ struct PlaygroundView: View {
                     Spacer()
                     Text(best.map { "Kỷ lục: \(bestText(kind, $0))" } ?? "Chưa có kỷ lục")
                         .font(Typography.caption.weight(.bold))
-                        .foregroundStyle(best == nil ? Palette.inkMuted : Palette.honey)
+                        .foregroundStyle(best == nil ? Palette.inkMuted : Palette.honeyText)
                 }
                 Text(kind.blurb)
                     .font(Typography.callout).foregroundStyle(Palette.inkMuted)

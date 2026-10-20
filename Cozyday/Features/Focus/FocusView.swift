@@ -226,8 +226,12 @@ struct FocusView: View {
     // MARK: Đang chạy
 
     private func running(_ session: FocusSessionRecord) -> some View {
-        let strictFocus = focus.settings.strictMode && session.kind == .focus
+        // Phiên đang tạm dừng (từ trước khi bật chế độ nghiêm) vẫn có nút Tiếp tục.
+        let strictFocus = focus.settings.strictMode && session.kind == .focus && !session.isPaused
         return VStack(spacing: Spacing.l) {
+            if session.kind == .rest, let done = focus.lastFinished {
+                recap(done)
+            }
             if let id = session.occurrenceID, let task = store.occurrence(id) {
                 Label(task.title, systemImage: "checklist")
                     .font(Typography.headline)
@@ -328,6 +332,29 @@ struct FocusView: View {
                     if session.kind == .rest { focus.endEarly() } else { confirmEnd = true }
                 } label: { Label("Kết thúc", systemImage: "stop.fill") }
                 .buttonStyle(SoftButtonStyle(tint: Palette.danger))
+            }
+        }
+    }
+
+    /// Tổng kết gọn phiên vừa xong, hiện trong lúc giờ nghỉ tự chạy.
+    private func recap(_ done: FocusSessionRecord) -> some View {
+        let away = focus.awayCount(for: done.id)
+        return CozyCard(padding: Spacing.m) {
+            VStack(alignment: .leading, spacing: Spacing.s) {
+                Label("Xong phiên \(Int(done.focusedSeconds / 60)) phút", systemImage: "checkmark.seal.fill")
+                    .font(Typography.headline)
+                    .foregroundStyle(Palette.sage)
+                Text(away == 0 ? "Không rời app lần nào." : "Rời app \(away) lần trong phiên.")
+                    .font(Typography.callout)
+                    .foregroundStyle(Palette.inkMuted)
+                if let id = done.occurrenceID, let task = store.occurrence(id), task.status == .open {
+                    Button {
+                        var reward: LedgerEntry?
+                        ui.run { reward = try store.setStatus(id: id, to: .done) }
+                        ui.reward(reward)
+                    } label: { Label("Đánh dấu “\(task.title)” đã xong", systemImage: "checkmark") }
+                    .buttonStyle(SoftButtonStyle(tint: Palette.sage))
+                }
             }
         }
     }

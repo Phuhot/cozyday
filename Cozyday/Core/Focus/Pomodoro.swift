@@ -158,8 +158,10 @@ struct FocusAwayTracker: Equatable {
     static let graceSeconds: TimeInterval = 10
     /// Chế độ nghiêm: rời app lâu hơn mức này thì phiên dừng lại.
     static let strictLimitSeconds: TimeInterval = 60
-    /// Lời nhắc quay lại gửi sau chừng này giây kể từ lúc rời app.
+    /// Lời nhắc quay lại gửi sau chừng này giây kể từ lúc rời app (sau khi chắc chắn không phải khóa máy).
     static let nudgeDelay: TimeInterval = 15
+    /// Thời gian giữ app chạy nền để chờ tín hiệu khóa máy.
+    static let lockCheckSeconds: TimeInterval = 13
 
     enum Outcome: Equatable {
         /// Không tính (khóa máy, quá ngắn hoặc không có phiên tập trung đang chạy).
@@ -171,8 +173,15 @@ struct FocusAwayTracker: Equatable {
     }
 
     private(set) var leftAt: Date?
-    /// Lúc iOS báo khóa máy (tín hiệu này có thể tới ngay trước hoặc sau lúc app vào nền).
+    /// Lúc iOS báo khóa máy. Tín hiệu này tới khoảng 10 giây SAU khi khóa (lúc dữ liệu được bảo vệ khóa lại),
+    /// nên app giữ chạy nền khoảng 15 giây để kịp nhận.
     private(set) var lockedAt: Date?
+
+    /// Khôi phục trạng thái đã lưu (app bị iOS đóng hẳn trong lúc bạn ở app khác).
+    init(leftAt: Date? = nil, lockedAt: Date? = nil) {
+        self.leftAt = leftAt
+        self.lockedAt = lockedAt
+    }
 
     mutating func didLeave(at now: Date) {
         leftAt = now

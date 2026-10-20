@@ -484,7 +484,7 @@ struct GameResultCard: View {
                     if host.saved?.isNewBest == true {
                         Label("Kỷ lục mới!", systemImage: "trophy.fill")
                             .font(Typography.headline)
-                            .foregroundStyle(Palette.honey)
+                            .foregroundStyle(Palette.honeyText)
                             .padding(.horizontal, Spacing.m)
                             .padding(.vertical, Spacing.xs)
                             .background(Palette.honey.opacity(0.15), in: Capsule())

@@ -38,6 +38,8 @@ enum Palette {
     static let sageSoft = Color.dynamic(light: 0xE4EFE2, dark: 0x33443A)
     static let peach = Color.dynamic(light: 0xE59A7A, dark: 0xF0B49A)
     static let honey = Color.dynamic(light: 0xD9A441, dark: 0xF0C26A)
+    /// Màu chữ giá xu: vàng mật ong đậm đủ tương phản trên nền kem (~4.6:1).
+    static let honeyText = Color.dynamic(light: 0x8F6410, dark: 0xF0C26A)
     static let danger = Color.dynamic(light: 0xC2565A, dark: 0xF08C8F)
     static let nowLine = Color.dynamic(light: 0xD9667A, dark: 0xF290A2)
 

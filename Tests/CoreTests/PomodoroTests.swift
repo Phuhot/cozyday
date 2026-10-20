@@ -102,6 +102,16 @@ final class PomodoroTests: XCTestCase {
         t.didLeave(at: t0.addingTimeInterval(120))
         XCTAssertEqual(t.didReturn(at: t0.addingTimeInterval(300), focusRunning: true, strict: true), .broke(seconds: 180))
 
+        // iOS báo khóa máy ~10 giây sau khi khóa: vẫn tính là khóa máy.
+        t.didLeave(at: t0)
+        t.deviceLocked(at: t0.addingTimeInterval(10))
+        XCTAssertTrue(t.lockedWhileAway)
+        XCTAssertEqual(t.didReturn(at: t0.addingTimeInterval(900), focusRunning: true, strict: true), .ignored)
+
+        // Khôi phục sau khi app bị đóng hẳn.
+        var restored = FocusAwayTracker(leftAt: t0, lockedAt: nil)
+        XCTAssertEqual(restored.didReturn(at: t0.addingTimeInterval(120), focusRunning: true, strict: true), .broke(seconds: 120))
+
         t.didLeave(at: t0)
         XCTAssertEqual(t.didReturn(at: t0.addingTimeInterval(300), focusRunning: false, strict: true), .ignored, "đang nghỉ/tạm dừng")
         XCTAssertNil(t.leftAt)

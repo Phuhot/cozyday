@@ -39,11 +39,14 @@ struct PrimaryButtonStyle: ButtonStyle {
 struct SoftButtonStyle: ButtonStyle {
     var tint: Color = Palette.lavender
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var colorScheme
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(Typography.headline)
             .foregroundStyle(tint)
+            // Chữ cùng màu với nền nhạt chỉ đạt ~2:1; làm đậm chữ ở chế độ sáng để đủ tương phản.
+            .brightness(colorScheme == .light ? -0.3 : 0.08)
             .padding(.horizontal, Spacing.l)
             .frame(minHeight: HitTarget.min + 6)
             .background(tint.opacity(configuration.isPressed ? 0.22 : 0.14), in: RoundedRectangle(cornerRadius: Radius.l, style: .continuous))

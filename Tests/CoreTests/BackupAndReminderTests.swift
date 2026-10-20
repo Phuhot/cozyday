@@ -13,7 +13,7 @@ final class BackupTests: XCTestCase {
         occ.completedAt = date(2026, 10, 18, 8, 31)
         let inbox = makeOneOff(title: "Gọi điện cho bà", day: nil, start: nil)
         let reward = RewardPolicy.forTaskCompletion(occurrence: occ, existingKeys: [], now: date(2026, 10, 18, 8, 31))!
-        let journalReward = RewardPolicy.forJournal(day: day("2026-10-18"), existingKeys: [], now: date(2026, 10, 18, 21))!
+        let journalReward = RewardPolicy.forJournal(day: day("2026-10-18"), today: day("2026-10-18"), calendar: cal(), existingKeys: [], now: date(2026, 10, 18, 21))!
         let buy = LedgerEntry(id: UUID(), key: LedgerKeys.purchase("desk.pine"), kind: .purchase, xp: 0, coins: 0,
                               createdAt: date(2026, 10, 18, 9), refID: "desk.pine", memo: "Bàn gỗ thông")
         var focus = FocusSessionRecord.start(kind: .focus, minutes: 25, occurrenceID: occ.id, now: date(2026, 10, 18, 9))

@@ -121,14 +121,33 @@ enum RewardPolicy {
         }
     }
 
-    static func forFocus(sessionID: UUID, plannedMinutes: Int, existingKeys: Set<String>, now: Date) -> LedgerEntry? {
+    /// Tiền tố ghi chú khi phiên tập trung vượt quá số phút có thưởng trong ngày.
+    static let focusCapMemo = "Đã đủ giờ có thưởng: "
+
+    /// Số phút tập trung đã có thưởng trong cùng ngày với `now`.
+    static func focusRewardedMinutesToday<S: Sequence>(_ ledger: S, now: Date, calendar: Calendar) -> Int where S.Element == LedgerEntry {
+        ledger.reduce(0) { n, e in
+            e.kind == .focusCompleted && calendar.isDate(e.createdAt, inSameDayAs: now)
+                ? n + e.xp / RewardConfig.focusXPPerFiveMinutes * 5 : n
+        }
+    }
+
+    /// Thưởng một phiên tập trung chạy hết giờ. Đã đủ giờ có thưởng trong ngày thì chỉ thưởng phần còn lại;
+    /// hết hẳn thì vẫn ghi một dòng 0 xu để màn hình báo rõ lý do.
+    static func forFocus(sessionID: UUID, plannedMinutes: Int, existingKeys: Set<String>, now: Date,
+                         rewardedMinutesToday: Int = 0) -> LedgerEntry? {
         let key = LedgerKeys.focus(sessionID)
-        let reward = RewardConfig.focusReward(plannedMinutes: plannedMinutes)
-        guard !existingKeys.contains(key), reward.xp > 0 || reward.coins > 0 else { return nil }
+        let full = RewardConfig.focusReward(plannedMinutes: plannedMinutes)
+        guard !existingKeys.contains(key), full.xp > 0 || full.coins > 0 else { return nil }
+        let eligible = min(plannedMinutes, RewardConfig.focusMaxRewardMinutes)
+        let left = max(0, RewardConfig.focusDailyRewardMinutes - rewardedMinutesToday)
+        let blocks = min(eligible, left) / 5
+        let capped = blocks * 5 < eligible
         return LedgerEntry(
             id: UUID(), key: key, kind: .focusCompleted,
-            xp: reward.xp, coins: reward.coins,
-            createdAt: now, refID: sessionID.uuidString.lowercased(), memo: "\(plannedMinutes) phút"
+            xp: blocks * RewardConfig.focusXPPerFiveMinutes, coins: blocks * RewardConfig.focusCoinsPerFiveMinutes,
+            createdAt: now, refID: sessionID.uuidString.lowercased(),
+            memo: (capped ? focusCapMemo : "") + "\(plannedMinutes) phút"
         )
     }
 
@@ -142,7 +161,10 @@ enum RewardPolicy {
         )
     }
 
-    static func forJournal(day: DayKey, existingKeys: Set<String>, now: Date) -> LedgerEntry? {
+    /// Nhật ký có thưởng khi viết cho hôm nay hoặc hôm qua (`today`). Ngày cũ hơn hay ngày tương lai: không thưởng.
+    static func forJournal(day: DayKey, today: DayKey, calendar: Calendar, existingKeys: Set<String>, now: Date) -> LedgerEntry? {
+        let back = day.days(to: today, calendar: calendar)
+        guard (0...RewardConfig.journalRewardDaysBack).contains(back) else { return nil }
         let key = LedgerKeys.journal(day)
         guard !existingKeys.contains(key) else { return nil }
         return LedgerEntry(

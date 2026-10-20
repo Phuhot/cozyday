@@ -95,8 +95,9 @@ struct PetCollectionView: View {
         if wearing { return ("Đang mặc", Palette.sage) }
         if let ownedText { return (ownedText, Palette.inkMuted) }
         if missing.isEmpty { return ("Đủ đồ", Palette.sage) }
+        if missing.contains(where: \.gachaOnly) { return ("Máy gacha", ItemRarity.secret.color) }
         if locked { return ("Cấp \(look.requiredLevel)", Palette.inkMuted) }
-        return ("\(look.cost(owned: owned)) xu", Palette.honey)
+        return ("\(look.cost(owned: owned)) xu", Palette.honeyText)
     }
 
     private func cell(_ look: PetLook, appearance: PetAppearance, owned: Set<String>, ownedText: String?) -> some View {
@@ -104,17 +105,20 @@ struct PetCollectionView: View {
         let missing = look.missing(owned: owned)
         let locked = look.requiredLevel > store.wallet.level && !missing.isEmpty
         let (status, color) = cellStatus(look, wearing: wearing, missing: missing, locked: locked, owned: owned, ownedText: ownedText)
+        // Bộ có món Bí mật chưa quay được: chỉ hiện bóng, giấu tên (giống Tủ đồ và máy gacha).
+        let hidden = missing.contains(where: \.isHiddenUntilOwned)
         return Button { selected = look } label: {
             VStack(spacing: 2) {
                 PetArt(mood: look.name.count % 3 == 0 ? .happy : .idle, appearance: appearance)
                     .frame(width: 96, height: 96)
+                    .silhouette(hidden)
                     .opacity(locked ? 0.55 : 1)
                     .overlay(alignment: .topTrailing) {
                         if locked {
                             Image(systemName: "lock.fill").font(.caption).foregroundStyle(Palette.inkMuted).padding(6)
                         }
                     }
-                Text(look.name)
+                Text(hidden ? "???" : look.name)
                     .font(Typography.caption.weight(.semibold))
                     .foregroundStyle(Palette.ink)
                     .lineLimit(1)
@@ -130,7 +134,7 @@ struct PetCollectionView: View {
             .overlay(RoundedRectangle(cornerRadius: Radius.l, style: .continuous).strokeBorder(wearing ? Palette.sage : .clear, lineWidth: 2))
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(look.name), \(status)")
+        .accessibilityLabel("\(hidden ? "Món bí mật" : look.name), \(status)")
         .accessibilityHint("Xem thử")
     }
 }
@@ -149,20 +153,31 @@ struct LookDetailSheet: View {
         let cost = look.cost(owned: owned)
         let level = store.wallet.level
         let appearance = look.appearance(stage: PetStage.forLevel(level))
+        let secret = missing.filter(\.isHiddenUntilOwned)
+        let gachaMissing = missing.contains(where: \.gachaOnly)
         ScrollView {
             VStack(spacing: Spacing.l) {
                 PetView(appearance: appearance, mood: .happy, name: store.profile.displayPetName,
                         interactive: true, haptics: store.profile.hapticsEnabled)
+                    .silhouette(!secret.isEmpty)
                     .frame(width: 190, height: 190)
                     .frame(maxWidth: .infinity)
                     .padding(.top, Spacing.l)
                     .background(Palette.roomWall, in: RoundedRectangle(cornerRadius: Radius.xl, style: .continuous))
-                Text(look.name)
+                Text(secret.isEmpty ? look.name : "Bộ bí mật")
                     .font(Typography.title)
                     .foregroundStyle(Palette.ink)
-                LookItemChips(items: look.itemIDs.compactMap(Catalog.item).filter { !$0.isDefault || $0.slot == .species }, owned: owned)
+                LookItemChips(items: look.itemIDs.compactMap(Catalog.item)
+                    .filter { (!$0.isDefault || $0.slot == .species) && !secret.contains($0) }, owned: owned)
 
-                if missing.isEmpty {
+                if gachaMissing {
+                    Label(secret.isEmpty ? "Có món chỉ ra từ máy gacha. Quay được rồi thì mặc cả bộ ở đây."
+                                         : "Bộ này có món Bí mật, chỉ ra từ máy gacha.",
+                          systemImage: "sparkles")
+                        .font(Typography.callout)
+                        .foregroundStyle(ItemRarity.secret.color)
+                        .multilineTextAlignment(.center)
+                } else if missing.isEmpty {
                     Button("Mặc bộ này") { wear() }
                         .buttonStyle(PrimaryButtonStyle(color: Palette.sage))
                         .disabled(working)

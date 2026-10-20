@@ -154,7 +154,8 @@ final class GameSound {
     func prepare() {
         guard enabled, engine == nil else { return }
         let session = AVAudioSession.sharedInstance()
-        try? session.setCategory(.ambient, mode: .default, options: [.mixWithOthers])
+        // Đang có âm nền của hẹn giờ thì giữ nguyên phiên của nó, chỉ phát chồng lên.
+        if !FocusAudio.inUse { try? session.setCategory(.ambient, mode: .default, options: [.mixWithOthers]) }
         try? session.setActive(true)
         guard let format = AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 1) else { return }
         let engine = AVAudioEngine()
@@ -200,7 +201,7 @@ final class GameSound {
         players = []
         buffers = [:]
         GameSound.activeCount -= 1
-        if GameSound.activeCount == 0 {
+        if GameSound.activeCount == 0 && !FocusAudio.inUse {
             try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         }
     }

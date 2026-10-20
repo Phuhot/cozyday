@@ -32,9 +32,40 @@ final class RewardAndShopTests: XCTestCase {
 
     func testJournalRewardOncePerDay() {
         let d = day("2026-10-18")
-        let first = RewardPolicy.forJournal(day: d, existingKeys: [], now: Date())!
-        XCTAssertNil(RewardPolicy.forJournal(day: d, existingKeys: [first.key], now: Date()))
-        XCTAssertNotNil(RewardPolicy.forJournal(day: d.adding(days: 1, calendar: cal()), existingKeys: [first.key], now: Date()))
+        let next = d.adding(days: 1, calendar: cal())
+        let first = RewardPolicy.forJournal(day: d, today: d, calendar: cal(), existingKeys: [], now: Date())!
+        XCTAssertNil(RewardPolicy.forJournal(day: d, today: d, calendar: cal(), existingKeys: [first.key], now: Date()))
+        XCTAssertNotNil(RewardPolicy.forJournal(day: next, today: next, calendar: cal(), existingKeys: [first.key], now: Date()))
+    }
+
+    func testJournalBackfillOnlyRewardsYesterday() {
+        let today = day("2026-10-20")
+        let c = cal()
+        XCTAssertNotNil(RewardPolicy.forJournal(day: day("2026-10-19"), today: today, calendar: c, existingKeys: [], now: Date()),
+                        "viết bù hôm qua (ví dụ sau nửa đêm) vẫn có thưởng")
+        XCTAssertNil(RewardPolicy.forJournal(day: day("2026-10-18"), today: today, calendar: c, existingKeys: [], now: Date()),
+                     "lùi lịch về ngày cũ không còn là cách kiếm xu")
+        XCTAssertNil(RewardPolicy.forJournal(day: day("2026-09-01"), today: today, calendar: c, existingKeys: [], now: Date()))
+        XCTAssertNil(RewardPolicy.forJournal(day: day("2026-10-21"), today: today, calendar: c, existingKeys: [], now: Date()), "ngày tương lai")
+    }
+
+    func testFocusRewardDailyCap() {
+        let now = date(2026, 10, 20, 15)
+        let c = cal()
+        // Đã có 3 phiên 50 phút + 1 phiên 60 phút = 210 phút có thưởng hôm nay.
+        var ledger: [LedgerEntry] = []
+        for m in [50, 50, 50, 60] {
+            ledger.append(RewardPolicy.forFocus(sessionID: UUID(), plannedMinutes: m, existingKeys: [], now: now)!)
+        }
+        XCTAssertEqual(RewardPolicy.focusRewardedMinutesToday(ledger, now: now, calendar: c), 210)
+        let partial = RewardPolicy.forFocus(sessionID: UUID(), plannedMinutes: 50, existingKeys: [], now: now, rewardedMinutesToday: 210)!
+        XCTAssertEqual(partial.coins, 30 / 5 * RewardConfig.focusCoinsPerFiveMinutes, "chỉ thưởng 30 phút còn lại")
+        XCTAssertTrue(partial.memo.hasPrefix(RewardPolicy.focusCapMemo))
+        let none = RewardPolicy.forFocus(sessionID: UUID(), plannedMinutes: 25, existingKeys: [], now: now, rewardedMinutesToday: 240)!
+        XCTAssertEqual(none.coins, 0)
+        XCTAssertEqual(none.xp, 0)
+        // Phiên hôm qua không tính vào hôm nay.
+        XCTAssertEqual(RewardPolicy.focusRewardedMinutesToday(ledger, now: now.addingTimeInterval(86_400), calendar: c), 0)
     }
 
     func testCatalogHasFixedUniqueIDsAndFreeItems() {

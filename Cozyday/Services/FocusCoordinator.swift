@@ -11,6 +11,8 @@ import UserNotifications
 final class FocusCoordinator {
     static let settingsKey = "focus.settings"
     static let awayKey = "focus.awayCounts"
+    static let leftAtKey = "focus.leftAt"
+    static let lockedAtKey = "focus.lockedAt"
 
     var settings: PomodoroSettings {
         didSet {
@@ -42,6 +44,15 @@ final class FocusCoordinator {
         self.defaults = defaults
         settings = PomodoroSettings.decode(defaults.data(forKey: Self.settingsKey))
         awayCounts = (defaults.dictionary(forKey: Self.awayKey) as? [String: Int]) ?? [:]
+        // App bị iOS đóng hẳn lúc bạn ở app khác: vẫn nhớ lúc rời app để chế độ nghiêm tính đúng.
+        let left = defaults.object(forKey: Self.leftAtKey) as? Date
+        let locked = defaults.object(forKey: Self.lockedAtKey) as? Date
+        tracker = FocusAwayTracker(leftAt: left, lockedAt: locked)
+    }
+
+    private func saveTracker() {
+        defaults.set(tracker.leftAt, forKey: Self.leftAtKey)
+        defaults.set(tracker.lockedAt, forKey: Self.lockedAtKey)
     }
 
     /// Gắn với kho dữ liệu (gọi một lần khi giao diện chính xuất hiện).
@@ -67,6 +78,8 @@ final class FocusCoordinator {
         settings = PomodoroSettings()
         defaults.removeObject(forKey: Self.settingsKey)
         defaults.removeObject(forKey: Self.awayKey)
+        tracker = FocusAwayTracker()
+        saveTracker()
         storeChanged()
     }
 
@@ -138,6 +151,9 @@ final class FocusCoordinator {
     /// Chốt phiên đã hết giờ (đúng một lần), báo hiệu và tự nối phiên kế tiếp nếu được bật.
     func reconcile() {
         guard let store, let ui, let active = store.activeFocus, active.hasReachedEnd(at: store.now) else { return }
+        // Chế độ nghiêm, đang ở app khác (không phải khóa máy) mà app vẫn chạy nền nhờ âm nền:
+        // chưa chốt ở đây, đợi lúc quay lại để xét thời gian rời app trước.
+        if !appActive, settings.strictMode, active.kind == .focus, tracker.leftAt != nil, !tracker.lockedWhileAway { return }
         var reward: LedgerEntry?
         ui.run { reward = try store.reconcileFocus() }
         ui.reward(reward)
@@ -156,7 +172,8 @@ final class FocusCoordinator {
         let next = PomodoroPlan.next(after: done.kind, completedFocusToday: day.completedFocus, settings: settings)
         if PomodoroPlan.shouldAutoStart(next, endedAt: endedAt, now: store.now, settings: settings) {
             start(kind: next.kind, minutes: next.minutes)
-            if done.kind == .focus { lastFinished = nil }
+            // Giữ tổng kết phiên vừa xong để hiện gọn trong lúc nghỉ (số lần rời app, đánh dấu việc xong).
+            if done.kind == .focus { lastFinished = done }
         } else {
             lastFinished = done.kind == .focus ? done : nil
         }
@@ -177,6 +194,7 @@ final class FocusCoordinator {
         let running = store.activeFocus.map { $0.kind == .focus && !$0.isPaused } ?? false
         let leftAt = tracker.leftAt
         let outcome = tracker.didReturn(at: store.now, focusRunning: running, strict: settings.strictMode)
+        saveTracker()
         switch outcome {
         case .ignored:
             break
@@ -208,28 +226,36 @@ final class FocusCoordinator {
             return
         }
         tracker.didLeave(at: store.now)
-        // Xin vài giây chạy nền để kịp nhận tín hiệu khóa máy (tới ngay sau lúc vào nền) và hủy lời nhắc.
-        holdBackgroundBriefly()
-        if (settings.nudgeWhenLeaving || settings.strictMode) && !tracker.lockedWhileAway {
-            notifications?.scheduleFocusNudge(petName: store.profile.displayPetName, strict: settings.strictMode,
-                                              after: FocusAwayTracker.nudgeDelay)
-        }
+        saveTracker()
+        // iOS báo khóa máy khoảng 10 giây sau khi khóa: giữ app chạy nền ~13 giây, chỉ gửi lời nhắc nếu
+        // tới lúc đó vẫn chưa có tín hiệu khóa máy (tức là bạn đang ở app khác).
+        holdBackgroundForLockCheck()
         applyEffects()
     }
 
     @ObservationIgnored private var backgroundTask = UIBackgroundTaskIdentifier.invalid
 
-    private func holdBackgroundBriefly() {
+    private func holdBackgroundForLockCheck() {
         let app = UIApplication.shared
-        guard backgroundTask == .invalid else { return }
-        backgroundTask = app.beginBackgroundTask(withName: "focus.lockCheck") { [weak self] in
-            MainActor.assumeIsolated { self?.endBackgroundHold() }
+        if backgroundTask == .invalid {
+            backgroundTask = app.beginBackgroundTask(withName: "focus.lockCheck") { [weak self] in
+                MainActor.assumeIsolated { self?.endBackgroundHold() }
+            }
         }
-        Task { [weak self] in
-            try? await Task.sleep(nanoseconds: 4_000_000_000)
-            self?.endBackgroundHold()
+        lockCheck?.cancel()
+        lockCheck = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(FocusAwayTracker.lockCheckSeconds * 1_000_000_000))
+            guard !Task.isCancelled, let self else { return }
+            if self.tracker.leftAt != nil, !self.tracker.lockedWhileAway, !self.appActive,
+               self.settings.nudgeWhenLeaving || self.settings.strictMode, let store = self.store {
+                self.notifications?.scheduleFocusNudge(petName: store.profile.displayPetName, strict: self.settings.strictMode,
+                                                       after: max(1, FocusAwayTracker.nudgeDelay - FocusAwayTracker.lockCheckSeconds))
+            }
+            self.endBackgroundHold()
         }
     }
+
+    @ObservationIgnored private var lockCheck: Task<Void, Never>?
 
     private func endBackgroundHold() {
         guard backgroundTask != .invalid else { return }
@@ -240,6 +266,7 @@ final class FocusCoordinator {
     private func deviceLocked() {
         guard let store else { return }
         tracker.deviceLocked(at: store.now)
+        saveTracker()
         // Khóa máy là chuyện bình thường khi tập trung: bỏ lời nhắc quay lại.
         notifications?.cancelFocusNudge()
     }

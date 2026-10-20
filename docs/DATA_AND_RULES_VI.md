@@ -83,8 +83,8 @@ Các con số nằm trong `Cozyday/Core/Rewards/RewardConfig.swift`.
 | Sự kiện | Thưởng | Khóa chống trùng |
 |---|---|---|
 | Hoàn thành một lần việc **lần đầu** (tối đa 10 việc có thưởng mỗi ngày) | +10 XP, +8 xu | `task:<occurrenceID>` |
-| Phiên tập trung ≥ 10 phút **chạy hết giờ** | +2 XP và +2 xu mỗi 5 phút (tối đa 120 phút) | `focus:<sessionID>` |
-| Viết nhật ký (một lần mỗi ngày) | +5 XP, +5 xu | `journal:<yyyy-MM-dd>` |
+| Phiên tập trung ≥ 10 phút **chạy hết giờ** | +2 XP và +2 xu mỗi 5 phút (tối đa 120 phút một phiên, 240 phút mỗi ngày) | `focus:<sessionID>` |
+| Viết nhật ký (một lần mỗi ngày, cho hôm nay hoặc hôm qua) | +5 XP, +5 xu | `journal:<yyyy-MM-dd>` |
 | Bài thở chạy hết giờ (một lần mỗi ngày) | +3 XP, +3 xu | `breathing:<yyyy-MM-dd>` |
 | Nghe thú cưng kể chuyến đi (đủ 100% năng lượng, một lần mỗi ngày) | +5 XP, +10 xu | `adventure:<yyyy-MM-dd>` |
 | Mua đồ | −giá (đồ miễn phí ghi 0 xu) | `purchase:<itemID>` |
@@ -159,8 +159,8 @@ Các con số nằm trong `Cozyday/Core/Care/PetCare.swift` (`CareConfig`).
 
 Các con số nằm trong `Cozyday/Core/Play/Minigame.swift` (`MinigameConfig`).
 
-**Cân bằng:** một ngày bình thường (5 việc + 50 phút tập trung + nhật ký + bài thở + chuyến đi) cho khoảng 30–45 xu và 70+ XP.
-Sân chơi là giờ nghỉ ngắn nên mỗi lượt 1–8 xu, **không có XP**, tối đa **40 xu/ngày** (≈ 8 việc). Trước đây là 6 xu/lượt
+**Cân bằng:** một ngày bình thường (5 việc + 50 phút tập trung + nhật ký + bài thở + chuyến đi) cho khoảng 78 xu và 83 XP (số liệu mô phỏng theo luật hiện tại, xem docs/review/economy.md).
+Sân chơi là giờ nghỉ ngắn nên mỗi lượt 1–8 xu, **không có XP**, tối đa **40 xu/ngày** (≈ 5 việc). Trước đây là 6 xu/lượt
 và 20 xu/ngày; đã nới ra theo góp ý "cho xu thoáng thêm" khi có thêm hai game theo lượt. Vẫn thấp hơn mức 60 xu tham khảo
 vì 60 xu sẽ vượt cả thu nhập từ hoạt động chính.
 
@@ -262,12 +262,12 @@ Luật nằm trong `Cozyday/Core/Shop/Gacha.swift` (`GachaConfig`, `GachaPolicy`
 - **Nhịp:** tập trung 5–120 phút (mặc định 25), nghỉ ngắn 5–15 phút, nghỉ dài 10–30 phút sau 2–6 phiên (mặc định 15 phút sau 4 phiên), mục tiêu 1–12 phiên mỗi ngày. Chọn nhanh 25/5, 50/10, 90/15.
 - **Đếm vòng:** tính lại từ các phiên đã lưu, không có bộ đếm riêng. Phiên tập trung chạy hết giờ trong ngày thứ N mà N chia hết cho số phiên một vòng → giờ nghỉ kế tiếp là nghỉ dài.
 - **Tự chạy tiếp:** tự bắt đầu giờ nghỉ (mặc định bật) và tự bắt đầu phiên tập trung kế tiếp (mặc định tắt). Chỉ tự chạy khi phiên vừa hết giờ chưa tới 1 phút; mở app sau khi hết giờ đã lâu thì app chờ bạn bấm.
-- **Rời app:** chuyển sang app khác từ 10 giây trở lên khi phiên tập trung đang chạy thì tính một lần rời app (hiện trong tổng kết phiên). Khóa máy không tính nếu iPhone có đặt mật mã. iOS chỉ báo cho app lúc khóa máy khi có mật mã, nên máy không đặt mật mã thì khóa máy cũng bị tính là rời app.
+- **Rời app:** chuyển sang app khác từ 10 giây trở lên khi phiên tập trung đang chạy thì tính một lần rời app (hiện trong tổng kết phiên). Khóa máy không tính nếu iPhone có đặt mật mã. iOS báo cho app khoảng 10 giây sau khi khóa (và chỉ khi có mật mã), nên app giữ chạy nền khoảng 13 giây để chờ tín hiệu này; máy không đặt mật mã thì khóa máy cũng bị tính là rời app. Lúc rời app được lưu lại, nên app bị iOS đóng hẳn trong lúc bạn ở app khác vẫn tính đúng.
 - **Nhắc quay lại:** sau 15 giây ở app khác, thú cưng gửi một thông báo nhắc (cần bật thông báo). Quay lại hoặc khóa máy thì hủy thông báo này.
 - **Chế độ nghiêm:** không có nút tạm dừng trong phiên tập trung; muốn dừng sớm phải giữ nút 3 giây; rời app quá 1 phút thì phiên dừng tại thời điểm vượt 1 phút (không phải lúc mở lại app), không có thưởng. Nếu phiên đã hết giờ trước thời điểm đó thì vẫn tính là hoàn thành.
 - **Ghi nhanh:** trong phiên tập trung, nút "Ghi nhanh" cất một ý nghĩ chen ngang vào Hộp chờ (việc chưa xếp lịch, ghi chú "Ghi lúc đang tập trung").
 - **Âm nền:** mưa nhẹ, tiếng ồn nâu, sóng biển. App tự tổng hợp âm, không có tệp âm thanh. Chỉ phát khi phiên tập trung đang chạy (kể cả lúc khóa máy), trộn với nhạc khác chứ không ngắt. Chuông hết giờ phát khi app đang mở.
-- **Thưởng:** không đổi so với mục 3. Phiên tập trung ≥ 10 phút chạy hết giờ: +2 XP và +2 xu mỗi 5 phút (tối đa 120 phút). Giờ nghỉ không có thưởng.
+- **Thưởng:** phiên tập trung ≥ 10 phút chạy hết giờ: +2 XP và +2 xu mỗi 5 phút (tối đa 120 phút một phiên). Tổng **240 phút có thưởng mỗi ngày**; vượt trần thì chỉ thưởng phần còn lại, sau đó phiên vẫn vào thống kê nhưng không có xu (ghi chú "Đã đủ giờ có thưởng"). Giờ nghỉ không có thưởng.
 - **Lưu trữ:** cài đặt hẹn giờ (`focus.settings`) và số lần rời app của 30 phiên gần nhất (`focus.awayCounts`) nằm trong UserDefaults trên máy, không vào bản sao lưu, bị xóa khi "Xóa toàn bộ dữ liệu".
 - **Giới hạn:** CozyDay không chặn được app khác (cần quyền Screen Time của Apple, app cài ngoài App Store không xin được). Không có Live Activity / Dynamic Island.
 

@@ -105,8 +105,10 @@ struct GachaView: View {
             .navigationTitle("Máy gacha Mây Mây")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) { Button("Xong") { dismiss() } }
+                // Đang quay: chưa cho đóng, để không mất màn kết quả (xu đã trừ, đồ đã vào tủ).
+                ToolbarItem(placement: .confirmationAction) { Button("Xong") { dismiss() }.disabled(spinningSince != nil) }
             }
+            .interactiveDismissDisabled(spinningSince != nil)
             .overlay(alignment: .top) { ErrorOverlay() }
             .task {
                 // Ảnh xem trước (Debug): quay 10 lượt để chụp màn kết quả.
@@ -288,7 +290,7 @@ struct GachaResultView: View {
                     if refund > 0 {
                         Label("Món trùng đổi thành \(refund) xu", systemImage: "arrow.uturn.left.circle")
                             .font(Typography.callout.weight(.semibold))
-                            .foregroundStyle(Palette.honey)
+                            .foregroundStyle(Palette.honeyText)
                     }
                 }
                 .padding(Spacing.l)

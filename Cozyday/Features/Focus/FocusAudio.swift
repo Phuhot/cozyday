@@ -9,6 +9,8 @@ final class FocusAudio {
     private var chimeBuffer: AVAudioPCMBuffer?
     private let noise = NoiseGenerator()
     private(set) var playing: FocusAmbient = .off
+    /// Âm nền đang giữ phiên âm thanh: âm thanh game không được đổi loại phiên hay tắt phiên.
+    static private(set) var inUse = false
 
     /// Bật/đổi/tắt âm nền. Gọi lại nhiều lần với cùng giá trị không sao.
     func setAmbient(_ ambient: FocusAmbient, volume: Double) {
@@ -19,11 +21,17 @@ final class FocusAudio {
         if ambient == .off {
             stopIfIdle()
         } else {
+            // Âm nền phát tiếp khi khóa máy: phiên .playback (vẫn trộn với nhạc của app khác).
+            try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.mixWithOthers])
             startEngine()
         }
     }
 
     func playChime() {
+        if engine?.isRunning != true {
+            // Không có âm nền: chuông theo phiên .ambient, im khi gạt công tắc im lặng.
+            try? AVAudioSession.sharedInstance().setCategory(.ambient, mode: .default, options: [.mixWithOthers])
+        }
         startEngine()
         guard let engine, engine.isRunning, let chimeNode, let chimeBuffer else { return }
         chimeNode.stop()
@@ -50,14 +58,13 @@ final class FocusAudio {
         engine.stop()
         self.engine = nil
         chimeNode = nil
+        Self.inUse = false
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
 
     private func startEngine() {
         if let engine, engine.isRunning { return }
-        let session = AVAudioSession.sharedInstance()
-        try? session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
-        try? session.setActive(true)
+        try? AVAudioSession.sharedInstance().setActive(true)
         guard let format = AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 1) else { return }
         let engine = AVAudioEngine()
         let gen = noise
@@ -78,6 +85,7 @@ final class FocusAudio {
             return
         }
         self.engine = engine
+        Self.inUse = true
         chimeNode = chime
         if chimeBuffer == nil { chimeBuffer = Self.makeChime(format: format) }
     }

@@ -238,6 +238,20 @@ enum BackupValidator {
                 guard e.coins <= 0, e.xp == 0 else { throw BackupError.invalidValue("dòng mua đồ") }
             case .minigame:
                 guard e.coins >= 0, e.coins <= MinigameConfig.maxCoinsPerRun, e.xp == 0 else { throw BackupError.invalidValue("dòng thưởng Sân chơi") }
+            // Thưởng có mức cố định: không vượt mức của luật (sửa tay file sao lưu để thêm xu sẽ bị từ chối).
+            case .taskCompleted:
+                guard (0...RewardConfig.taskXP).contains(e.xp), (0...RewardConfig.taskCoins).contains(e.coins) else { throw BackupError.invalidValue("dòng thưởng việc") }
+            case .focusCompleted:
+                let top = RewardConfig.focusReward(plannedMinutes: RewardConfig.focusMaxRewardMinutes)
+                guard (0...top.xp).contains(e.xp), (0...top.coins).contains(e.coins) else { throw BackupError.invalidValue("dòng thưởng tập trung") }
+            case .journalWritten:
+                guard (0...RewardConfig.journalXP).contains(e.xp), (0...RewardConfig.journalCoins).contains(e.coins) else { throw BackupError.invalidValue("dòng thưởng nhật ký") }
+            case .breathing:
+                guard (0...RewardConfig.breathingXP).contains(e.xp), (0...RewardConfig.breathingCoins).contains(e.coins) else { throw BackupError.invalidValue("dòng thưởng bài thở") }
+            case .adventure:
+                guard (0...RewardConfig.adventureXP).contains(e.xp), (0...RewardConfig.adventureCoins).contains(e.coins) else { throw BackupError.invalidValue("dòng thưởng chuyến đi") }
+            case .gift:
+                guard e.xp == 0, (0...(GiftCodes.codes.values.max() ?? 0)).contains(e.coins) else { throw BackupError.invalidValue("dòng mã quà") }
             default:
                 guard e.coins >= 0, e.xp >= 0 else { throw BackupError.invalidValue("dòng thưởng âm") }
             }
