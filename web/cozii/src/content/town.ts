@@ -260,26 +260,26 @@ export interface Place {
   id: PlaceId
   name: string
   npc?: string
-  /** Vị trí trên bản đồ (hệ 100 × 160). */
+  /** Chân công trình trên bản đồ (hệ 100 × 160); nhãn nằm ngay dưới. */
   x: number
   y: number
   blurb: string
 }
 
 export const PLACES: Place[] = [
-  { id: 'hall', name: 'Tòa thị chính', npc: 'tra', x: 50, y: 20, blurb: 'Hộ chiếu thị trấn, chuyện của Ông Trà.' },
-  { id: 'capsule', name: 'Máy capsule', x: 50, y: 46, blurb: 'Quảng trường, có máy quay bộ sưu tập.' },
-  { id: 'furniture', name: 'Tiệm Nội Thất', npc: 'moc', x: 20, y: 40, blurb: 'Đồ gỗ, đèn, thảm và tường mới.' },
-  { id: 'tailor', name: 'Tiệm May Mây', npc: 'may', x: 80, y: 40, blurb: 'Mũ, kính, áo và phụ kiện.' },
-  { id: 'bakery', name: 'Tiệm Bánh', x: 22, y: 70, blurb: 'Mua đồ ăn hoặc nấu từ nông sản.' },
-  { id: 'market', name: 'Quầy Hạt Giống', npc: 'la', x: 78, y: 70, blurb: 'Mua hạt, bán nông sản.' },
-  { id: 'orders', name: 'Bảng đơn hàng', npc: 'bo', x: 50, y: 78, blurb: 'Bé Bơ cần vài thứ từ vườn.' },
-  { id: 'playground', name: 'Sân chơi', npc: 'pip', x: 24, y: 102, blurb: 'Sáu trò chơi nhỏ và bảng xếp hạng.' },
-  { id: 'farm', name: 'Vườn rau', x: 76, y: 104, blurb: 'Vườn của bạn, cạnh nhà.' },
-  { id: 'npc_moc', name: 'Nhà Bà Mộc (NPC)', npc: 'moc', x: 16, y: 132, blurb: 'Nhà mẫu NPC — ghé xem cho vui.' },
-  { id: 'home', name: 'Nhà mình', x: 50, y: 136, blurb: 'Căn nhà cuối con đường.' },
-  { id: 'npc_la', name: 'Nhà Cô Lá (NPC)', npc: 'la', x: 84, y: 132, blurb: 'Nhà mẫu NPC — vườn là phòng khách.' },
-  { id: 'npc_tra', name: 'Nhà Ông Trà (NPC)', npc: 'tra', x: 50, y: 4, blurb: 'Nhà mẫu NPC sau tòa thị chính.' },
+  { id: 'hall', name: 'Tòa thị chính', npc: 'tra', x: 50, y: 42, blurb: 'Hộ chiếu thị trấn, chuyện của Ông Trà.' },
+  { id: 'capsule', name: 'Máy capsule', x: 50, y: 64, blurb: 'Quảng trường, có máy quay bộ sưu tập.' },
+  { id: 'furniture', name: 'Tiệm Nội Thất', npc: 'moc', x: 20, y: 60, blurb: 'Đồ gỗ, đèn, thảm và tường mới.' },
+  { id: 'tailor', name: 'Tiệm May Mây', npc: 'may', x: 80, y: 60, blurb: 'Mũ, kính, áo và phụ kiện.' },
+  { id: 'bakery', name: 'Tiệm Bánh', x: 22, y: 90, blurb: 'Mua đồ ăn hoặc nấu từ nông sản.' },
+  { id: 'market', name: 'Quầy Hạt Giống', npc: 'la', x: 78, y: 90, blurb: 'Mua hạt, bán nông sản.' },
+  { id: 'orders', name: 'Bảng đơn hàng', npc: 'bo', x: 50, y: 90, blurb: 'Bé Bơ cần vài thứ từ vườn.' },
+  { id: 'playground', name: 'Sân chơi', npc: 'pip', x: 24, y: 124, blurb: 'Sáu trò chơi nhỏ và bảng xếp hạng.' },
+  { id: 'farm', name: 'Vườn rau', x: 76, y: 124, blurb: 'Vườn của bạn, cạnh nhà.' },
+  { id: 'npc_moc', name: 'Nhà Bà Mộc (NPC)', npc: 'moc', x: 16, y: 150, blurb: 'Nhà mẫu NPC, ghé xem cho vui.' },
+  { id: 'home', name: 'Nhà mình', x: 50, y: 152, blurb: 'Căn nhà cuối con đường.' },
+  { id: 'npc_la', name: 'Nhà Cô Lá (NPC)', npc: 'la', x: 84, y: 150, blurb: 'Nhà mẫu NPC, vườn là phòng khách.' },
+  { id: 'npc_tra', name: 'Nhà Ông Trà (NPC)', npc: 'tra', x: 50, y: 17, blurb: 'Nhà mẫu NPC sau tòa thị chính.' },
 ]
 
 // ---------------- Lời khen (sticker có sẵn) ----------------

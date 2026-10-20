@@ -266,7 +266,7 @@ function drawMeet(g: GC, w: number, h: number, u: number, t: number, a: PetAppea
   T.cloud(g, w * 0.1, h * 0.1, 1.6 * u, Color.white.opacity(0.9))
   T.cloud(g, w * 0.62, h * 0.16, 1.2 * u, Color.white.opacity(0.85))
   const cx = w / 2
-  const ground = h * 0.66
+  const ground = h * Math.min(0.66, 0.42 + (w / h) * 0.3)
   T.hill(g, -w * 0.3, w * 0.8, ground, ground - 22 * u, rgb(0xb9ddb0))
   T.hill(g, w * 0.2, w * 1.3, ground, ground - 14 * u, rgb(0xa3d19c))
   g.rect(0, ground, w, h, rgb(0xb8e0a2))

@@ -283,10 +283,14 @@ p { margin: 0; }
 .coach canvas { flex: none; }
 .coach .txt { flex: 1; font-weight: 800; font-size: 14.5px; }
 .coach .txt small { display: block; font-weight: 700; color: var(--ink-2); font-size: 12.5px; }
+.coach .btn.small { min-height: 32px; padding: 4px 10px; font-size: 13px; }
+.coach { padding: 8px 10px; align-items: flex-start; }
+.clamp2 { display: -webkit-box !important; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.app-main { padding-bottom: calc(190px + var(--safe-b)); }
 
 /* ---------- câu chuyện ---------- */
 .story { position: fixed; inset: 0; z-index: 80; background: #2f2a45; display: flex; flex-direction: column; }
-.story canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.story > canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 .story-text {
   position: relative; margin-top: auto; padding: 20px 22px calc(28px + var(--safe-b));
   background: linear-gradient(to top, rgba(30, 26, 46, 0.78), rgba(30, 26, 46, 0));
@@ -295,6 +299,7 @@ p { margin: 0; }
 }
 .story-skip { position: absolute; top: calc(14px + var(--safe-t)); right: 14px; z-index: 2; }
 .story-skip .btn { background: rgba(255, 255, 255, 0.92); }
+.story-text .btn { color: var(--ink); }
 .story-dots { display: flex; gap: 6px; margin-top: 12px; }
 .story-dots i { width: 8px; height: 8px; border-radius: 4px; background: rgba(255, 255, 255, 0.4); }
 .story-dots i.on { width: 22px; background: #fff; }

@@ -17,7 +17,27 @@ function canvas(w: number, h: number) {
   return c
 }
 
-if (mode === 'pets') {
+if (mode === 'icon') {
+  const size = Number(params.get('size') ?? 512)
+  const pad = params.get('maskable') ? 0.2 : 0.08
+  const cv = document.createElement('canvas')
+  cv.width = size
+  cv.height = size
+  cv.id = 'icon'
+  cv.style.border = '0'
+  cv.style.borderRadius = '0'
+  out.appendChild(cv)
+  const c = cv.getContext('2d')!
+  const grd = c.createLinearGradient(0, 0, 0, size)
+  grd.addColorStop(0, '#ffd9e4')
+  grd.addColorStop(1, '#fbe7de')
+  c.fillStyle = grd
+  c.fillRect(0, 0, size, size)
+  c.fillStyle = 'rgba(255,255,255,0.55)'
+  c.beginPath(); c.ellipse(size / 2, size * 0.84, size * 0.36, size * 0.07, 0, 0, Math.PI * 2); c.fill()
+  const inner = size * (1 - pad * 2)
+  paintPet(c, size * pad, size * pad + size * 0.02, inner, { species: 'duck', fur: 'honey', hat: 'hat.cloud', stage: 'little' }, 'happy')
+} else if (mode === 'pets') {
   for (const s of SPECIES) {
     const a: PetAppearance = { species: s, fur: NATURAL_FUR[s], stage: 'grown' }
     paintPet(canvas(120, 120), 10, 10, 100, a)

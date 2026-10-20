@@ -54,7 +54,7 @@ export function Town() {
             <button
               key={p.id}
               className={'place-btn' + (p.id.startsWith('npc_') ? ' npc' : '')}
-              style={{ left: `${p.x}%`, top: `${((p.y + 10) / MAP_H) * 100}%`, outline: target === p.id ? '3px solid var(--lavender)' : undefined, borderRadius: 16 }}
+              style={{ left: `${p.x}%`, top: `${((p.y + 0.5) / MAP_H) * 100}%`, outline: target === p.id ? '3px solid var(--lavender)' : undefined, borderRadius: 16 }}
               onClick={() => {
                 sfx('tap')
                 if (p.id === 'home') go('home')
@@ -89,63 +89,67 @@ function drawTown(g: GC, t: number, rank: number, state: ReturnType<typeof useGa
   g.rect(0, 0, 100, MAP_H, rgb(0xcbe8b5))
   for (let i = 0; i < 40; i++) g.circle((i * 37.3) % 100, (i * 53.7) % MAP_H, 0.5, rgb(0xb3dc9c))
   const river = new Path()
-  river.move(pt(-5, 92))
-  river.addQuadCurve(pt(105, 88), pt(50, 100))
+  river.move(pt(-5, 104))
+  river.addQuadCurve(pt(105, 100), pt(50, 112))
   g.stroke(river, rgb(0xa8d8ec), 7)
   g.stroke(river, rgb(0xc8e8f4), 3)
   // cầu
-  g.rect(44, 89, 12, 9, rgb(0xd4b08a), 2)
+  g.rect(44, 101, 12, 9, rgb(0xd4b08a), 2)
   // đường chính
-  T.road(g, [[50, 150], [50, 120], [50, 96], [50, 70], [50, 46], [50, 24]], 7)
-  T.road(g, [[20, 52], [50, 58], [80, 52]], 4.5)
-  T.road(g, [[22, 82], [50, 86], [78, 82]], 4.5)
-  T.road(g, [[24, 114], [50, 118], [76, 116]], 4.5)
-  T.road(g, [[16, 144], [50, 148], [84, 144]], 4)
+  T.road(g, [[50, 160], [50, 130], [50, 104], [50, 76], [50, 48], [50, 22]], 7)
+  T.road(g, [[20, 64], [50, 70], [80, 64]], 4.5)
+  T.road(g, [[22, 94], [50, 98], [78, 94]], 4.5)
+  T.road(g, [[24, 128], [50, 132], [76, 128]], 4.5)
+  T.road(g, [[16, 154], [50, 157], [84, 154]], 4)
 
   const lit = rank >= 3 ? 1 : rank >= 2 ? 0.5 : 0.15
-  // Tòa thị chính (+ nhà Ông Trà phía sau)
-  T.house(g, 50, 14, 16, { wall: rgb(0xfdf3e3), roof: rgb(0x9c7bd0), door: rgb(0xa07448), lit, sign: 'NHÀ ÔNG TRÀ' })
-  T.house(g, 50, 30, 24, { wall: rgb(0xfffaf0), roof: rgb(0x8d78cf), door: rgb(0xa07448), lit, sign: 'THỊ CHÍNH' })
-  // quảng trường + máy capsule
-  g.ellipse(36, 50, 28, 12, rgb(0xf1e2c4))
-  T.capsuleMachine(g, 50, 56, 0.9, t)
-  if (rank >= 4) T.fountain(g, 38, 58, 0.55, t)
-  // cửa hàng
-  T.house(g, 20, 50, 20, { wall: rgb(0xf6e3cf), roof: rgb(0xb07a4c), door: rgb(0x8c5e3a), lit, sign: 'NỘI THẤT' })
-  T.house(g, 80, 50, 20, { wall: rgb(0xf3e9f7), roof: rgb(0xd98aa6), door: rgb(0xa07448), lit, sign: 'TIỆM MAY' })
-  T.house(g, 22, 80, 20, { wall: rgb(0xfdf0e2), roof: rgb(0xe59a7a), door: rgb(0xa07448), lit, awning: rgb(0xf2a3b8), sign: 'TIỆM BÁNH' })
-  T.stall(g, 78, 80, 20, rgb(0x6f9a72))
-  g.text('HẠT GIỐNG', 3.2, rgb(0x3e3550), pt(78, 66.5), 'bold')
-  // bảng đơn hàng
-  g.rect(46.5, 76, 7, 9, rgb(0xc89b6d), 1)
-  g.rect(44, 70, 12, 8, rgb(0xfdf6ec), 1.5)
-  for (let i = 0; i < 3; i++) g.rect(45.3 + i * 3.7, 71.5, 2.8, 3.5, rgb([0xf2a3b8, 0xf6d36b, 0x9ed4b6][i]), 0.5)
-  // sân chơi
-  g.ellipse(10, 104, 28, 14, rgb(0xf6e7c8))
-  g.rect(15, 98, 2, 10, rgb(0xd9667a))
-  g.rect(31, 98, 2, 10, rgb(0xd9667a))
-  g.rect(14, 97, 20, 2, rgb(0xd9667a), 1)
-  g.strokePath(rgb(0x7a6f86), 0.4, q => { q.move(pt(20, 99)); q.addLine(pt(20, 105)); q.move(pt(27, 99)); q.addLine(pt(27, 105)) })
-  g.rect(18.5, 105, 3, 1, rgb(0x8d78cf), 0.5)
-  g.rect(25.5, 105, 3, 1, rgb(0x8d78cf), 0.5)
-  // vườn rau
-  g.rect(64, 98, 26, 16, rgb(0xb48f66), 3)
-  for (let i = 0; i < 3; i++) g.rect(66, 100 + i * 4.8, 22, 2.6, rgb(0x9c7650), 1.3)
-  const planted = state.farm.plots.filter(p => p.crop).length
-  for (let i = 0; i < Math.min(planted, 9); i++) g.circle(69 + (i % 3) * 8, 101.2 + Math.floor(i / 3) * 4.8, 1.4, rgb(0x7fbf7a))
-  // nhà mình & nhà NPC
-  T.house(g, 50, 146, 18, { wall: rgb(0xfffaf0), roof: rgb(0xa58bd9), door: rgb(0xc89b6d), lit: 1, sign: 'NHÀ MÌNH' })
-  T.house(g, 16, 142, 15, { wall: rgb(0xf6e3cf), roof: rgb(0x8e6247), door: rgb(0x8c5e3a), lit })
-  T.house(g, 84, 142, 15, { wall: rgb(0xe4efe2), roof: rgb(0x6f9a72), door: rgb(0xa07448), lit })
-  // pet của bạn trước cửa
-  paintPet(g.ctx, 58 * k, 136.5 * k, 10 * k, petAppearance(state), 'idle', restPose())
+  const at = (id: string) => PLACES.find(p => p.id === id)!
+  const P = (id: string): [number, number] => [at(id).x, at(id).y]
+  {
+    const [x, y] = P('npc_tra'); T.house(g, x, y, 13, { wall: rgb(0xfdf3e3), roof: rgb(0x9c7bd0), door: rgb(0xa07448), lit })
+  }
+  {
+    const [x, y] = P('hall'); T.house(g, x, y, 24, { wall: rgb(0xfffaf0), roof: rgb(0x8d78cf), door: rgb(0xa07448), lit, sign: 'THỊ CHÍNH' })
+  }
+  {
+    const [x, y] = P('capsule'); g.ellipse(x - 16, y - 6, 32, 10, rgb(0xf1e2c4)); T.capsuleMachine(g, x, y, 0.8, t)
+    if (rank >= 4) T.fountain(g, x - 14, y, 0.5, t)
+  }
+  { const [x, y] = P('furniture'); T.house(g, x, y, 20, { wall: rgb(0xf6e3cf), roof: rgb(0xb07a4c), door: rgb(0x8c5e3a), lit, sign: 'NỘI THẤT' }) }
+  { const [x, y] = P('tailor'); T.house(g, x, y, 20, { wall: rgb(0xf3e9f7), roof: rgb(0xd98aa6), door: rgb(0xa07448), lit, sign: 'TIỆM MAY' }) }
+  { const [x, y] = P('bakery'); T.house(g, x, y, 20, { wall: rgb(0xfdf0e2), roof: rgb(0xe59a7a), door: rgb(0xa07448), lit, awning: rgb(0xf2a3b8), sign: 'TIỆM BÁNH' }) }
+  { const [x, y] = P('market'); T.stall(g, x, y, 20, rgb(0x6f9a72)); g.text('HẠT GIỐNG', 3, rgb(0x3e3550), pt(x, y - 14), 'bold') }
+  {
+    const [x, y] = P('orders')
+    g.rect(x - 1, y - 8, 2, 8, rgb(0xa07448))
+    g.rect(x - 7, y - 15, 14, 9, rgb(0xc89b6d), 1.5)
+    g.rect(x - 6, y - 14, 12, 7, rgb(0xfdf6ec), 1)
+    for (let i = 0; i < 3; i++) g.rect(x - 5 + i * 3.6, y - 13, 2.8, 3.8, rgb([0xf2a3b8, 0xf6d36b, 0x9ed4b6][i]), 0.5)
+  }
+  {
+    const [x, y] = P('playground')
+    g.ellipse(x - 14, y - 6, 28, 9, rgb(0xf6e7c8))
+    g.rect(x - 9, y - 14, 2, 12, rgb(0xd9667a)); g.rect(x + 7, y - 14, 2, 12, rgb(0xd9667a)); g.rect(x - 10, y - 15, 20, 2, rgb(0xd9667a), 1)
+    g.strokePath(rgb(0x7a6f86), 0.4, q => { q.move(pt(x - 4, y - 13)); q.addLine(pt(x - 4, y - 6)); q.move(pt(x + 3, y - 13)); q.addLine(pt(x + 3, y - 6)) })
+    g.rect(x - 5.5, y - 6, 3, 1, rgb(0x8d78cf), 0.5); g.rect(x + 1.5, y - 6, 3, 1, rgb(0x8d78cf), 0.5)
+  }
+  {
+    const [x, y] = P('farm')
+    g.rect(x - 13, y - 16, 26, 15, rgb(0xb48f66), 3)
+    for (let i = 0; i < 3; i++) g.rect(x - 11, y - 14 + i * 4.6, 22, 2.6, rgb(0x9c7650), 1.3)
+    const planted = state.farm.plots.filter(p => p.crop).length
+    for (let i = 0; i < Math.min(planted, 9); i++) g.circle(x - 7 + (i % 3) * 7, y - 12.6 + Math.floor(i / 3) * 4.6, 1.4, rgb(0x7fbf7a))
+  }
+  { const [x, y] = P('home'); T.house(g, x, y, 18, { wall: rgb(0xfffaf0), roof: rgb(0xa58bd9), door: rgb(0xc89b6d), lit: 1, sign: 'NHÀ MÌNH' }); paintPet(g.ctx, (x + 7) * k, (y - 9) * k, 9 * k, petAppearance(state), 'idle', restPose()) }
+  { const [x, y] = P('npc_moc'); T.house(g, x, y, 15, { wall: rgb(0xf6e3cf), roof: rgb(0x8e6247), door: rgb(0x8c5e3a), lit }) }
+  { const [x, y] = P('npc_la'); T.house(g, x, y, 15, { wall: rgb(0xe4efe2), roof: rgb(0x6f9a72), door: rgb(0xa07448), lit }) }
   // cây, đèn
-  for (const [x, y, s] of [[6, 22, 1], [92, 24, 1.1], [8, 66, 0.9], [92, 66, 0.9], [6, 124, 1], [94, 124, 1.1], [34, 128, 0.7], [66, 130, 0.7], [70, 18, 0.8], [30, 18, 0.8]] as const) T.tree(g, x, y, s)
-  for (const [x, y] of [[44, 40], [56, 40], [44, 108], [56, 108], [44, 132], [56, 132]] as const) T.lamp(g, x, y, 0.6, lit)
-  if (rank >= 2) for (const [x, y] of [[40, 34], [60, 34], [36, 31], [64, 31]] as const) g.circle(x, y, 0.9, rgb(0xf2a3b8))
+  for (const [x, y, s] of [[8, 26, 1], [92, 28, 1.1], [6, 78, 0.9], [94, 78, 0.9], [6, 136, 0.9], [94, 136, 1], [36, 140, 0.6], [66, 142, 0.6], [72, 18, 0.8], [28, 18, 0.8]] as const) T.tree(g, x, y, s)
+  for (const [x, y] of [[43, 52], [57, 52], [43, 118], [57, 118], [35, 146], [65, 146]] as const) T.lamp(g, x, y, 0.6, lit)
+  if (rank >= 2) for (const [x, y] of [[36, 44], [64, 44], [33, 41], [67, 41]] as const) g.circle(x, y, 0.9, rgb(0xf2a3b8))
   if (rank >= 5) {
-    T.bunting(g, 26, 74, 40, 5, 1)
-    T.bunting(g, 26, 74, 64, 4, 1)
+    T.bunting(g, 26, 74, 50, 5, 1)
+    T.bunting(g, 26, 74, 76, 4, 1)
   }
   if (rank >= 6) {
     g.rect(32, 4, 36, 5, rgb(0xd9667a), 2.5)
@@ -154,6 +158,6 @@ function drawTown(g: GC, t: number, rank: number, state: ReturnType<typeof useGa
   // mây trôi
   const drift = (t * 0.8) % 140
   T.cloud(g, drift - 30, 6, 0.6, Color.white.opacity(0.75))
-  T.cloud(g, ((drift + 70) % 140) - 30, 72, 0.5, Color.white.opacity(0.6))
+  T.cloud(g, ((drift + 70) % 140) - 30, 82, 0.5, Color.white.opacity(0.6))
   void R
 }
