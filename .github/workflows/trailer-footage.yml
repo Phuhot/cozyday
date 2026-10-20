@@ -1,0 +1,90 @@
+# Quay footage giao diện thật cho trailer quảng cáo (marketing/trailer) trên iOS Simulator.
+#
+# Chỉ chạy khi được gọi: commit trên nhánh claude/** có "[trailer]" trong message, hoặc tab Actions →
+# "Trailer footage" → Run workflow. Tốn khoảng 10–12 phút macOS. Clip nén được commit vào
+# marketing/trailer/footage để dựng trailer (xem marketing/trailer/README.md).
+name: Trailer footage
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "claude/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: trailer-footage-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  XCODE_VERSION: "26.6"
+  XCODEGEN_VERSION: "2.46.0"
+  XCODEGEN_SHA256: "4d9e34b62172d645eed6457cac13fc222569974098ef4ee9c3368bedf0196806"
+
+jobs:
+  record:
+    name: Quay footage trên iOS Simulator
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[trailer]')
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - name: Lấy source
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Chọn Xcode ${{ env.XCODE_VERSION }}
+        run: scripts/ci/select_xcode.sh
+
+      - name: Cài XcodeGen ${{ env.XCODEGEN_VERSION }} (kiểm SHA-256)
+        run: scripts/ci/install_xcodegen.sh
+
+      - name: Tạo Xcode project từ project.yml
+        run: scripts/ci/generate_project.sh
+
+      - name: Build Debug + quay footage
+        run: scripts/ci/record_trailer_footage.sh
+
+      - name: Upload footage gốc
+        uses: actions/upload-artifact@v7
+        with:
+          name: Cozyday-trailer-footage-run${{ github.run_number }}
+          path: build/trailer-footage/
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+
+      - name: Upload log
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-logs-trailer-run${{ github.run_number }}
+          path: build/logs/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  publish:
+    name: Nén footage và lưu vào marketing/trailer/footage
+    needs: record
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Lấy source (đầu nhánh hiện tại)
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Tải footage từ job simulator
+        uses: actions/download-artifact@v8
+        with:
+          name: Cozyday-trailer-footage-run${{ github.run_number }}
+          path: build/trailer-footage
+
+      - name: Nén + commit
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: scripts/ci/publish_trailer_footage.sh

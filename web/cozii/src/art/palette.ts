@@ -1,0 +1,31 @@
+import { rgb } from './gc'
+
+// Bảng màu của Cozyday (giá trị chế độ sáng) — dùng cho hình vẽ pet, phòng, đồ đạc.
+export const Palette = {
+  background: rgb(0xfef6ec),
+  surface: rgb(0xfffdf8),
+  surfaceMuted: rgb(0xf6ede0),
+  line: rgb(0xe8dccb),
+  ink: rgb(0x3e3550),
+  inkMuted: rgb(0x786e87),
+  lavender: rgb(0x8d78cf),
+  lavenderSoft: rgb(0xece6fa),
+  sage: rgb(0x6f9a72),
+  sageSoft: rgb(0xe4efe2),
+  peach: rgb(0xe59a7a),
+  honey: rgb(0xd9a441),
+  danger: rgb(0xc2565a),
+  nowLine: rgb(0xd9667a),
+  onAccent: rgb(0xffffff),
+  catCream: rgb(0xfcf1de),
+  catShade: rgb(0xeedcc2),
+  catInk: rgb(0x4a3c5c),
+  blush: rgb(0xf4b0b0),
+  wood: rgb(0xc89b6d),
+  woodDark: rgb(0xa07448),
+  roomWall: rgb(0xf3e9f7),
+  roomFloor: rgb(0xead9c3),
+  shadow: rgb(0x8d78cf),
+  bubble: rgb(0xf6e3d3),
+  bubbleInk: rgb(0x6b4a3a),
+}

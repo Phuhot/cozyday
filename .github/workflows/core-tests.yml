@@ -1,0 +1,38 @@
+# Test phần logic thuần Foundation (Cozyday/Core) trên Linux — rẻ hơn runner macOS nhiều.
+# Không thay thế việc build iOS: SwiftUI/SwiftData chỉ được kiểm tra trong workflow iOS.
+name: Core logic tests (Linux)
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "Cozyday/Core/**"
+      - "Tests/CoreTests/**"
+      - "Package.swift"
+      - ".github/workflows/core-tests.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: core-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  swift-test:
+    name: swift test (Swift 6.2, Ubuntu)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    container:
+      image: swift:6.2-noble
+    steps:
+      - name: Lấy source
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Phiên bản Swift
+        run: swift --version
+
+      - name: Chạy test
+        run: swift test --parallel

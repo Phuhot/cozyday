@@ -1,0 +1,17 @@
+{
+  "name": "Cozii! – Thị trấn bạn nhỏ",
+  "short_name": "Cozii!",
+  "description": "Nuôi pet, trồng trọt, chơi minigame, trang trí nhà và ghé thăm nhau.",
+  "lang": "vi",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fef6ec",
+  "theme_color": "#fef6ec",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
