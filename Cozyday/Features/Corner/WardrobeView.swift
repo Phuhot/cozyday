@@ -11,6 +11,7 @@ struct WardrobeView: View {
     /// Món đang mặc thử ở vị trí hiện tại. `""` = thử "không dùng gì".
     @State private var trial: String?
     @State private var working = false
+    @State private var showGacha = false
 
     private static let noneID = ""
 
@@ -22,6 +23,7 @@ struct WardrobeView: View {
                 VStack(spacing: Spacing.l) {
                     PetView(appearance: preview, mood: .happy, name: store.profile.displayPetName,
                             bounceTrigger: trialBounce, interactive: true, haptics: store.profile.hapticsEnabled)
+                        .silhouette(trial.flatMap(Catalog.item).map(isHidden) ?? false)
                         .frame(width: 180, height: 180)
                         .frame(maxWidth: .infinity)
                         .padding(.top, Spacing.xl)
@@ -58,11 +60,17 @@ struct WardrobeView: View {
                 ToolbarItem(placement: .confirmationAction) { Button("Xong") { dismiss() } }
             }
             .overlay(alignment: .top) { ErrorOverlay() }
+            .sheet(isPresented: $showGacha) { GachaView() }
             .task {
                 // Khi CI chụp ảnh giao diện: mặc thử một món chưa có để thấy nút Mua.
                 if PreviewMode.current == .wardrobe {
                     slot = .species
                     trial = "species.bunny"
+                }
+                if PreviewMode.current == .wardrobeSecret {
+                    // Ảnh xem trước: mục Phụ kiện có món bí mật (chỉ hiện bóng) và món chỉ có trong gacha.
+                    slot = .back
+                    trial = Catalog.items(in: .back).first { $0.isHiddenUntilOwned }?.id
                 }
                 if PreviewMode.current == .trailerWardrobe {
                     // Trailer: thử lần lượt vài món có thật trong tủ, như người dùng chạm từng ô.
@@ -82,6 +90,11 @@ struct WardrobeView: View {
 
     private var trialBounce: Int { (trial ?? "-").hashValue & 0xFFFF }
 
+    /// Món bí mật chưa có: chỉ thấy bóng.
+    private func isHidden(_ item: CatalogItem) -> Bool {
+        item.isHiddenUntilOwned && !Catalog.isOwned(item.id, owned: store.ownedIDs)
+    }
+
     private func previewAppearance(_ current: PetAppearance) -> PetAppearance {
         guard let trial else { return current }
         if trial == Self.noneID { return current.removing(slot) }
@@ -97,13 +110,18 @@ struct WardrobeView: View {
         let selected = (trial ?? current.itemID(in: slot) ?? Self.noneID) == id
         let level = store.wallet.level
         let thumb = item.map { current.trying($0) } ?? current.removing(slot)
+        let hidden = item.map(isHidden) ?? false
         return Button {
             trial = id
         } label: {
             VStack(spacing: Spacing.xs) {
                 PetArt(mood: .idle, appearance: thumb)
+                    .silhouette(hidden)
                     .frame(width: 72, height: 72)
-                Text(item?.name ?? "Không dùng")
+                    .overlay(alignment: .topTrailing) {
+                        if let item, item.tier >= .rare { RarityDot(rarity: item.tier) }
+                    }
+                Text(hidden ? "???" : (item?.name ?? "Không dùng"))
                     .font(Typography.caption.weight(.semibold))
                     .foregroundStyle(Palette.ink)
                     .lineLimit(2)
@@ -133,6 +151,8 @@ struct WardrobeView: View {
         } else if let item {
             if Catalog.isOwned(item.id, owned: store.ownedIDs) {
                 Text("Đã có").foregroundStyle(Palette.inkMuted)
+            } else if item.gachaOnly {
+                Label("Gacha", systemImage: "gift.fill").foregroundStyle(Palette.lavender)
             } else if level < item.requiredLevel {
                 Label("Cấp \(item.requiredLevel)", systemImage: "lock.fill").foregroundStyle(Palette.inkMuted)
             } else {
@@ -147,6 +167,8 @@ struct WardrobeView: View {
         guard let item else { return inUse ? "Không dùng, đang chọn" : "Không dùng" }
         if inUse { return "\(item.name), đang dùng" }
         if Catalog.isOwned(item.id, owned: store.ownedIDs) { return "\(item.name), đã có" }
+        if isHidden(item) { return "Món bí mật, chỉ có trong máy gacha" }
+        if item.gachaOnly { return "\(item.name), \(item.tier.label), chỉ có trong máy gacha" }
         if level < item.requiredLevel { return "\(item.name), mở khóa ở cấp \(item.requiredLevel)" }
         return "\(item.name), \(item.isFree ? "miễn phí" : "\(item.price) xu")"
     }
@@ -176,6 +198,13 @@ struct WardrobeView: View {
                         perform { try store.equip(itemID: item.id) }
                     }
                     .buttonStyle(PrimaryButtonStyle(color: Palette.sage))
+                } else if item.gachaOnly {
+                    Button {
+                        showGacha = true
+                    } label: {
+                        Label(isHidden(item) ? "Món bí mật: thử vận may ở máy gacha" : "\(item.tier.label): chỉ có trong máy gacha", systemImage: "gift.fill")
+                    }
+                    .buttonStyle(PrimaryButtonStyle(color: Palette.lavender))
                 } else if level < item.requiredLevel {
                     Label("Mở khóa khi \(store.profile.displayPetName) đạt cấp \(item.requiredLevel) (đang cấp \(level))", systemImage: "lock.fill")
                         .font(Typography.callout)

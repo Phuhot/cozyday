@@ -39,7 +39,12 @@ final class UIState {
     }
 
     func reward(_ entry: LedgerEntry?) {
-        guard let entry, !entry.rewardText.isEmpty else { return }
+        guard let entry else { return }
+        if entry.kind == .taskCompleted, entry.memo.hasPrefix(RewardPolicy.taskCapMemo) {
+            showReward("Xong rồi! Hôm nay đã đủ \(RewardConfig.taskRewardsPerDay) việc có thưởng, việc này vẫn được ghi nhận.")
+            return
+        }
+        guard !entry.rewardText.isEmpty else { return }
         showReward(entry.rewardText)
     }
 

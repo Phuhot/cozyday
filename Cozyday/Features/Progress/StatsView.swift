@@ -199,13 +199,15 @@ struct StatsView: View {
         case .minigame: return "gamecontroller"
         case .care: return "heart"
         case .foodPurchase: return "fork.knife"
+        case .gacha: return "gift"
+        case .gift: return "star"
         }
     }
 
     private func subtitle(_ e: LedgerEntry) -> String {
         let when = DateText.dateTime(e.createdAt, calendar: store.calendar)
         switch e.kind {
-        case .taskCompleted, .focusCompleted, .adventure, .minigame, .care, .foodPurchase: return "\(when) · \(e.memo)"
+        case .taskCompleted, .focusCompleted, .adventure, .minigame, .care, .foodPurchase, .gacha, .gift: return "\(when) · \(e.memo)"
         default: return when
         }
     }

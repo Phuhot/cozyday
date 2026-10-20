@@ -22,6 +22,12 @@ struct SettingsView: View {
     @State private var showImporter = false
     @State private var pendingRestore: BackupDocument?
     @State private var backupMessage: String?
+    @State private var confirmErase = false
+    @State private var confirmEraseFinal = false
+    /// Chạm 7 lần vào dòng "Phiên bản" để hiện ô nhập mã quà (dành cho người thử nghiệm).
+    @State private var versionTaps = 0
+    @State private var giftCode = ""
+    @State private var giftMessage: String?
 
     var body: some View {
         NavigationStack {
@@ -33,7 +39,7 @@ struct SettingsView: View {
                             .multilineTextAlignment(.trailing)
                             .onSubmit(saveNames)
                     }
-                    LabeledContent("Tên mèo") {
+                    LabeledContent("Tên thú cưng") {
                         TextField(ProfileRecord.defaultPetName, text: $petName)
                             .multilineTextAlignment(.trailing)
                             .onSubmit(saveNames)
@@ -61,7 +67,21 @@ struct SettingsView: View {
                     NavigationLink("Quy tắc phần thưởng") { RewardRulesView() }
                     NavigationLink("Dữ liệu & quyền riêng tư") { PrivacyView() }
                     LabeledContent("Phiên bản", value: AppStore.appVersionString)
+                        .contentShape(Rectangle())
+                        .onTapGesture { versionTaps += 1 }
                     LabeledContent("Bundle ID", value: Bundle.main.bundleIdentifier ?? "?")
+                }
+
+                if versionTaps >= 7 {
+                    giftSection
+                }
+
+                Section {
+                    Button("Xóa toàn bộ dữ liệu", role: .destructive) { confirmErase = true }
+                } header: {
+                    Text("Xóa dữ liệu")
+                } footer: {
+                    Text("Xóa việc, nhật ký, xu, đồ, thú cưng và kết quả Sân chơi trên máy này rồi quay về màn giới thiệu. Không hoàn tác được, nên tạo bản sao lưu trước nếu muốn giữ lại.")
                 }
             }
             .navigationTitle("Cài đặt")
@@ -75,6 +95,19 @@ struct SettingsView: View {
                 }
             }
             .overlay(alignment: .top) { ErrorOverlay() }
+            .alert("Xóa toàn bộ dữ liệu?", isPresented: $confirmErase) {
+                Button("Tạo bản sao lưu trước") { exportBackup() }
+                Button("Tiếp tục", role: .destructive) { confirmEraseFinal = true }
+                Button("Hủy", role: .cancel) {}
+            } message: {
+                Text("Mọi việc, nhật ký, \(store.wallet.coins) xu, đồ đã mua và thú cưng \(store.profile.displayPetName) sẽ bị xóa khỏi máy này.")
+            }
+            .alert("Xóa vĩnh viễn?", isPresented: $confirmEraseFinal) {
+                Button("Xóa hết", role: .destructive) { eraseAll() }
+                Button("Không xóa", role: .cancel) {}
+            } message: {
+                Text("Bước này không hoàn tác được. App sẽ quay về màn giới thiệu.")
+            }
             .onAppear(perform: load)
             .task { await notifications.refreshPermission() }
             .fileExporter(
@@ -99,6 +132,45 @@ struct SettingsView: View {
                 .presentationDetents([.medium, .large])
             }
         }
+    }
+
+    // MARK: Mã quà (ẩn)
+
+    private var giftSection: some View {
+        Section {
+            TextField("Nhập mã", text: $giftCode)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .onSubmit(redeem)
+            Button("Nhận quà", action: redeem)
+                .disabled(giftCode.trimmingCharacters(in: .whitespaces).isEmpty)
+            if let giftMessage {
+                Text(giftMessage)
+                    .font(Typography.callout)
+                    .foregroundStyle(Palette.inkMuted)
+            }
+        } header: {
+            Text("Mã quà")
+        }
+    }
+
+    private func redeem() {
+        do {
+            let coins = try store.redeemGiftCode(giftCode)
+            giftMessage = "Đã nhận \(coins) xu."
+            giftCode = ""
+        } catch {
+            giftMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+
+    // MARK: Xóa dữ liệu
+
+    private func eraseAll() {
+        guard ui.run({ try store.eraseAllData() }) else { return }
+        Task { await notifications.sync(store: store) }
+        ui.showSettings = false
+        dismiss()
     }
 
     // MARK: Lịch iPhone

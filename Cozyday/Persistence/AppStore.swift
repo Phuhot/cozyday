@@ -63,6 +63,10 @@ final class AppStore {
     var avatar: AvatarConfig = .standard
     @ObservationIgnored let defaults: UserDefaults
 
+    @ObservationIgnored private var walletCache: (key: LedgerCacheKey, value: Wallet)?
+    @ObservationIgnored private var ledgerKeysCache: (key: LedgerCacheKey, value: Set<String>)?
+    @ObservationIgnored var ownedIDsCache: (count: Int, last: String?, value: Set<String>)?
+
     /// Tăng sau mỗi lần ghi thành công — dùng để đồng bộ lại thông báo.
     private(set) var changeCounter = 0
 
@@ -113,7 +117,7 @@ final class AppStore {
     }
 
     /// Tạo hồ sơ mặc định đúng một lần (idempotent). Không bao giờ ghi đè hồ sơ đang có.
-    private func ensureProfile() throws {
+    func ensureProfile() throws {
         guard try fetchProfileModel() == nil else { return }
         context.insert(ProfileModel(record: ProfileRecord.makeDefault(now: clock.now)))
         do {
@@ -126,7 +130,7 @@ final class AppStore {
 
     /// Tạo hồ sơ chăm sóc đúng một lần (thú cưng mới hoặc bản cũ vừa nâng cấp lên V3), kèm gói đồ ăn chào mừng
     /// trong CÙNG một lần lưu — mở lại app hay chạy lại migration không tặng thêm.
-    private func ensurePetCare() throws {
+    func ensurePetCare() throws {
         guard try fetchPetCareModel() == nil else { return }
         let record = PetCareRecord(needs: .initial(at: clock.now), welcomeGranted: true, createdAt: clock.now)
         context.insert(PetCareStateModel(record: record))
@@ -237,11 +241,39 @@ final class AppStore {
 
     // MARK: Ví & sổ cái
 
-    var wallet: Wallet { Wallet(entries: ledger) }
-    var ledgerKeys: Set<String> { Set(ledger.map(\.key)) }
+    /// Số dư tính từ sổ cái, nhớ tạm theo (số dòng, dòng đầu, dòng cuối): view đọc `wallet` hàng chục lần mỗi lần vẽ,
+    /// không cần cộng lại toàn bộ sổ cái mỗi lần. Sổ cái chỉ thêm dòng hoặc được nạp lại cả mảng.
+    var wallet: Wallet {
+        let key = LedgerCacheKey(ledger)
+        if let cache = walletCache, cache.key == key { return cache.value }
+        let value = Wallet(entries: ledger)
+        walletCache = (key, value)
+        return value
+    }
+
+    var ledgerKeys: Set<String> {
+        let key = LedgerCacheKey(ledger)
+        if let cache = ledgerKeysCache, cache.key == key { return cache.value }
+        let value = Set(ledger.map(\.key))
+        ledgerKeysCache = (key, value)
+        return value
+    }
 
     func insertLedger(_ entry: LedgerEntry) {
         context.insert(LedgerEntryModel(record: entry))
         ledger.append(entry)
+    }
+}
+
+/// Dấu vân tay rẻ của sổ cái để biết bộ nhớ tạm còn đúng không.
+struct LedgerCacheKey: Equatable {
+    let count: Int
+    let first: UUID?
+    let last: UUID?
+
+    init(_ ledger: [LedgerEntry]) {
+        count = ledger.count
+        first = ledger.first?.id
+        last = ledger.last?.id
     }
 }

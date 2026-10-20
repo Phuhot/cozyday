@@ -229,6 +229,11 @@ enum BackupValidator {
         if wallet.coins < 0 { throw BackupError.invalidValue("số xu âm") }
         for e in d.ledger {
             switch e.kind {
+            case .gacha:
+                // Một lượt quay: trừ giá, cộng lại xu hoàn khi trùng (có thể dương nếu món Bí mật trùng).
+                guard e.coins <= GachaConfig.duplicateRefund(.secret), e.coins >= -GachaConfig.singlePrice, e.xp == 0 else {
+                    throw BackupError.invalidValue("dòng máy gacha")
+                }
             case .purchase, .foodPurchase:
                 guard e.coins <= 0, e.xp == 0 else { throw BackupError.invalidValue("dòng mua đồ") }
             case .minigame:

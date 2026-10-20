@@ -52,6 +52,12 @@ enum PreviewScreen: String, CaseIterable {
     case trailerCuddle
     case trailerClean
     case trailerWardrobe
+    // Phiên 8: giới thiệu, máy gacha, sàn, đồ bí mật
+    case tour
+    case gacha
+    case gachaResult
+    case shopFloor
+    case wardrobeSecret
 }
 
 /// Chế độ xem trước chỉ có trong bản Debug: dữ liệu mẫu nằm trong bộ nhớ, không đụng tới kho dữ liệu thật.
@@ -95,7 +101,7 @@ extension PreviewMode {
         defaults.removePersistentDomain(forName: "CozyPreview.store")
         let store = try AppStore(container: PersistenceController.makeContainer(inMemory: true), clock: clock, defaults: defaults)
         let ui = UIState()
-        if screen != .onboarding {
+        if screen != .onboarding && screen != .tour {
             try seed(store, clock: clock, activeFocus: screen == .focus, adventureReady: screen == .adventure)
             try seedCareAndPlay(store, screen: screen)
             if trailer { try seedTrailerHero(store) }
@@ -105,7 +111,8 @@ extension PreviewMode {
         case .corner, .shop, .wardrobe, .adventure, .memories, .bedroom, .kitchen, .bath, .garden, .collection, .look,
              .care, .food, .feed, .clean, .careCapped,
              .playground, .pickPet, .tutorial, .jump, .basket, .memory, .pause, .result, .resultCapped, .avatar, .avatarOutfit,
-             .trailerFeed, .trailerCuddle, .trailerClean, .trailerWardrobe:
+             .trailerFeed, .trailerCuddle, .trailerClean, .trailerWardrobe,
+             .gacha, .gachaResult, .shopFloor, .wardrobeSecret:
             router.selectedTab = .corner
         case .journal, .breathing, .journalEditor: router.selectedTab = .journal
         case .progress: router.selectedTab = .progress

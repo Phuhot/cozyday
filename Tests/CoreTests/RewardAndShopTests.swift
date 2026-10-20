@@ -22,7 +22,7 @@ final class RewardAndShopTests: XCTestCase {
     func testFocusRewardNeedsMinimumAndIsCapped() {
         XCTAssertEqual(RewardConfig.focusReward(plannedMinutes: 5).xp, 0)
         XCTAssertEqual(RewardConfig.focusReward(plannedMinutes: 25).xp, 10)
-        XCTAssertEqual(RewardConfig.focusReward(plannedMinutes: 25).coins, 5)
+        XCTAssertEqual(RewardConfig.focusReward(plannedMinutes: 25).coins, 10)
         XCTAssertEqual(RewardConfig.focusReward(plannedMinutes: 500).xp, RewardConfig.focusReward(plannedMinutes: 120).xp)
         let id = UUID()
         let first = RewardPolicy.forFocus(sessionID: id, plannedMinutes: 25, existingKeys: [], now: Date())

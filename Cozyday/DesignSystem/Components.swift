@@ -77,8 +77,7 @@ struct CoinBadge: View {
 
     var body: some View {
         HStack(spacing: Spacing.xs) {
-            Image(systemName: "circle.hexagongrid.fill")
-                .foregroundStyle(Palette.honey)
+            CoinIcon(size: 20)
             Text("\(coins)")
                 .font(Typography.headline.monospacedDigit())
                 .foregroundStyle(Palette.ink)

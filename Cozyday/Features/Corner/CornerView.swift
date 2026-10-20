@@ -17,6 +17,7 @@ struct CornerView: View {
     @State private var editingName = false
     @State private var nameDraft = ""
     @State private var showPlayground = false
+    @State private var showGacha = false
     @State private var foodTab: FoodSheet.Tab?
     @State private var cleaning: CleanSession?
     @State private var cuddle = CuddleProgress()
@@ -36,16 +37,15 @@ struct CornerView: View {
             ScrollViewReader { proxy in
             ScrollView {
                 VStack(alignment: .leading, spacing: Spacing.l) {
+                    petHeader
+
                     RoomPicker(selection: Binding(get: { room }, set: { roomRaw = $0.rawValue }), level: store.wallet.level)
 
                     roomArea
 
-                    Text("Chạm để vuốt ve, vuốt qua lại để nựng, giữ rồi kéo để đưa \(store.profile.displayPetName) sang chỗ khác. Chạm một ô trong phòng để chọn đồ.")
+                    Text("Chạm để vuốt ve, vuốt qua lại để nựng, giữ rồi kéo để đưa \(store.profile.displayPetName) sang chỗ khác.")
                         .font(Typography.caption)
                         .foregroundStyle(Palette.inkMuted)
-
-                    PlaygroundEntryCard { showPlayground = true }
-                    AvatarEntryCard { showAvatar = true }
 
                     NeedsCard(cuddleFraction: cuddle.fraction,
                               onFeed: { foodTab = .tray },
@@ -53,31 +53,10 @@ struct CornerView: View {
                               onCuddle: { finishCare(.cuddle, id: UUID()) })
                         .id("needs")
 
-                    HStack(spacing: Spacing.s) {
-                        Button {
-                            showWardrobe = true
-                        } label: {
-                            Label("Tủ đồ", systemImage: "tshirt")
-                        }
-                        .buttonStyle(PrimaryButtonStyle())
-                        Button {
-                            showCollection = true
-                        } label: {
-                            Label("Bộ sưu tập", systemImage: "square.grid.3x3")
-                        }
-                        .buttonStyle(PrimaryButtonStyle(color: Palette.peach))
-                    }
-                    Button {
-                        shopTarget = ShopTarget(room: room.isUnlocked(level: store.wallet.level) ? room : .study, slot: nil)
-                    } label: {
-                        Label("Trang trí \(room.name.lowercased())", systemImage: "sofa")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(SoftButtonStyle(tint: Palette.lavender))
+                    activityGrid
 
-                    levelCard
-                    PetWeekCard()
                     AdventureCard(showStory: $showAdventure, showMemories: $showMemories)
+                    PetWeekCard()
                 }
                 .padding(Spacing.l)
             }
@@ -90,6 +69,7 @@ struct CornerView: View {
             }
             .cozyBackground()
             .navigationTitle("Góc nhỏ")
+            .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(isPresented: $showPlayground) { PlaygroundView() }
             .sheet(item: $foodTab) { tab in
                 FoodSheet(initialTab: tab)
@@ -105,6 +85,9 @@ struct CornerView: View {
                 CleanRoomView(room: session.room, equipped: store.equippedMap, appearance: store.petAppearance,
                               petName: store.profile.displayPetName, haptics: store.profile.hapticsEnabled,
                               actionID: session.id, work: session.work) { id in finishCare(.clean, id: id) }
+            }
+            .sheet(isPresented: $showGacha) {
+                GachaView()
             }
             .sheet(isPresented: $showAvatar) {
                 AvatarStudioView()
@@ -143,7 +126,9 @@ struct CornerView: View {
                 }
                 switch screen {
                 case .shop: shopTarget = ShopTarget(room: .bedroom, slot: .bed)
-                case .wardrobe, .trailerWardrobe: showWardrobe = true
+                case .shopFloor: shopTarget = ShopTarget(room: .bedroom, slot: .bedroomFloor)
+                case .gacha, .gachaResult: showGacha = true
+                case .wardrobe, .trailerWardrobe, .wardrobeSecret: showWardrobe = true
                 case .avatar, .avatarOutfit: showAvatar = true
                 case .adventure: showAdventure = true
                 case .memories: showMemories = true
@@ -248,54 +233,118 @@ struct CornerView: View {
         }
     }
 
-    private var levelCard: some View {
+    /// Tên, cấp, xu và giai đoạn lớn gom vào một dòng đầu trang (trước đây là một thẻ riêng ở cuối).
+    private var petHeader: some View {
         let wallet = store.wallet
         let stage = PetStage.forLevel(wallet.level)
-        return CozyCard {
-            VStack(alignment: .leading, spacing: Spacing.s) {
-                HStack {
-                    Text(store.profile.displayPetName)
-                        .font(Typography.title)
-                        .foregroundStyle(Palette.ink)
-                        .lineLimit(1)
-                    Button {
-                        nameDraft = store.profile.petName
-                        editingName = true
-                    } label: {
-                        Image(systemName: "pencil")
-                            .frame(width: HitTarget.min, height: HitTarget.min)
-                    }
-                    .accessibilityLabel("Đổi tên thú cưng")
-                    Spacer()
-                    Text("Cấp \(wallet.level)")
-                        .font(Typography.headline)
-                        .foregroundStyle(Palette.lavender)
-                    CoinBadge(coins: wallet.coins)
+        return VStack(alignment: .leading, spacing: Spacing.xs) {
+            HStack(spacing: Spacing.xs) {
+                Text(store.profile.displayPetName)
+                    .font(Typography.title)
+                    .foregroundStyle(Palette.ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                Button {
+                    nameDraft = store.profile.petName
+                    editingName = true
+                } label: {
+                    Image(systemName: "pencil")
+                        .font(Typography.callout)
+                        .frame(width: HitTarget.min, height: HitTarget.min)
                 }
+                .accessibilityLabel("Đổi tên thú cưng")
+                Spacer(minLength: Spacing.xs)
+                CoinBadge(coins: wallet.coins)
+            }
+            HStack(spacing: Spacing.s) {
+                Text("Cấp \(wallet.level)")
+                    .font(Typography.callout.weight(.bold))
+                    .foregroundStyle(Palette.lavender)
                 ProgressView(value: wallet.levelProgress)
                     .tint(Palette.lavender)
                     .accessibilityLabel("Tiến độ lên cấp")
                     .accessibilityValue("\(wallet.xpIntoLevel) trên \(RewardConfig.xpPerLevel) XP")
-                Text("\(wallet.xpIntoLevel)/\(RewardConfig.xpPerLevel) XP tới cấp \(wallet.level + 1) · tổng \(wallet.xp) XP")
-                    .font(Typography.caption)
+                Text("\(wallet.xpIntoLevel)/\(RewardConfig.xpPerLevel) XP")
+                    .font(Typography.caption.monospacedDigit())
                     .foregroundStyle(Palette.inkMuted)
-                Label {
-                    if let next = stage.next {
-                        Text("\(stage.label). Lớn thành “\(next.label)” ở cấp \(next.startLevel)")
-                    } else {
-                        Text(stage.label)
-                    }
-                } icon: {
-                    Image(systemName: "leaf")
-                }
-                .font(Typography.callout.weight(.semibold))
-                .foregroundStyle(Palette.sage)
-                Text("\(store.profile.displayPetName) \(ui.petMood(store: store).label). Thú cưng không bao giờ ốm, bỏ đi hay giận khi bạn bận vài ngày.")
-                    .font(Typography.callout)
-                    .foregroundStyle(Palette.ink)
             }
+            Group {
+                if let next = stage.next {
+                    Text("\(stage.label) · lớn thành “\(next.label)” ở cấp \(next.startLevel)")
+                } else {
+                    Text(stage.label)
+                }
+            }
+            .font(Typography.caption.weight(.semibold))
+            .foregroundStyle(Palette.sage)
         }
     }
+
+    /// Lối vào các tính năng của thú cưng, xếp lưới 2 cột cho gọn thay vì nhiều thẻ dài.
+    private var activityGrid: some View {
+        let name = store.profile.displayPetName
+        let playCoins = store.minigameCoins(on: store.today)
+        let decorRoom = room.isUnlocked(level: store.wallet.level) ? room : .study
+        return LazyVGrid(columns: [GridItem(.flexible(), spacing: Spacing.m), GridItem(.flexible(), spacing: Spacing.m)],
+                         spacing: Spacing.m) {
+            CornerTile(title: "Sân chơi", subtitle: "\(playCoins)/\(MinigameConfig.dailyCoinCap) xu hôm nay",
+                       symbol: "gamecontroller.fill", tint: Palette.lavender) { showPlayground = true }
+            CornerTile(title: "Máy gacha", subtitle: "\(GachaConfig.singlePrice) xu một lượt",
+                       symbol: "gift.fill", tint: Palette.peach) { showGacha = true }
+            CornerTile(title: "Tủ đồ", subtitle: "Đổi đồ cho \(name)",
+                       symbol: "tshirt.fill", tint: Palette.sage) { showWardrobe = true }
+            CornerTile(title: "Trang trí", subtitle: decorRoom.name,
+                       symbol: "sofa.fill", tint: Palette.honey) {
+                shopTarget = ShopTarget(room: decorRoom, slot: nil)
+            }
+            CornerTile(title: "Bộ sưu tập", subtitle: "Bộ phối và các loài",
+                       symbol: "square.grid.3x3.fill", tint: ItemRarity.rare.color) { showCollection = true }
+            CornerTile(title: "Ảnh đại diện", subtitle: "Khoe \(name)",
+                       symbol: "person.crop.square.fill", tint: Palette.nowLine) { showAvatar = true }
+        }
+    }
+}
+
+/// Ô lối vào trong Góc nhỏ: biểu tượng tròn, tên, một dòng phụ.
+struct CornerTile: View {
+    let title: String
+    let subtitle: String
+    let symbol: String
+    let tint: Color
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: Spacing.s) {
+                Image(systemName: symbol)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(Palette.onAccent)
+                    .frame(width: 40, height: 40)
+                    .background(tint, in: Circle())
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(title)
+                        .font(Typography.callout.weight(.bold))
+                        .foregroundStyle(Palette.ink)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                    Text(subtitle)
+                        .font(Typography.caption2)
+                        .foregroundStyle(Palette.inkMuted)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(Spacing.s)
+            .frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
+            .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: Radius.l, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Radius.l, style: .continuous).strokeBorder(tint.opacity(0.35)))
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isButton)
+
 }
 
 /// Mở cửa hàng ở một phòng / vị trí cụ thể.
@@ -405,10 +454,7 @@ struct ShopView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: Spacing.l) {
-                    HStack {
-                        RoomPicker(selection: $room, level: store.wallet.level)
-                        CoinBadge(coins: store.wallet.coins)
-                    }
+                    RoomPicker(selection: $room, level: store.wallet.level)
 
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: Spacing.s) {
@@ -443,6 +489,8 @@ struct ShopView: View {
             .navigationTitle("Trang trí")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                // Xu nằm trên thanh tiêu đề để không che hàng chọn phòng.
+                ToolbarItem(placement: .topBarLeading) { CoinBadge(coins: store.wallet.coins) }
                 ToolbarItem(placement: .confirmationAction) { Button("Xong") { dismiss() } }
             }
             .sheet(item: $preview) { item in

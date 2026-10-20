@@ -13,6 +13,10 @@ enum LedgerKind: String, Codable, CaseIterable {
     case care
     /// Mua đồ ăn (vật phẩm tiêu hao, mua lặp lại được).
     case foodPurchase
+    /// Một lượt quay máy gacha (trừ xu; món trùng được hoàn một phần xu).
+    case gacha
+    /// Xu tặng qua mã quà (Cài đặt).
+    case gift
 
     var label: String {
         switch self {
@@ -25,13 +29,15 @@ enum LedgerKind: String, Codable, CaseIterable {
         case .minigame: return "Sân chơi"
         case .care: return "Chăm thú cưng"
         case .foodPurchase: return "Mua đồ ăn"
+        case .gacha: return "Máy gacha"
+        case .gift: return "Quà tặng"
         }
     }
 
     /// Dòng chi tiêu (xu âm, không có XP).
     var isSpending: Bool {
         switch self {
-        case .purchase, .foodPurchase: return true
+        case .purchase, .foodPurchase, .gacha: return true
         default: return false
         }
     }
@@ -62,6 +68,8 @@ enum LedgerKeys {
     static func care(_ actionID: UUID) -> String { "care:\(actionID.uuidString.lowercased())" }
     /// Mỗi lần mua đồ ăn có mã giao dịch riêng — khác `purchase:<itemID>` của đồ sở hữu vĩnh viễn.
     static func foodPurchase(_ transactionID: UUID) -> String { "food-purchase:\(transactionID.uuidString.lowercased())" }
+    static func gacha(_ pullID: UUID) -> String { "gacha:\(pullID.uuidString.lowercased())" }
+    static func gift(_ id: UUID) -> String { "gift:\(id.uuidString.lowercased())" }
 }
 
 struct Wallet: Equatable {
@@ -89,14 +97,28 @@ struct Wallet: Equatable {
 
 /// Quyết định thưởng — thuần, không đụng lưu trữ. Trả về nil nếu khóa đã có (chống nhận 2 lần).
 enum RewardPolicy {
-    static func forTaskCompletion(occurrence: TaskOccurrenceRecord, existingKeys: Set<String>, now: Date) -> LedgerEntry? {
+    /// `rewardedToday`: số việc đã có thưởng trong ngày hoàn thành. Hết hạn mức → vẫn ghi một dòng 0 XP/0 xu
+    /// (giữ khóa, để tick lại hay xóa rồi tạo lại cũng không có thưởng) và đánh dấu `memo` để giao diện báo.
+    static func forTaskCompletion(occurrence: TaskOccurrenceRecord, existingKeys: Set<String>, rewardedToday: Int = 0,
+                                  now: Date) -> LedgerEntry? {
         let key = LedgerKeys.task(occurrence.id)
         guard !existingKeys.contains(key) else { return nil }
+        let capped = rewardedToday >= RewardConfig.taskRewardsPerDay
         return LedgerEntry(
             id: UUID(), key: key, kind: .taskCompleted,
-            xp: RewardConfig.taskXP, coins: RewardConfig.taskCoins,
-            createdAt: now, refID: occurrence.id.uuidString.lowercased(), memo: occurrence.title
+            xp: capped ? 0 : RewardConfig.taskXP, coins: capped ? 0 : RewardConfig.taskCoins,
+            createdAt: now, refID: occurrence.id.uuidString.lowercased(), memo: capped ? taskCapMemo + occurrence.title : occurrence.title
         )
+    }
+
+    /// Tiền tố ghi chú của dòng việc xong khi đã hết hạn mức thưởng trong ngày.
+    static let taskCapMemo = "Hết hạn mức: "
+
+    /// Số việc đã có thưởng trong cùng ngày với `now`.
+    static func taskRewardsToday<S: Sequence>(_ ledger: S, now: Date, calendar: Calendar) -> Int where S.Element == LedgerEntry {
+        ledger.reduce(0) { n, e in
+            e.kind == .taskCompleted && e.xp > 0 && calendar.isDate(e.createdAt, inSameDayAs: now) ? n + 1 : n
+        }
     }
 
     static func forFocus(sessionID: UUID, plannedMinutes: Int, existingKeys: Set<String>, now: Date) -> LedgerEntry? {

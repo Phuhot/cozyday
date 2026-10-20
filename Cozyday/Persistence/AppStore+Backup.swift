@@ -73,6 +73,36 @@ extension AppStore {
         try? ensureUpcomingOccurrences()
     }
 
+    /// Xóa toàn bộ dữ liệu trên máy (việc, nhật ký, xu, đồ, thú cưng, kết quả Sân chơi, ảnh đại diện, tùy chọn)
+    /// rồi tạo lại hồ sơ trống: app quay về màn giới thiệu. Không hoàn tác được.
+    func eraseAllData() throws {
+        try commit {
+            try self.deleteAll(ProfileModel.self)
+            try self.deleteAll(TaskTemplateModel.self)
+            try self.deleteAll(TaskOccurrenceModel.self)
+            try self.deleteAll(LedgerEntryModel.self)
+            try self.deleteAll(OwnedItemModel.self)
+            try self.deleteAll(EquippedSlotModel.self)
+            try self.deleteAll(FocusSessionModel.self)
+            try self.deleteAll(JournalEntryModel.self)
+            try self.deleteAll(PetCareStateModel.self)
+            try self.deleteAll(FoodStockModel.self)
+            try self.deleteAll(CareActionModel.self)
+            try self.deleteAll(MinigameResultModel.self)
+        }
+        for store in [defaults, UserDefaults.standard] {
+            for key in Self.localPreferenceKeys { store.removeObject(forKey: key) }
+        }
+        avatar = .standard
+        try ensureProfile()
+        try ensurePetCare()
+        try reloadAll()
+    }
+
+    /// Tùy chọn hiển thị lưu ngoài SwiftData, xóa cùng khi xóa dữ liệu.
+    static let localPreferenceKeys = [avatarKey, "corner.room", "playground.species", "playground.tutorialsSeen",
+                                      "playground.memoryLevel", "playground.sound", "playground.haptics", "today.layout"]
+
     private func deleteAll<T: PersistentModel>(_ type: T.Type) throws {
         for model in try context.fetch(FetchDescriptor<T>()) {
             context.delete(model)

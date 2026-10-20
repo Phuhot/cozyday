@@ -4,25 +4,28 @@ import Foundation
 enum RewardConfig {
     /// Hoàn thành một lần việc (lần đầu tiên).
     static let taskXP = 10
-    static let taskCoins = 5
+    static let taskCoins = 8
+    /// Số việc được thưởng mỗi ngày (theo ngày hoàn thành). Việc thứ 11 trở đi vẫn ghi nhận nhưng không có XP/xu:
+    /// tạo thật nhiều việc rồi tick liên tục không còn là cách "cày" xu.
+    static let taskRewardsPerDay = 10
 
     /// Phiên tập trung hoàn thành đủ thời lượng: thưởng theo số phút đã đặt.
     static let focusMinMinutesForReward = 10
     static let focusXPPerFiveMinutes = 2
-    static let focusCoinsPerFiveMinutes = 1
+    static let focusCoinsPerFiveMinutes = 2
     static let focusMaxRewardMinutes = 120
 
     /// Viết nhật ký: một lần mỗi ngày.
     static let journalXP = 5
-    static let journalCoins = 2
+    static let journalCoins = 5
 
     /// Bài thở: một lần mỗi ngày.
     static let breathingXP = 3
-    static let breathingCoins = 1
+    static let breathingCoins = 3
 
     /// Nghe thú cưng kể chuyến phiêu lưu (khi đủ năng lượng): một lần mỗi ngày.
     static let adventureXP = 5
-    static let adventureCoins = 3
+    static let adventureCoins = 10
 
     /// XP cho mỗi cấp của mèo.
     static let xpPerLevel = 100
@@ -35,7 +38,7 @@ enum RewardConfig {
 
     /// Quy tắc hiển thị trong app (Cài đặt → Quy tắc phần thưởng).
     static let rulesText: [String] = [
-        "Hoàn thành một việc lần đầu: +\(taskXP) XP, +\(taskCoins) xu.",
+        "Hoàn thành một việc lần đầu: +\(taskXP) XP, +\(taskCoins) xu. Mỗi ngày tối đa \(taskRewardsPerDay) việc có thưởng; việc xong sau đó vẫn được ghi nhận.",
         "Bỏ đánh dấu hoàn thành hoặc xóa việc không thu hồi phần thưởng đã nhận.",
         "Hoàn thành lại chính lần việc đó không nhận thêm thưởng.",
         "Phiên tập trung từ \(focusMinMinutesForReward) phút trở lên, chạy hết giờ: +\(focusXPPerFiveMinutes) XP và +\(focusCoinsPerFiveMinutes) xu cho mỗi 5 phút (tối đa \(focusMaxRewardMinutes) phút).",

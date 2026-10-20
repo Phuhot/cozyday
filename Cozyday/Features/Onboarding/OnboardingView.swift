@@ -9,8 +9,27 @@ struct OnboardingView: View {
     @State private var petName = ProfileRecord.defaultPetName
     @State private var goals: Set<UsageGoal> = []
     @State private var habits: Set<String> = []
+    /// Video giới thiệu → tóm tắt tính năng → ba bước thiết lập.
+    @State private var phase: Phase = PreviewMode.current == .tour ? .tour : .video
+
+    enum Phase { case video, tour, setup }
 
     var body: some View {
+        switch phase {
+        case .video:
+            IntroVideoPage(onNext: { withAnimation(Motion.gentle) { phase = .tour } },
+                           onSkip: { withAnimation(Motion.gentle) { phase = .setup } })
+                .transition(.opacity)
+        case .tour:
+            FeatureTourView(onFinish: { withAnimation(Motion.gentle) { phase = .setup } })
+                .transition(.move(edge: .trailing).combined(with: .opacity))
+        case .setup:
+            setup
+                .transition(.move(edge: .trailing).combined(with: .opacity))
+        }
+    }
+
+    private var setup: some View {
         VStack(spacing: 0) {
             HStack {
                 Text("Bước \(step + 1)/3")
@@ -57,15 +76,15 @@ struct OnboardingView: View {
             Text("Chào mừng tới CozyDay")
                 .font(Typography.largeTitle)
                 .foregroundStyle(Palette.ink)
-            Text("Sắp xếp ngày của bạn trên một timeline gọn gàng. Mỗi việc hoàn thành giúp chú mèo nhỏ trang trí góc phòng.")
+            Text("Sắp xếp ngày của bạn trên một timeline gọn gàng. Mỗi việc hoàn thành cho xu để bạn nhỏ trang trí góc phòng.")
                 .foregroundStyle(Palette.inkMuted)
             VStack(alignment: .leading, spacing: Spacing.s) {
                 Text("Mình nên gọi bạn là gì?").font(Typography.headline)
                 TextField("Tên của bạn (không bắt buộc)", text: $userName)
                     .textFieldStyle(.roundedBorder)
                     .textContentType(.givenName)
-                Text("Đặt tên cho mèo").font(Typography.headline)
-                TextField("Tên mèo", text: $petName)
+                Text("Đặt tên cho bạn nhỏ").font(Typography.headline)
+                TextField("Tên bạn nhỏ", text: $petName)
                     .textFieldStyle(.roundedBorder)
             }
         }

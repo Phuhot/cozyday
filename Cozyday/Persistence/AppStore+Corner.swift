@@ -2,7 +2,13 @@ import Foundation
 import SwiftData
 
 extension AppStore {
-    var ownedIDs: Set<String> { Set(owned.map(\.itemID)) }
+    /// Tập ID đồ đã có, nhớ tạm theo số món và món mới nhất (kho chỉ thêm món hoặc được nạp lại).
+    var ownedIDs: Set<String> {
+        if let c = ownedIDsCache, c.count == owned.count, c.last == owned.last?.itemID { return c.value }
+        let value = Set(owned.map(\.itemID))
+        ownedIDsCache = (owned.count, owned.last?.itemID, value)
+        return value
+    }
 
     func equippedItem(in slot: ItemSlot) -> CatalogItem? {
         equipped.first { $0.slot == slot }.flatMap { Catalog.item($0.itemID) }

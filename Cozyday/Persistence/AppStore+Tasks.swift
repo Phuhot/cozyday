@@ -207,7 +207,9 @@ extension AppStore {
         try commit {
             try self.occurrenceModel(id).apply(occ)
             self.replaceCached(occ)
-            if status == .done, let entry = RewardPolicy.forTaskCompletion(occurrence: occ, existingKeys: self.ledgerKeys, now: self.now) {
+            if status == .done, let entry = RewardPolicy.forTaskCompletion(
+                occurrence: occ, existingKeys: self.ledgerKeys,
+                rewardedToday: RewardPolicy.taskRewardsToday(self.ledger, now: self.now, calendar: self.calendar), now: self.now) {
                 self.insertLedger(entry)
                 granted = entry
             }
