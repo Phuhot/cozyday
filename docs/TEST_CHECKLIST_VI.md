@@ -146,3 +146,16 @@ Xem `PROJECT_STATUS.md` — mục "Kết quả kiểm tra thực tế". Mục n�
 - [ ] Đứng nảy tại chỗ chờ chim bay đi: không bị chạm
 - [ ] Cảm giác độ khó hợp lý sau ~50–150 m (ghi lại độ cao thường đạt được)
 
+## Gacha, sàn, giới thiệu, xóa dữ liệu (phiên 8)
+
+- [ ] Xóa app cũ hoặc Cài đặt → *Xóa toàn bộ dữ liệu* → hỏi 2 lần → về màn giới thiệu: video tự chạy (tắt tiếng), nút loa bật tiếng được, *Bỏ qua* sang bước thiết lập
+- [ ] Mũi tên → 4 trang tính năng + trang mẹo; vuốt ngang cũng sang trang; *Bắt đầu thiết lập* → 3 bước đặt tên/mục tiêu/thói quen như cũ
+- [ ] Hoàn thành hơn 10 việc trong một ngày: 10 việc đầu có thưởng, việc thứ 11 hiện câu "đã đủ 10 việc có thưởng", xu không tăng
+- [ ] Góc nhỏ: đầu trang có tên, cấp, xu; lưới 6 ô (Sân chơi, Máy gacha, Tủ đồ, Trang trí, Bộ sưu tập, Ảnh đại diện) không bị chật ở cỡ chữ lớn
+- [ ] Trang trí: xu nằm trên thanh tiêu đề, hàng chọn phòng không bị che; mục *Sàn* có đủ mẫu, mua sàn đổi sàn trong phòng
+- [ ] Máy gacha: quay 1 lượt / 10 lượt, máy lắc + viên nang rơi, màn kết quả "Mới!" / "+xu" khi trùng, *Mặc ngay*
+- [ ] Bộ đếm bảo hiểm giảm sau mỗi lượt; kệ trưng bày: món Bí mật chưa có chỉ thấy bóng và "???"
+- [ ] Tủ đồ: món chỉ có trong gacha ghi "Gacha", không có nút mua; món bí mật hiện bóng
+- [ ] Cài đặt: chạm *Phiên bản* 7 lần → hiện ô *Mã quà*; nhập mã thử nghiệm → nhận xu
+- [ ] Đồng xu mới (dấu chân) ở mọi chỗ hiện số xu
+

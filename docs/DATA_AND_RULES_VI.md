@@ -82,16 +82,21 @@ Các con số nằm trong `Cozyday/Core/Rewards/RewardConfig.swift`.
 
 | Sự kiện | Thưởng | Khóa chống trùng |
 |---|---|---|
-| Hoàn thành một lần việc **lần đầu** | +10 XP, +5 xu | `task:<occurrenceID>` |
-| Phiên tập trung ≥ 10 phút **chạy hết giờ** | +2 XP và +1 xu mỗi 5 phút (tối đa 120 phút) | `focus:<sessionID>` |
-| Viết nhật ký (một lần mỗi ngày) | +5 XP, +2 xu | `journal:<yyyy-MM-dd>` |
-| Bài thở chạy hết giờ (một lần mỗi ngày) | +3 XP, +1 xu | `breathing:<yyyy-MM-dd>` |
-| Nghe thú cưng kể chuyến đi (đủ 100% năng lượng, một lần mỗi ngày) | +5 XP, +3 xu | `adventure:<yyyy-MM-dd>` |
+| Hoàn thành một lần việc **lần đầu** (tối đa 10 việc có thưởng mỗi ngày) | +10 XP, +8 xu | `task:<occurrenceID>` |
+| Phiên tập trung ≥ 10 phút **chạy hết giờ** | +2 XP và +2 xu mỗi 5 phút (tối đa 120 phút) | `focus:<sessionID>` |
+| Viết nhật ký (một lần mỗi ngày) | +5 XP, +5 xu | `journal:<yyyy-MM-dd>` |
+| Bài thở chạy hết giờ (một lần mỗi ngày) | +3 XP, +3 xu | `breathing:<yyyy-MM-dd>` |
+| Nghe thú cưng kể chuyến đi (đủ 100% năng lượng, một lần mỗi ngày) | +5 XP, +10 xu | `adventure:<yyyy-MM-dd>` |
 | Mua đồ | −giá (đồ miễn phí ghi 0 xu) | `purchase:<itemID>` |
 | Mua đồ ăn (mua lặp lại được) | −giá × số lượng | `food-purchase:<transactionID>` (mỗi lần mua một mã) |
 | Chăm thú cưng đúng lúc cần | xem mục 3b | `care:<careActionID>` |
-| Lượt Sân chơi hợp lệ | 1–6 xu, **không có XP** | `minigame:<sessionID>` |
+| Lượt Sân chơi hợp lệ | xem mục 3c, **không có XP** | `minigame:<sessionID>` |
+| Một lượt máy gacha | −60 xu (10 lượt: −540), cộng lại xu nếu ra món trùng | `gacha:<pullID>` |
+| Mã quà (ẩn trong Cài đặt, cho người thử nghiệm) | +xu theo mã | `gift:<id>` |
 
+- **Hạn mức thưởng việc**: mỗi ngày (theo ngày bấm hoàn thành) chỉ 10 việc đầu có XP/xu. Việc thứ 11 trở đi vẫn ghi
+  một dòng sổ cái 0 XP/0 xu với ghi chú "Hết hạn mức: …" để giữ khóa `task:<id>`, nên tạo hàng loạt việc rồi tick, hay
+  xóa đi tạo lại, không còn cày được xu. Giao diện báo một câu nhẹ nhàng thay cho popup thưởng.
 - Bỏ hoàn thành hoặc xóa việc **không thu hồi** thưởng đã nhận; hoàn thành lại cùng lần việc **không** nhận thêm.
 - Thống kê "việc đã xong" phản ánh **trạng thái hiện tại** (bỏ hoàn thành thì số giảm), độc lập với sổ cái.
 - Tạm dừng không tính vào phút tập trung. Kết thúc sớm: không thưởng, nhưng số phút đã chạy được ghi lại.
@@ -203,6 +208,28 @@ tham khảo vì 60 xu sẽ vượt cả thu nhập từ hoạt động chính.
 - *Lưu ảnh / chia sẻ*: tạo PNG 1024×1024 **trên máy** chỉ khi bạn bấm; không tải lên đâu. Lưu vào app Ảnh cần quyền "chỉ thêm
   ảnh" (`NSPhotoLibraryAddUsageDescription`) — app không đọc ảnh có sẵn.
 - Icon của app là ảnh đại diện "Trời hồng + Đệm mây + Lấp lánh" với vịt con vàng đội mây (`AvatarPainter.appIcon`).
+
+## 3e. Máy gacha, đồ hiếm và đồ bí mật
+
+Luật nằm trong `Cozyday/Core/Shop/Gacha.swift` (`GachaConfig`, `GachaPolicy`), hiện công khai trong màn máy gacha.
+
+- Giá: 60 xu/lượt, 540 xu/10 lượt. Lượt 10 chắc chắn có ít nhất một món Hiếm.
+- Tỉ lệ: Thường 60%, Hiếm 28%, Quý 10%, Bí mật 2%. Độ hiếm của món cửa hàng tính theo giá (< 50 xu Thường,
+  50–89 Hiếm, ≥ 90 Quý); món có `rarity` riêng (đồ chỉ có trong gacha) giữ độ hiếm đó.
+- Bảo hiểm: 9 lượt liền không có món Quý trở lên thì lượt thứ 10 chắc chắn Quý; lượt thứ 60 kể từ món Bí mật gần nhất
+  chắc chắn Bí mật. Bộ đếm đọc thẳng từ sổ cái (`gacha:` + món đã ra), không lưu riêng.
+- Máy chỉ ra trang phục (mũ, kính, cổ, áo, phụ kiện) và hình dạng; không ra màu lông hay đồ trong phòng.
+- Ưu tiên món chưa có trong cùng độ hiếm. Khi đã có đủ cả nhóm, món trùng đổi thành xu: Thường 15, Hiếm 25, Quý 50, Bí mật 120.
+- Mỗi lượt là một dòng sổ cái `gacha:<pullID>`: xu = −giá lượt + xu hoàn (nếu trùng), `refID` = ID món. Món mới được thêm
+  vào kho trong **cùng một lần save** với các dòng sổ cái.
+- Món `gachaOnly` không mua được trong cửa hàng/tủ đồ. Món Bí mật chưa có chỉ hiện bóng đen và tên "???".
+- Sao lưu: dòng `gacha` phải có 0 XP và xu trong khoảng −60 … +120.
+
+## 3f. Xóa toàn bộ dữ liệu và mã quà
+
+- Cài đặt → *Xóa toàn bộ dữ liệu*: hỏi hai lần (lần đầu gợi ý tạo bản sao lưu). Xóa mọi bảng SwiftData và các tùy chọn
+  hiển thị (ảnh đại diện, phòng đang xem, tùy chọn Sân chơi), tạo lại hồ sơ trống rồi app quay về màn giới thiệu. Không hoàn tác.
+- Mã quà: chạm 7 lần vào dòng *Phiên bản* trong Cài đặt để hiện ô nhập. Mã đúng ghi một dòng `gift:<id>`; nhập lại được.
 
 ## 4. Sao lưu và khôi phục
 
