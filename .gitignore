@@ -1,32 +1,31 @@
-# Xcode / XcodeGen — project được tạo lại trong CI
-*.xcodeproj/
-*.xcworkspace/
-xcuserdata/
-DerivedData/
-build/
-*.xcarchive
-*.ipa
-*.dSYM.zip
-*.dSYM
-
-# Swift Package Manager (dùng để chạy test logic trên Linux/macOS)
-.build/
-.swiftpm/
-Package.resolved
 
 # Hệ điều hành / editor
-.DS_Store
-Thumbs.db
-desktop.ini
-.vscode/
-.idea/
-
 # Không bao giờ commit: chứng chỉ, profile, sao lưu dữ liệu cá nhân
-*.p12
-*.mobileprovision
+# Swift Package Manager (dùng để chạy test logic trên Linux/macOS)
+# Xcode / XcodeGen — project được tạo lại trong CI
 *.cer
-*.pem
+*.dSYM
+*.dSYM.zip
+*.ipa
 *.key
 *.mobiledevicepairing
+*.mobileprovision
+*.p12
+*.pem
 *.plist.local
+*.xcarchive
+*.xcodeproj/
+*.xcworkspace/
+.DS_Store
+.build/
+.claude/worktrees/
+.idea/
+.swiftpm/
+.vscode/
 Cozyday-backup-*.json
+DerivedData/
+Package.resolved
+Thumbs.db
+build/
+desktop.ini
+xcuserdata/
