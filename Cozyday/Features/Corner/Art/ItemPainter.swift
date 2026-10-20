@@ -5,6 +5,13 @@ enum ItemPainter {
     static func isScene(_ id: String) -> Bool { Catalog.item(id)?.slot.isTheme ?? false }
 
     static func draw(_ id: String, in ctx: GraphicsContext) {
+        // Biến thể màu: vẽ lại món gốc qua bộ lọc xoay sắc độ.
+        if let item = Catalog.item(id), let base = item.variantOf {
+            var tinted = ctx
+            tinted.addFilter(.hueRotation(.degrees(item.hue)))
+            draw(base, in: tinted)
+            return
+        }
         if StudyArt.draw(id, in: ctx) || BedroomArt.draw(id, in: ctx) || KitchenArt.draw(id, in: ctx)
             || BathArt.draw(id, in: ctx) || GardenArt.draw(id, in: ctx) {
             return

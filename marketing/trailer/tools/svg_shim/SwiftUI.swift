@@ -220,7 +220,19 @@ public struct GraphicsContext {
     let rec: SVGRecorder
     var m = Affine()
     var clipID: String?
+    var filterID: String?
     public init(recorder: SVGRecorder) { rec = recorder }
+    /// Bộ lọc màu (chỉ hỗ trợ xoay sắc độ, dùng cho biến thể màu của đồ).
+    public struct Filter {
+        var degrees: Double
+        public static func hueRotation(_ a: Angle) -> Filter { Filter(degrees: a.radians * 180 / .pi) }
+    }
+    public mutating func addFilter(_ filter: Filter) {
+        rec.clipCount += 1
+        let id = "h\(rec.clipCount)"
+        rec.defs += "<filter id=\"\(id)\" color-interpolation-filters=\"sRGB\"><feColorMatrix type=\"hueRotate\" values=\"\(filter.degrees)\"/></filter>"
+        filterID = id
+    }
 
     func d(_ p: Path) -> String {
         var s = ""
@@ -237,7 +249,7 @@ public struct GraphicsContext {
         }
         return s
     }
-    var clipAttr: String { clipID.map { " clip-path=\"url(#\($0))\"" } ?? "" }
+    var clipAttr: String { (clipID.map { " clip-path=\"url(#\($0))\"" } ?? "") + (filterID.map { " filter=\"url(#\($0))\"" } ?? "") }
     public func fill(_ path: Path, with shading: Shading) {
         rec.body += "<path d=\"\(d(path))\" fill=\"\(shading.paint(self))\" opacity=\"\(opacity)\"\(clipAttr)/>"
     }
@@ -253,7 +265,7 @@ public struct GraphicsContext {
     public mutating func clip(to path: Path) {
         rec.clipCount += 1
         let id = "c\(rec.clipCount)"
-        rec.defs += "<clipPath id=\"\(id)\"\(clipAttr)><path d=\"\(d(path))\"/></clipPath>"
+        rec.defs += "<clipPath id=\"\(id)\"\(clipID.map { " clip-path=\"url(#\($0))\"" } ?? "")><path d=\"\(d(path))\"/></clipPath>"
         clipID = id
     }
     public mutating func translateBy(x: CGFloat, y: CGFloat) { m = m.then(Affine(tx: x, ty: y)) }

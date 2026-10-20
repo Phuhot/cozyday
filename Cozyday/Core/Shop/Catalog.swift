@@ -171,6 +171,23 @@ enum RoomKind: String, CaseIterable, Identifiable {
     func isUnlocked(level: Int) -> Bool { level >= requiredLevel }
 }
 
+/// Độ hiếm của món đồ (dùng cho máy gacha và nhãn trong cửa hàng).
+enum ItemRarity: String, Codable, CaseIterable, Comparable {
+    case common, rare, epic, secret
+
+    var label: String {
+        switch self {
+        case .common: return "Thường"
+        case .rare: return "Hiếm"
+        case .epic: return "Quý"
+        case .secret: return "Bí mật"
+        }
+    }
+
+    private var order: Int { ItemRarity.allCases.firstIndex(of: self) ?? 0 }
+    static func < (a: ItemRarity, b: ItemRarity) -> Bool { a.order < b.order }
+}
+
 struct CatalogItem: Identifiable, Equatable {
     /// ID cố định — không bao giờ đổi giữa các phiên bản (được lưu trong dữ liệu & bản sao lưu).
     let id: String
@@ -180,8 +197,24 @@ struct CatalogItem: Identifiable, Equatable {
     let blurb: String
     /// Cấp của thú cưng cần đạt để mở khóa (cấp = XP / 100 + 1).
     var requiredLevel: Int = 1
+    var rarity: ItemRarity = .common
+    /// Chỉ có từ máy gacha, không bán trong cửa hàng. Món bí mật chưa có chỉ hiện bóng đen.
+    var gachaOnly = false
+    /// Biến thể màu: vẽ lại món `variantOf` với sắc độ xoay `hue` độ.
+    var variantOf: String?
+    var hue: Double = 0
 
     var isFree: Bool { price == 0 }
+    /// Chưa sở hữu thì chỉ thấy bóng (món bí mật).
+    var isHiddenUntilOwned: Bool { rarity == .secret }
+
+    /// Biến thể màu của một món có sẵn: ID "<gốc>~<tên màu>", giá và cấp lấy từ tham số.
+    static func variant(of base: String, _ tag: String, name: String, hue: Double, price: Int, blurb: String,
+                        requiredLevel: Int = 1, rarity: ItemRarity = .common) -> CatalogItem {
+        let slot = Catalog.baseSlot(base)
+        return CatalogItem(id: "\(base)~\(tag)", slot: slot, name: name, price: price, blurb: blurb,
+                           requiredLevel: requiredLevel, rarity: rarity, variantOf: base, hue: hue)
+    }
     /// Lựa chọn mặc định (mèo, lông kem): luôn thuộc về bạn, đang dùng khi vị trí đó trống. Không ghi vào kho.
     var isDefault: Bool { Catalog.defaultIDs.contains(id) }
 }
@@ -194,7 +227,18 @@ enum Catalog {
         "studyTheme.cream", "bedroomTheme.lilac", "kitchenTheme.mint", "bathTheme.aqua", "gardenTheme.day"
     ]
 
+    /// Toàn bộ danh mục. Các mảng `…More` nằm ở các file Catalog+… (đồ thêm theo phòng, trang phục, món gacha).
     static let items: [CatalogItem] = roomItems + petItems
+        + studyMore + bedroomMore + kitchenMore + bathMore + gardenMore + costumeMore + speciesMore
+
+    /// Tra cứu nhanh theo ID và theo vị trí (danh mục gọi rất nhiều lần mỗi khung hình khi vẽ).
+    private static let byID: [String: CatalogItem] = Dictionary(items.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+    private static let bySlot: [ItemSlot: [CatalogItem]] = Dictionary(grouping: items, by: \.slot)
+
+    /// Vị trí của món gốc khi tạo biến thể (chỉ đọc mảng gốc, tránh vòng lặp khởi tạo).
+    static func baseSlot(_ id: String) -> ItemSlot {
+        (roomItems + petItems).first { $0.id == id }?.slot ?? .wall
+    }
 
     static let roomItems: [CatalogItem] = [
         CatalogItem(id: "desk.pine", slot: .desk, name: "Bàn gỗ thông", price: 0, blurb: "Mộc mạc, vừa đủ cho một cuốn sổ."),
@@ -429,11 +473,11 @@ enum Catalog {
     ]
 
     static func item(_ id: String) -> CatalogItem? {
-        items.first { $0.id == id }
+        byID[id]
     }
 
     static func items(in slot: ItemSlot) -> [CatalogItem] {
-        items.filter { $0.slot == slot }
+        bySlot[slot] ?? []
     }
 
     static func defaultItem(for slot: ItemSlot) -> CatalogItem? {
@@ -451,6 +495,7 @@ enum PurchaseDecision: Equatable {
     case alreadyOwned
     case insufficientCoins(needed: Int, available: Int)
     case levelLocked(required: Int, current: Int)
+    case gachaOnly
     case unknownItem
 
     var message: String? {
@@ -459,6 +504,7 @@ enum PurchaseDecision: Equatable {
         case .alreadyOwned: return "Bạn đã có món này rồi."
         case .insufficientCoins(let needed, let available): return "Cần \(needed) xu, bạn đang có \(available) xu."
         case .levelLocked(let required, let current): return "Mở khóa ở cấp \(required) (hiện đang cấp \(current))."
+        case .gachaOnly: return "Món này chỉ có trong máy gacha."
         case .unknownItem: return "Không tìm thấy món đồ này."
         }
     }
@@ -472,6 +518,7 @@ enum PurchasePolicy {
         if Catalog.isOwned(itemID, owned: owned) || ledger.contains(where: { $0.key == key }) {
             return .alreadyOwned
         }
+        if item.gachaOnly { return .gachaOnly }
         let wallet = Wallet(entries: ledger)
         guard wallet.level >= item.requiredLevel else {
             return .levelLocked(required: item.requiredLevel, current: wallet.level)
