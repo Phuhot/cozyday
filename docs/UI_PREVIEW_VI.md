@@ -53,7 +53,7 @@ GitHub Actions mở app trên **iPhone ảo (iOS Simulator)** của máy macOS, 
 |---|---|---|
 | ![Sân chơi](screenshots/30-playground.jpg) Sân chơi | ![Chọn bạn chơi](screenshots/31-pick-pet.jpg) Chọn bạn chơi (loài chưa có bị khóa) | ![Hướng dẫn](screenshots/32-tutorial.jpg) Hướng dẫn lần đầu |
 | ![Nhảy Mây](screenshots/33-jump.jpg) Nhảy Mây (bản xem trước tự chơi) | ![Giỏ Quà](screenshots/34-basket.jpg) Giỏ Quà | ![Lật Thẻ](screenshots/35-memory.jpg) Lật Thẻ Bạn Nhỏ (mức Vừa) |
-| ![Tạm dừng](screenshots/36-pause.jpg) Tạm dừng | ![Kết quả](screenshots/37-result.jpg) Kết quả có thưởng | ![Hết hạn mức](screenshots/38-result-capped.jpg) Kết quả khi đã đủ 20 xu hôm nay |
+| ![Tạm dừng](screenshots/36-pause.jpg) Tạm dừng | ![Kết quả](screenshots/37-result.jpg) Kết quả có thưởng | ![Hết hạn mức](screenshots/38-result-capped.jpg) Kết quả khi đã đủ 40 xu hôm nay |
 
 Chụp liên tiếp cách nhau ~0,7 giây khi game đang chạy (để thấy nhân vật và vật phẩm thật sự di chuyển):
 

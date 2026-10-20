@@ -81,16 +81,19 @@ iPhone: ________ · iOS: ________ · Bản build (Cài đặt → Thông tin →
 - [ ] Chăm khi đang ổn: không có XP/xu, có câu giải thích; quá 2 lần/loại trong ngày: báo đã đủ thưởng
 
 ### Sân chơi
-- [ ] Góc nhỏ có thẻ "Sân chơi"; mở ra thấy bạn nhỏ, số xu, "Xu sân chơi hôm nay x/20", 3 thẻ game có kỷ lục
+- [ ] Góc nhỏ có thẻ "Sân chơi"; mở ra thấy bạn nhỏ, số xu, "Xu sân chơi hôm nay x/40", 5 thẻ game có kỷ lục
 - [ ] "Đổi bạn chơi": loài đã có chọn được, loài chưa có bị khóa; đổi xong quay lại Góc nhỏ → thú cưng vẫn là loài cũ
 - [ ] Lần đầu mỗi game có hướng dẫn ngắn; lần sau vào thẳng đếm ngược 3-2-1
 - [ ] Nhảy Mây: kéo ngang một tay điều khiển được; tự nảy; lên cao bệ hẹp dần, có mây xanh di chuyển; rơi → màn kết quả; điểm không tăng khi nảy tại chỗ
 - [ ] Giỏ Quà: kéo giỏ mượt; bùn/mây mưa có dấu ✕ dễ nhận; hết 60 giây đúng lúc; không bị cộng điểm sau khi hết giờ
 - [ ] Lật Thẻ: Dễ 3×4, Vừa 4×4 vừa màn hình; chạm nhanh nhiều thẻ không mở quá 2; cặp sai tự úp; thú cưng phản ứng vui khi đúng, động viên khi sai
+- [ ] Xếp Khối: kéo khối bằng một tay, khối nổi lên trên ngón tay (không bị che), bóng mờ hít đúng ô; chỗ không vừa chỉ hiện viền nhạt; hàng và cột đầy xóa cùng lúc có hiệu ứng nổ ngắn và nhãn điểm; đặt hết 3 khối thì có bộ mới; bàn gần kín thì bạn nhỏ lo lắng; hết chỗ → màn kết quả. Chạm chọn khối rồi chạm vào bàn cũng đặt được
+- [ ] Gộp Bánh: vuốt 4 hướng mượt, món trượt rồi gộp, món mới hiện sau mỗi lượt; một lượt vuốt không gộp hai lần; 4 nút mũi tên hoạt động, VoiceOver đọc được bàn và các nút
+- [ ] Xếp Khối và Gộp Bánh: Tạm dừng → "Kết thúc lượt" lưu điểm và có xu; "Thoát lượt này" thì không
 - [ ] Nút tạm dừng dễ bấm; vuốt về màn hình chính / khóa máy giữa lượt → quay lại thấy "Tạm dừng", bấm Tiếp tục có đếm ngược
 - [ ] Thoát giữa lượt hỏi xác nhận; thoát xong không có xu, số xu cũ không đổi
 - [ ] Kết quả: hiện điểm, kỷ lục mới, xu thực nhận; chơi lại nhiều lượt liên tiếp không nhanh dần sai, không chồng tiếng
-- [ ] Chơi tới khi đủ 20 xu/ngày: lượt sau ghi "Hôm nay đã nhận đủ xu sân chơi", kỷ lục vẫn lưu
+- [ ] Chơi tới khi đủ 40 xu/ngày: lượt sau ghi "Hôm nay đã nhận đủ xu sân chơi", kỷ lục vẫn lưu
 - [ ] Âm thanh nhỏ, không ngắt nhạc đang nghe; tắt "Âm thanh trò chơi"/"Rung khi chơi" có tác dụng; bật Giảm chuyển động → ít hiệu ứng
 - [ ] Xuất sao lưu rồi khôi phục: khay đồ ăn, chỉ số, kỷ lục Sân chơi còn nguyên; chơi lại không nhận trùng
 

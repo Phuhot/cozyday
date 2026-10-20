@@ -90,7 +90,7 @@ Các con số nằm trong `Cozyday/Core/Rewards/RewardConfig.swift`.
 | Mua đồ | −giá (đồ miễn phí ghi 0 xu) | `purchase:<itemID>` |
 | Mua đồ ăn (mua lặp lại được) | −giá × số lượng | `food-purchase:<transactionID>` (mỗi lần mua một mã) |
 | Chăm thú cưng đúng lúc cần | xem mục 3b | `care:<careActionID>` |
-| Lượt Sân chơi hợp lệ | xem mục 3c, **không có XP** | `minigame:<sessionID>` |
+| Lượt Sân chơi hợp lệ | 1–8 xu, **không có XP** | `minigame:<sessionID>` |
 | Một lượt máy gacha | −60 xu (10 lượt: −540), cộng lại xu nếu ra món trùng | `gacha:<pullID>` |
 | Mã quà (ẩn trong Cài đặt, cho người thử nghiệm) | +xu theo mã | `gift:<id>` |
 
@@ -160,21 +160,30 @@ Các con số nằm trong `Cozyday/Core/Care/PetCare.swift` (`CareConfig`).
 Các con số nằm trong `Cozyday/Core/Play/Minigame.swift` (`MinigameConfig`).
 
 **Cân bằng:** một ngày bình thường (5 việc + 50 phút tập trung + nhật ký + bài thở + chuyến đi) cho khoảng 30–45 xu và 70+ XP.
-Sân chơi chỉ là giờ nghỉ ngắn nên mỗi lượt 1–6 xu, **không có XP**, tối đa **20 xu/ngày** (≈ 4 việc) — thấp hơn mức 60 xu
-tham khảo vì 60 xu sẽ vượt cả thu nhập từ hoạt động chính.
+Sân chơi là giờ nghỉ ngắn nên mỗi lượt 1–8 xu, **không có XP**, tối đa **40 xu/ngày** (≈ 8 việc). Trước đây là 6 xu/lượt
+và 20 xu/ngày; đã nới ra theo góp ý "cho xu thoáng thêm" khi có thêm hai game theo lượt. Vẫn thấp hơn mức 60 xu tham khảo
+vì 60 xu sẽ vượt cả thu nhập từ hoạt động chính.
 
 | Game | Lượt hợp lệ (có xu) | Quy đổi |
 |---|---|---|
 | Nhảy Mây | rơi xuống (kết thúc đúng luật) và leo ≥ 15 m | điểm = mét + 3 × sao; 1 xu mỗi 15 điểm (độ khó mới không đổi cách quy đổi) |
 | Giỏ Quà | chơi **hết 60 giây** và ≥ 20 điểm | 1 xu mỗi 20 điểm |
 | Lật Thẻ | **ghép hết bàn** | Dễ 2 xu / Vừa 3 xu; +1 nếu lượt lật ≤ 2 × số cặp; +1 nếu ≤ số cặp + 3; +1 nếu nhanh (Dễ ≤ 40 s, Vừa ≤ 65 s) |
+| Xếp Khối | hết chỗ đặt khối **hoặc** tự *Kết thúc lượt*, và ≥ 100 điểm | 1 xu mỗi 120 điểm |
+| Gộp Bánh | hết đường gộp **hoặc** tự *Kết thúc lượt*, và ≥ 400 điểm | 1 xu mỗi 400 điểm |
 
-- Tối đa 6 xu/lượt. Chỉ còn 4 xu trong hạn mức thì chỉ nhận 4 (*partialCap*). Hết hạn mức: vẫn chơi, vẫn lưu kết quả và
+- Tối đa 8 xu/lượt. Chỉ còn 4 xu trong hạn mức thì chỉ nhận 4 (*partialCap*). Hết hạn mức: vẫn chơi, vẫn lưu kết quả và
   kỷ lục, màn kết quả ghi "Hôm nay đã nhận đủ xu sân chơi".
 - Thoát giữa lượt: không lưu, không xu. Thua không bao giờ mất xu. Không mua lượt, không quảng cáo.
+- **Kết thúc lượt** (chỉ Xếp Khối, Gộp Bánh — hai game không giới hạn thời gian): ở màn Tạm dừng có nút *Kết thúc lượt*;
+  lượt được tính là xong đúng luật và nhận xu theo điểm đã có. *Thoát lượt này* vẫn là bỏ lượt, không lưu, không xu.
 - **Kiểm tra hợp lý** trước khi trao xu (không tin hoàn toàn số liệu từ màn hình): Nhảy Mây ≤ 8 m/giây chơi và điểm phải khớp
-  độ cao + sao; Giỏ Quà ≤ 40 điểm/giây và ≤ 61 giây; Lật Thẻ số lượt ≥ số cặp, thời gian ≥ 0,6 giây/cặp. Sai → lưu kết quả,
-  0 xu (*implausible*).
+  độ cao + sao; Giỏ Quà ≤ 40 điểm/giây và ≤ 61 giây; Lật Thẻ số lượt ≥ số cặp, thời gian ≥ 0,6 giây/cặp.
+  Xếp Khối: ≤ 4 khối/giây, ≤ 40 điểm/giây (+100), số đường ≤ 1,25 × số khối, điểm ≥ số khối và ≤ 5 × số khối + 110 × số
+  đường. Gộp Bánh: ≤ 8 lượt vuốt/giây, ≤ 150 điểm/giây (+200), món lớn nhất là 2, 4, 8… và ≤ 4 × (số lượt + 2), điểm
+  ≥ (bậc − 2) × giá trị món lớn nhất và ≤ 64 × (số lượt + 2). Sai → lưu kết quả, 0 xu (*implausible*).
+- Kết quả lưu: `primary` = độ cao (Nhảy Mây) / số món hứng được (Giỏ Quà) / số lượt lật (Lật Thẻ) / số đường đã xóa
+  (Xếp Khối) / giá trị món lớn nhất (Gộp Bánh); `secondary` = số sao / combo dài nhất / số cặp / số khối đã đặt / số lượt vuốt.
 - **Ngày tính hạn mức** = ngày địa phương lúc lượt **kết thúc** (bắt đầu 23:59, xong 00:01 → tính ngày mới). Mốc kết thúc
   ở tương lai bị kẹp về hiện tại. Hạn mức tính từ sổ cái nên khởi động lại app không đặt lại hạn mức.
 - Mỗi lượt có `sessionID` riêng. Kết quả + dòng `minigame:<sessionID>` lưu trong **một lần lưu**, tự động khi lượt kết thúc
@@ -191,6 +200,23 @@ tham khảo vì 60 xu sẽ vượt cả thu nhập từ hoạt động chính.
   **Luôn chơi được**: mọi khoảng cách vẫn trong tầm nhảy; chướng ngại không bao giờ chạm vùng của mây ngay bên dưới và mây
   trước đó, nên đứng nảy tại chỗ để chờ luôn an toàn; chim không bay trên mây mỏng. Có test với 30 seed: người chơi máy biết
   chờ chim leo > 200 m không rơi; tốc độ leo tối đa theo vật lý vẫn < 4 m/giây.
+- **Xếp Khối** (`BlockPuzzleEngine`, kiểu Block Blast): bàn 8×8; khay luôn có tới 3 khối lấy từ 34 hình cố định 1–5 ô
+  (một ô, đường thẳng 2–5 ngang/dọc, vuông 2×2, góc nhỏ, chữ L/J/T/S/Z, góc lớn 3×3; khối to ra ít hơn). Đặt hết 3 khối
+  thì phát bộ mới (thử tối đa 6 lần theo seed để bộ mới có ít nhất một khối còn chỗ). Hàng **và** cột đầy được tìm trên
+  cùng một trạng thái rồi xóa cùng lúc (ô giao chỉ tính một lần). Điểm mỗi lần đặt = số ô + 10 × (số đường)² + 10 cho mỗi
+  lần xóa liên tiếp trước đó (tối đa +50). Hết lượt khi không khối nào còn trong khay đặt vừa chỗ nào. Kéo khối ra khỏi
+  khay: khối nổi phía trên ngón tay, hít vào ô gần nhất, bóng mờ cho chỗ sẽ rơi, đường sắp xóa sáng lên; chỗ không hợp lệ
+  chỉ hiện viền nét đứt nhạt. Có thể chạm chọn khối rồi chạm vào bàn (VoiceOver: mỗi ô trên bàn là một nút). Bạn nhỏ reo
+  khi xóa đường, lo lắng khi bàn kín ≥ 60%.
+- **Gộp Bánh** (`SweetMergeEngine`, kiểu 2048): bàn 4×4, vuốt 4 hướng (hoặc 4 nút mũi tên, dùng được với VoiceOver).
+  Bậc món: kẹo 2 → bánh quy 4 → donut 8 → cupcake 16 → bánh kem dâu 32 → bánh kem 2 tầng 64 → bánh kem 3 tầng 128 →
+  tháp bánh su 256 → bánh kem cầu vồng 512 → lâu đài bánh ngọt 1024 → vương miện kẹo 2048 → ngôi sao ngọt. Mỗi món chỉ
+  gộp một lần mỗi lượt vuốt; cặp gần phía vuốt gộp trước. Vuốt không làm món nào di chuyển thì không tính lượt, không sinh
+  món. Sau mỗi lượt hợp lệ sinh một món ở ô trống ngẫu nhiên (90% kẹo, 10% bánh quy). Điểm = tổng giá trị các món vừa
+  gộp ra. Hết lượt khi bàn đầy và không còn hai món cạnh nhau giống nhau.
+- Cả hai game dùng seed theo `sessionID` (chơi lại cùng seed ra cùng ván), không chạy vòng lặp theo khung hình (chỉ vẽ lại
+  khi đặt khối / vuốt / đang kéo), hiệu ứng ngắn ≤ 0,4 giây (nhãn điểm ≈ 1 giây), tắt nảy/xoay khi bật Giảm chuyển động.
+  Máy chơi tham khảo (test): Xếp Khối 220–1700 điểm, Gộp Bánh 600–5900 điểm mỗi ván.
 - **Giới hạn chống gian lận**: app hoàn toàn offline nên nếu bạn đổi ngày giờ của máy, hạn mức theo ngày (cả chăm sóc lẫn Sân
   chơi) đổi theo. Cozyday không hứa chống được kiểu gian lận này.
 
@@ -263,7 +289,7 @@ Luật nằm trong `Cozyday/Core/Shop/Gacha.swift` (`GachaConfig`, `GachaPolicy`
 
 File sao lưu **bản 1** (trước khi có chăm thú cưng / Sân chơi) vẫn khôi phục được: chỉ số chăm sóc về mức dễ chịu, khay đồ ăn
 trống (không tặng lại gói chào mừng), chưa có kết quả Sân chơi. Bản 2 được kiểm tra thêm: chỉ số 0–100, số lượng đồ ăn 0–99,
-ID không trùng, món ăn có trong danh mục, dòng thưởng Sân chơi không có XP và ≤ 6 xu, và thưởng chăm sóc / Sân chơi trong
+ID không trùng, món ăn có trong danh mục, dòng thưởng Sân chơi không có XP và ≤ 8 xu, và thưởng chăm sóc / Sân chơi trong
 2 ngày trước lúc xuất phải có lịch sử đi kèm (để sau khi khôi phục vẫn chống thưởng trùng và tính đúng hạn mức).
 
 ### Khôi phục (thay thế toàn bộ)

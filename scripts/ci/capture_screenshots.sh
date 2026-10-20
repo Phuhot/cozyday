@@ -129,6 +129,8 @@ burst 39-jump-frames jump 7 4 0.7
 burst 40-basket-frames basket 7 4 0.7
 shot 41-avatar avatar 5
 shot 42-avatar-outfit avatarOutfit 5
+shot 43-blocks blocks 12
+shot 44-merge merge 12
 shot 45-tour tour 4
 shot 46-gacha gacha 5
 shot 47-gacha-result gachaResult 9
@@ -139,6 +141,8 @@ log "Quay video gameplay"
 record video-jump jump 18
 record video-basket basket 18
 record video-memory result 18
+record video-blocks blocks 18
+record video-merge merge 18
 
 log "Giao diện tối"
 xcrun simctl ui "$SIM_ID" appearance dark

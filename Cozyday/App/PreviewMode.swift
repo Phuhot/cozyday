@@ -40,6 +40,8 @@ enum PreviewScreen: String, CaseIterable {
     case jump
     case basket
     case memory
+    case blocks
+    case merge
     case pause
     case result
     case resultCapped
@@ -110,7 +112,7 @@ extension PreviewMode {
         switch screen {
         case .corner, .shop, .wardrobe, .adventure, .memories, .bedroom, .kitchen, .bath, .garden, .collection, .look,
              .care, .food, .feed, .clean, .careCapped,
-             .playground, .pickPet, .tutorial, .jump, .basket, .memory, .pause, .result, .resultCapped, .avatar, .avatarOutfit,
+             .playground, .pickPet, .tutorial, .jump, .basket, .memory, .blocks, .merge, .pause, .result, .resultCapped, .avatar, .avatarOutfit,
              .trailerFeed, .trailerCuddle, .trailerClean, .trailerWardrobe,
              .gacha, .gachaResult, .shopFloor, .wardrobeSecret:
             router.selectedTab = .corner
@@ -161,7 +163,7 @@ extension PreviewMode {
         default:
             break
         }
-        let playScreens: [PreviewScreen] = [.playground, .pickPet, .tutorial, .jump, .basket, .memory, .pause, .result, .resultCapped]
+        let playScreens: [PreviewScreen] = [.playground, .pickPet, .tutorial, .jump, .basket, .memory, .blocks, .merge, .pause, .result, .resultCapped]
         guard playScreens.contains(screen) else { return }
         func outcome(_ kind: MinigameKind, score: Int, primary: Int, secondary: Int, seconds: Double, minutesAgo: Double) -> MinigameOutcome {
             let end = store.now.addingTimeInterval(-minutesAgo * 60)
@@ -172,8 +174,8 @@ extension PreviewMode {
         try store.recordMinigame(outcome(.cloudJump, score: CloudJumpEngine.score(heightMeters: 48, stars: 3), primary: 48, secondary: 3, seconds: 42, minutesAgo: 50))
         try store.recordMinigame(outcome(.giftBasket, score: 64, primary: 38, secondary: 11, seconds: 60, minutesAgo: 30))
         if screen == .resultCapped {
-            for i in 0..<3 {
-                try store.recordMinigame(outcome(.giftBasket, score: 120, primary: 60, secondary: 14, seconds: 60, minutesAgo: Double(20 - i)))
+            for i in 0..<5 {
+                try store.recordMinigame(outcome(.giftBasket, score: 160, primary: 70, secondary: 14, seconds: 60, minutesAgo: Double(20 - i)))
             }
         }
     }
