@@ -89,11 +89,12 @@ function Leaderboard() {
       </div>
       <p className="tiny muted">
         {scope === 'collector' ? 'Số món ngoại hình khác nhau trong kho, chỉ tính đồ máy chủ đã ghi nhận.' :
-          `Chỉ tính lượt máy chủ chạy lại từ seed và nhật ký điều khiển. ${scope === 'weekly' ? `Tuần ${weekKey(Date.now())}: ai cũng chơi cùng một bản đồ.` : ''} Xác minh không đồng nghĩa chặn được bot hoàn toàn.`}
+          `Chỉ tính lượt máy chủ chạy lại từ seed và nhật ký điều khiển. ${scope === 'weekly' ? `Tuần ${weekKey(Date.now())}: chỉ tính lượt chơi bằng nút Thử thách tuần, ai cũng cùng một bản đồ.` : ''} Xác minh không đồng nghĩa chặn được bot hoàn toàn.`}
       </p>
       {err && <div className="small muted">{err}</div>}
       {!rows && !err && <div className="small muted">Đang tải…</div>}
-      {rows && rows.length === 0 && <Empty>Chưa có ai trên bảng. Bạn là người đầu tiên!</Empty>}
+      {rows && rows.length === 0 && <Empty>{scope === 'weekly' ? 'Tuần này chưa ai chơi Thử thách tuần.' : 'Chưa có ai trên bảng.'}</Empty>}
+      {scope === 'weekly' && <button className="btn small primary" onClick={() => go('game/cloudJump/weekly')}>Chơi Thử thách tuần</button>}
       {rows && rows.length > 0 && (
         <div className="list">
           {rows.map(r => (

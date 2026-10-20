@@ -30,20 +30,21 @@ export function npcSnapshot(id: string): HomeSnapshot | null {
 }
 
 export function Visit({ target }: { target: string }) {
-  const { state, act, social, toast } = useGame()
+  const { state, act, social, toast, reload } = useGame()
   const isNpc = target.startsWith('npc:')
   const npcId = isNpc ? target.slice(4) : null
   const [remote, setRemote] = useState<VisitResult | null>(null)
   const [error, setError] = useState<string | null>(null)
   const visited = useRef(false)
+  const sending = useRef(false)
 
   useEffect(() => {
     if (visited.current) return
     visited.current = true
     if (npcId) void act({ type: 'visitNpc', npc: npcId }, { quiet: true })
-    else if (social) social.visit(target).then(setRemote).catch(e => setError(e instanceof Error ? e.message : 'Không mở được ngôi nhà này.'))
+    else if (social) social.visit(target).then(r => { setRemote(r); if (r.coins) { toast(`Quà ghé thăm: +${r.coins} xu`, 'good'); void reload() } }).catch(e => setError(e instanceof Error ? e.message : 'Không mở được ngôi nhà này.'))
     else setError('Thăm nhà bạn bè cần tài khoản online.')
-  }, [npcId, social, target, act])
+  }, [npcId, social, target, act, toast, reload])
 
   const snap = npcId ? npcSnapshot(npcId) : remote?.snapshot ?? null
   if (error) return <div className="stack"><ScreenHead title="Thăm nhà" onBack={() => back('friends')} /><Empty>{error}</Empty></div>
@@ -56,12 +57,16 @@ export function Visit({ target }: { target: string }) {
       if (await act({ type: 'npcCompliment', npc: npcId, sticker })) toast('Đã gửi lời khen!', 'good')
       return
     }
+    if (sending.current) return
+    sending.current = true
     try {
       await social!.compliment(target, sticker)
       setRemote(r => (r ? { ...r, complimentedToday: sticker } : r))
       toast('Đã gửi lời khen!', 'good')
     } catch (e) {
       toast(e instanceof Error ? e.message : 'Không gửi được.', 'warn')
+    } finally {
+      sending.current = false
     }
   }
   const helpWater = async (idx: number) => {
@@ -70,12 +75,17 @@ export function Visit({ target }: { target: string }) {
       if (await act({ type: 'npcHelpWater', npc: npcId })) toast(`${npc(npcId).name} cảm ơn bạn đã tưới giúp!`, 'good')
       return
     }
+    if (sending.current) return
+    sending.current = true
     try {
       const r = await social!.helpWater(target, idx, uuid())
       setRemote(v => (v ? { ...v, helpedPlots: [...v.helpedPlots, idx], helpsLeftToday: Math.max(0, v.helpsLeftToday - 1) } : v))
       toast(r.coins ? `Tưới giúp xong! +${r.coins} xu` : 'Tưới giúp xong!', 'good')
+      if (r.coins) void reload()
     } catch (e) {
       toast(e instanceof Error ? e.message : 'Không tưới được.', 'warn')
+    } finally {
+      sending.current = false
     }
   }
 

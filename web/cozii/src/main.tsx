@@ -7,13 +7,26 @@ import { AuthCtx, preferredMode, setPreferredMode, type AuthApi } from './app/au
 import { LocalBackend } from './backend/local'
 import type { Backend, SocialApi } from './backend/types'
 import type { GameState } from './core/state'
-import { readConfig, supabase, SupabaseBackend, SupabaseSocial, currentSession, authErrorText } from './backend/supabase'
+import { readConfig, supabase, SupabaseBackend, SupabaseSocial, currentSession, authErrorText, supabaseToken, type TokenSource } from './backend/supabase'
 import { Welcome } from './ui/screens/Account'
 import { registerSW } from './app/pwa'
 
 registerSW()
 
 const cfg = readConfig()
+
+/** Chỉ khi chạy `npm run dev` với VITE_COZII_DEV_AUTH=1: đăng nhập giả để thử online trên máy (không có ở bản build). */
+const devAuth = import.meta.env.DEV && import.meta.env.VITE_COZII_DEV_AUTH === '1'
+function devToken(): TokenSource {
+  return async () => {
+    let id = localStorage.getItem('cozii:devUser')
+    if (!id) {
+      id = crypto.randomUUID()
+      localStorage.setItem('cozii:devUser', id)
+    }
+    return `dev:${id}`
+  }
+}
 
 type Boot =
   | { kind: 'loading' }
@@ -35,24 +48,35 @@ function Root() {
   }
 
   const startOnline = async () => {
+    if (devAuth) {
+      const t = devToken()
+      const backend = new SupabaseBackend(t)
+      try {
+        setBoot({ kind: 'ready', backend, social: new SupabaseSocial(t), state: await backend.load(), status: 'member', email: 'dev@local' })
+      } catch (e) {
+        setBoot({ kind: 'error', message: e instanceof Error ? e.message : 'Lỗi máy chủ dev.' })
+      }
+      return
+    }
     const sb = supabase(cfg!)
     const session = await currentSession(sb)
     if (!session) {
       setBoot({ kind: 'welcome' })
       return
     }
-    const backend = new SupabaseBackend(sb)
+    const token = supabaseToken(sb)
+    const backend = new SupabaseBackend(token)
     try {
       const state = await backend.load()
       const user = session.user
-      setBoot({ kind: 'ready', backend, social: new SupabaseSocial(sb), state, status: user.is_anonymous ? 'guest' : 'member', email: user.email ?? null })
+      setBoot({ kind: 'ready', backend, social: new SupabaseSocial(token), state, status: user.is_anonymous ? 'guest' : 'member', email: user.email ?? null })
     } catch (e) {
       setBoot({ kind: 'error', message: e instanceof Error ? e.message : 'Không kết nối được máy chủ.' })
     }
   }
 
   useEffect(() => {
-    const mode = cfg ? preferredMode() ?? 'online' : 'local'
+    const mode = cfg || devAuth ? preferredMode() ?? 'online' : 'local'
     void (mode === 'local' ? startLocal() : startOnline())
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

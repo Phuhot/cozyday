@@ -20,8 +20,26 @@ function serviceWorker(): Plugin {
   }
 }
 
+/**
+ * Chỉ khi chạy `npm run dev` với COZII_DEV_API=1: phục vụ /api/cozii ngay trong máy chủ dev bằng chính server/api.ts
+ * (cần DATABASE_URL trỏ tới Postgres cục bộ). Bản build không chứa phần này; trên Vercel hàm nằm ở api/cozii.js.
+ */
+function devApi(): Plugin {
+  return {
+    name: 'cozii-dev-api',
+    apply: 'serve',
+    configureServer(server) {
+      if (process.env.COZII_DEV_API !== '1') return
+      server.middlewares.use('/api/cozii', async (req, res) => {
+        const mod = await server.ssrLoadModule('/server/api.ts')
+        await mod.default(req, res)
+      })
+    },
+  }
+}
+
 export default defineConfig({
-  plugins: [react(), serviceWorker()],
+  plugins: [react(), serviceWorker(), devApi()],
   build: { target: 'es2020', sourcemap: false, chunkSizeWarningLimit: 900 },
   server: { host: true },
 })

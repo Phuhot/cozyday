@@ -9,7 +9,7 @@ import { crop as cropDef, cropByProduce, cropBySeed, food as foodDef } from '../
 
 // ---------------- Biểu tượng (SVG nét tròn) ----------------
 
-const P = { fill: 'none', stroke: 'currentColor', strokeWidth: 2.2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
+const P = { width: 22, height: 22, fill: 'none', stroke: 'currentColor', strokeWidth: 2.2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
 
 export const Icon = {
   home: () => <svg viewBox="0 0 24 24" {...P}><path d="M3 11.5 12 4l9 7.5" /><path d="M5.5 10v9.5h13V10" /><path d="M10 19.5v-5h4v5" /></svg>,
