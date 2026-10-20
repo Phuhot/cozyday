@@ -52,6 +52,7 @@ struct AppEnvironment {
     let calendar: CalendarService
     let focus: FocusCoordinator
 
+    @MainActor
     init(store: AppStore, ui: UIState, dayClock: DayClock, notifications: NotificationService, calendar: CalendarService) {
         self.store = store
         self.ui = ui
