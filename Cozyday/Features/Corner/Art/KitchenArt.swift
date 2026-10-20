@@ -9,32 +9,56 @@ enum KitchenArt {
         case "kitchenTheme.gingham": themeGingham(clipRoom(ctx))
         case "kitchenTheme.lemon": themeLemon(clipRoom(ctx))
         case "kitchenTheme.wood": themeWood(clipRoom(ctx))
+        case "kitchenTheme.bakery": themeBakery(clipRoom(ctx))
+        case "kitchenTheme.night": themeNight(clipRoom(ctx))
         // MARK: Bếp
         case "stove.basic": stoveBasic(ctx)
         case "stove.retro": stoveRetro(ctx)
         case "stove.oven": stoveOven(ctx)
         case "stove.hearth": stoveHearth(ctx)
+        case "stove.induction": stoveInduction(ctx)
+        case "stove.pizza": stovePizza(ctx)
+        case "stove.waffle": stoveWaffle(ctx)
+        case "stove.cat": stoveCat(ctx)
         // MARK: Tủ lạnh
         case "fridge.mini": fridgeMini(ctx)
         case "fridge.retro": fridgeRetro(ctx)
         case "fridge.pink": fridgePink(ctx)
         case "fridge.magnets": fridgeMagnets(ctx)
+        case "fridge.double": fridgeDouble(ctx)
+        case "fridge.icebox": fridgeIcebox(ctx)
+        case "fridge.glass": fridgeGlass(ctx)
+        case "fridge.cat": fridgeCat(ctx)
         // MARK: Bàn ăn
         case "dining.stool": diningStool(ctx)
         case "dining.round": diningRound(ctx)
         case "dining.picnic": diningPicnic(ctx)
         case "dining.long": diningLong(ctx)
+        case "dining.kotatsu": diningKotatsu(ctx)
+        case "dining.bar": diningBar(ctx)
+        case "dining.stump": diningStump(ctx)
+        case "dining.booth": diningBooth(ctx)
         // MARK: Đồ treo tường
         case "kitchenWall.clock": wallClock(ctx)
         case "kitchenWall.pans": wallPans(ctx)
         case "kitchenWall.fruit": wallFruit(ctx)
         case "kitchenWall.jars": wallJars(ctx)
+        case "kitchenWall.spice": wallSpice(ctx)
+        case "kitchenWall.herbs": wallHerbs(ctx)
+        case "kitchenWall.plates": wallPlates(ctx)
+        case "kitchenWall.menu": wallMenu(ctx)
+        case "kitchenWall.cherry": wallCherry(ctx)
         // MARK: Món ăn trên bàn
         case "treat.tea": treatTea(ctx)
         case "treat.bread": treatBread(ctx)
         case "treat.ramen": treatRamen(ctx)
         case "treat.pizza": treatPizza(ctx)
         case "treat.cake": treatCake(ctx)
+        case "treat.dumpling": treatDumpling(ctx)
+        case "treat.pho": treatPho(ctx)
+        case "treat.banhmi": treatBanhMi(ctx)
+        case "treat.mooncake": treatMooncake(ctx)
+        case "treat.boba": treatBoba(ctx)
         default: return false
         }
         return true
@@ -70,12 +94,21 @@ enum KitchenArt {
     }
 
     /// Cửa sổ ở x 46…72, y 8…30, có rèm ngắn màu `curtain`.
-    private static func window(_ ctx: GraphicsContext, frame: Color, curtain: Color) {
+    private static func window(_ ctx: GraphicsContext, frame: Color, curtain: Color, night: Bool = false) {
         ctx.rect(45, 7, 28, 24, frame, radius: 2.5)
-        ctx.rect(47.5, 9.5, 23, 19, rgb(0xCFE9F4), radius: 1.5)
-        ctx.ellipse(50, 20, 9, 4, Color.white.opacity(0.85))
-        ctx.ellipse(54, 18, 7, 4, Color.white.opacity(0.85))
-        ctx.circle(66, 14, 2.6, rgb(0xFBE7A6))
+        if night {
+            ctx.rect(47.5, 9.5, 23, 19, rgb(0x34386B), radius: 1.5)
+            ctx.circle(65, 15, 3.4, rgb(0xFFF1B8))
+            ctx.circle(66.6, 13.8, 3, rgb(0x34386B))
+            for (sx, sy) in [(51.0, 14.0), (55.5, 23.0), (62.0, 24.5), (52.5, 21.0)] as [(CGFloat, CGFloat)] {
+                ctx.circle(sx, sy, 0.7, rgb(0xFFF1B8))
+            }
+        } else {
+            ctx.rect(47.5, 9.5, 23, 19, rgb(0xCFE9F4), radius: 1.5)
+            ctx.ellipse(50, 20, 9, 4, Color.white.opacity(0.85))
+            ctx.ellipse(54, 18, 7, 4, Color.white.opacity(0.85))
+            ctx.circle(66, 14, 2.6, rgb(0xFBE7A6))
+        }
         ctx.rect(58.2, 9.5, 1.6, 19, frame)
         ctx.rect(47.5, 18.4, 23, 1.6, frame)
         // rèm ngắn có viền lượn sóng
@@ -912,5 +945,1104 @@ enum KitchenArt {
         ctx.rect(26, 56, 3, 22, Color.white.opacity(0.6), radius: 1.5)
         sparkle(ctx, 82, 34, 7)
         sparkle(ctx, 18, 40, 5, rgb(0xF6D867))
+    }
+
+    // MARK: - Tường & sàn mới
+
+    private static func starPoints(_ cx: CGFloat, _ cy: CGFloat, _ r: CGFloat, _ inner: CGFloat) -> [CGPoint] {
+        (0..<10).map { i in
+            let ang = Double(i) * Double.pi / 5 - Double.pi / 2
+            let rr = i % 2 == 0 ? r : inner
+            return pt(cx + CGFloat(cos(ang)) * rr, cy + CGFloat(sin(ang)) * rr)
+        }
+    }
+
+    /// Tiệm bánh: tường sọc hồng, mái hiên vỏ sò, sàn đá mài lấm tấm.
+    private static func themeBakery(_ ctx: GraphicsContext) {
+        ctx.rect(0, 0, 125, 62, rgb(0xFCE6E4))
+        var x: CGFloat = 0
+        while x < 125 { ctx.rect(x, 0, 6, 60, rgb(0xF8D4D6)); x += 12 }
+        for (hx, hy) in [(9.0, 44.0), (33.0, 52.0), (21.0, 34.0)] as [(CGFloat, CGFloat)] {
+            ctx.heart(center: pt(hx, hy), size: 4, Color.white.opacity(0.75))
+        }
+        backsplash(ctx, rgb(0xFFF8F5), rgb(0xF3D3D2))
+        window(ctx, frame: rgb(0xFFFDF8), curtain: rgb(0xF6C59B))
+        // mái hiên sọc có viền vỏ sò
+        var i = 0
+        var ax: CGFloat = 0
+        while ax < 125 {
+            ctx.rect(ax, 0, 8.4, 5, i % 2 == 0 ? rgb(0xEE9EA6) : rgb(0xFFF8F2))
+            ctx.circle(ax + 4.2, 5, 4.2, i % 2 == 0 ? rgb(0xEE9EA6) : rgb(0xFFF8F2))
+            ax += 8.4
+            i += 1
+        }
+        ctx.rect(0, 0, 125, 1.4, rgb(0xE48C96))
+        baseboard(ctx, rgb(0xEDB0B6))
+        // sàn đá mài
+        ctx.rect(0, 62, 125, 38, rgb(0xFBF2EC))
+        let chips: [UInt32] = [0xF2B8BC, 0xA9D8C4, 0xF6D88A, 0xC9B6F0, 0xF4C29E]
+        for k in 0..<70 {
+            let cx = CGFloat((k * 37) % 125) + CGFloat(k % 3)
+            let cy = 64 + CGFloat((k * 53) % 35)
+            let s: CGFloat = 0.8 + CGFloat(k % 4) * 0.35
+            ctx.ellipse(cx, cy, s * 1.6, s, rgb(chips[k % chips.count]))
+        }
+    }
+
+    /// Bếp đêm: tường xanh tím điểm sao, dây đèn ấm, cửa sổ có trăng.
+    private static func themeNight(_ ctx: GraphicsContext) {
+        ctx.rect(0, 0, 125, 62, rgb(0x5D6194))
+        for k in 0..<26 {
+            let sx = CGFloat((k * 47) % 123) + 1
+            let sy = CGFloat((k * 29) % 36) + 3
+            ctx.circle(sx, sy, k % 3 == 0 ? 0.9 : 0.55, rgb(0xFFF1B8).opacity(k % 2 == 0 ? 0.9 : 0.55))
+        }
+        backsplash(ctx, rgb(0x777AAA), rgb(0x666999))
+        window(ctx, frame: rgb(0xE9E3F5), curtain: rgb(0xB7A3E6), night: true)
+        // dây đèn ấm
+        ctx.strokePath(rgb(0x3F4270), width: 0.6) { p in
+            p.move(to: pt(0, 2))
+            p.addQuadCurve(to: pt(44, 2), control: pt(22, 14))
+            p.move(to: pt(74, 2))
+            p.addQuadCurve(to: pt(125, 2), control: pt(100, 14))
+        }
+        for t in stride(from: 0.08, through: 0.93, by: 0.14) {
+            for (x0, x1) in [(0.0, 44.0), (74.0, 125.0)] as [(CGFloat, CGFloat)] {
+                let u = CGFloat(t)
+                let bx = x0 + (x1 - x0) * u
+                let by = 2 + 12 * 2 * u * (1 - u) * 0.5 + 1.2
+                ctx.circle(bx, by, 2.6, rgb(0xFFE6A0).opacity(0.25))
+                ctx.circle(bx, by, 1.2, rgb(0xFFE6A0))
+            }
+        }
+        baseboard(ctx, rgb(0x4A4D7C))
+        floorChecker(ctx, rgb(0x8C8DBA), rgb(0x7A7BAA))
+        ctx.ellipse(30, 70, 70, 14, rgb(0xFFE6A0).opacity(0.08))
+    }
+
+    // MARK: - Bếp mới
+
+    private static func stoveInduction(_ ctx: GraphicsContext) {
+        ctx.ellipse(4, 89, 70, 8, shadow)
+        let cab = rgb(0xD7EEE4)
+        ctx.rect(9, 47, 58, 45, cab, radius: 4)
+        ctx.rect(13, 53, 50, 15, rgb(0xE8F6F0), radius: 3)
+        ctx.rect(13, 71, 50, 17, rgb(0xE8F6F0), radius: 3)
+        ctx.rect(28, 58.5, 20, 2.6, steelDark, radius: 1.3)
+        ctx.rect(28, 77.5, 20, 2.6, steelDark, radius: 1.3)
+        ctx.rect(12, 91, 6, 3, rgb(0xA9C9BC), radius: 1)
+        ctx.rect(58, 91, 6, 3, rgb(0xA9C9BC), radius: 1)
+        // mặt kính đen
+        ctx.rect(6, 40, 64, 9, rgb(0x4E4760), radius: 3)
+        ctx.rect(8, 41, 26, 1.4, Color.white.opacity(0.25), radius: 0.7)
+        ctx.strokePath(rgb(0x8E879C), width: 1) { p in
+            p.addEllipse(in: CGRect(x: 48, y: 42.4, width: 16, height: 4))
+        }
+        for k in 0..<3 { ctx.circle(41 + CGFloat(k) * 2.6, 46.5, 0.8, k == 0 ? rgb(0x8FE3B9) : rgb(0x8E879C)) }
+        // vòng nóng dưới nồi
+        ctx.ellipse(10, 41.6, 30, 6, rgb(0xF29E8E).opacity(0.55))
+        // nồi canh
+        ctx.rect(11, 29, 4, 3, rgb(0xD4806A), radius: 1)
+        ctx.rect(35, 29, 4, 3, rgb(0xD4806A), radius: 1)
+        ctx.rect(13, 22, 24, 21, rgb(0xF3A58E), radius: 6)
+        ctx.rect(13, 31, 24, 3, rgb(0xFBD3C2))
+        ctx.rect(16, 25, 3, 13, Color.white.opacity(0.45), radius: 1.5)
+        ctx.ellipse(12, 19, 26, 7, rgb(0xE48D72))
+        ctx.ellipse(14.5, 20.2, 21, 4.4, rgb(0xF6D79A))
+        ctx.circle(20, 22, 1.6, rgb(0xF29E8E))
+        ctx.circle(28, 21.6, 1.4, rgb(0x8CC08F))
+        ctx.circle(31, 22.6, 1.2, rgb(0xF6B04F))
+        // muôi gác trên miệng nồi
+        ctx.strokePath(rgb(0xC9B6F0), width: 2.4) { p in
+            p.move(to: pt(26, 21)); p.addLine(to: pt(38, 6))
+        }
+        ctx.circle(38.6, 5.4, 2, rgb(0xC9B6F0))
+        steam(ctx, 18, 16, 10)
+        steam(ctx, 31, 15, 9)
+        // thớt có cà rốt
+        ctx.rect(45, 35.5, 22, 5, rgb(0xDDB088), radius: 2)
+        ctx.rect(45, 35.5, 22, 1.4, rgb(0xEBC9A2), radius: 0.7)
+        ctx.circle(65, 38, 1.2, rgb(0xB58357))
+        ctx.rotated(-8, around: pt(54, 33)) { c in
+            c.ellipse(46, 30.5, 16, 5, rgb(0xF4A25E))
+            c.strokePath(rgb(0xE08B48), width: 0.8) { p in
+                p.move(to: pt(50, 31.5)); p.addLine(to: pt(50, 33.5))
+                p.move(to: pt(54, 31.2)); p.addLine(to: pt(54, 33.8))
+            }
+            c.ellipse(60, 30, 6, 2.6, rgb(0x7DB582))
+            c.ellipse(60.5, 32.4, 5, 2.4, rgb(0x8CC08F))
+        }
+        ctx.circle(49, 39, 1.8, rgb(0xF4A25E))
+        ctx.circle(53, 39.4, 1.8, rgb(0xF4A25E))
+        ctx.circle(49, 39, 0.7, rgb(0xFBD3A0))
+        ctx.circle(53, 39.4, 0.7, rgb(0xFBD3A0))
+    }
+
+    private static func stovePizza(_ ctx: GraphicsContext) {
+        ctx.ellipse(2, 88, 74, 9, shadow)
+        // bệ đá có ngăn củi
+        ctx.rect(8, 64, 60, 29, rgb(0xDCD3CB), radius: 4)
+        ctx.rect(8, 64, 60, 3, rgb(0xEAE3DC), radius: 1.5)
+        ctx.rect(16, 72, 44, 17, rgb(0x8E7F86), radius: 3)
+        for (lx, ly) in [(22.0, 84.0), (30.0, 84.0), (38.0, 84.0), (46.0, 84.0), (54.0, 84.0), (26.0, 77.0), (34.0, 77.0), (42.0, 77.0), (50.0, 77.0)] as [(CGFloat, CGFloat)] {
+            ctx.circle(lx, ly, 3.8, rgb(0xC9976A))
+            ctx.circle(lx, ly, 2.2, rgb(0xE6C39C))
+        }
+        // mái vòm gạch
+        var dome = Path()
+        dome.move(to: pt(8, 66))
+        dome.addCurve(to: pt(38, 18), control1: pt(8, 38), control2: pt(20, 18))
+        dome.addCurve(to: pt(68, 66), control1: pt(56, 18), control2: pt(68, 38))
+        dome.closeSubpath()
+        ctx.fill(dome, with: .color(rgb(0xEBA486)))
+        var bricks = ctx
+        bricks.clip(to: dome)
+        var row = 0
+        var by: CGFloat = 22
+        while by < 66 {
+            bricks.rect(0, by, 80, 0.9, rgb(0xD8876A))
+            var bx: CGFloat = row % 2 == 0 ? 6 : 12
+            while bx < 72 { bricks.rect(bx, by, 0.9, 6, rgb(0xD8876A)); bx += 12 }
+            by += 6
+            row += 1
+        }
+        bricks.ellipse(14, 24, 12, 20, Color.white.opacity(0.22))
+        // ống khói
+        ctx.rect(33, 6, 10, 15, rgb(0xD8876A), radius: 1.5)
+        ctx.rect(31.5, 4, 13, 4, rgb(0xC77A60), radius: 1.5)
+        steam(ctx, 36, 2, 7, Color.white.opacity(0.7))
+        // miệng lò có lửa và pizza
+        var mouth = Path()
+        mouth.move(to: pt(22, 66))
+        mouth.addLine(to: pt(22, 54))
+        mouth.addQuadCurve(to: pt(54, 54), control: pt(38, 36))
+        mouth.addLine(to: pt(54, 66))
+        mouth.closeSubpath()
+        ctx.fill(mouth, with: .color(rgb(0x4A3A48)))
+        ctx.strokePath(rgb(0xF2C9B5), width: 2.4) { p in
+            p.move(to: pt(21, 66)); p.addLine(to: pt(21, 54)); p.addQuadCurve(to: pt(55, 54), control: pt(38, 34.5)); p.addLine(to: pt(55, 66))
+        }
+        ctx.polygon([pt(40, 64), pt(43, 52), pt(46, 57), pt(49, 49), pt(52, 64)], rgb(0xF4A25E))
+        ctx.polygon([pt(43, 64), pt(46, 58), pt(49, 64)], rgb(0xF8D772))
+        ctx.ellipse(24, 60, 16, 5, rgb(0xE6B26C))
+        ctx.ellipse(25.5, 60.6, 13, 3.6, rgb(0xF7D67C))
+        for dx in [28.0, 32.0, 35.5] as [CGFloat] { ctx.circle(dx, 62, 1, rgb(0xE97A6E)) }
+        // xẻng gỗ dựa bên phải
+        ctx.rotated(10, around: pt(66, 60)) { c in
+            c.rect(64.5, 24, 3, 46, rgb(0xC9976A), radius: 1.5)
+            c.rect(59, 68, 14, 22, rgb(0xDDB088), radius: 6)
+            c.rect(61, 71, 2, 14, Color.white.opacity(0.35), radius: 1)
+        }
+        ctx.rect(10, 66, 3, 22, Color.white.opacity(0.35), radius: 1.5)
+    }
+
+    private static func waffleGrid(_ ctx: GraphicsContext, _ rect: CGRect, _ color: Color) {
+        var c = ctx
+        c.clip(to: Path(roundedRect: rect, cornerRadius: 2))
+        c.strokePath(color, width: 0.9) { p in
+            var x = rect.minX + 3
+            while x < rect.maxX { p.move(to: pt(x, rect.minY)); p.addLine(to: pt(x, rect.maxY)); x += 3.6 }
+            var y = rect.minY + 2.5
+            while y < rect.maxY { p.move(to: pt(rect.minX, y)); p.addLine(to: pt(rect.maxX, y)); y += 3 }
+        }
+    }
+
+    private static func stoveWaffle(_ ctx: GraphicsContext) {
+        ctx.ellipse(4, 89, 70, 8, shadow)
+        // xe đẩy váy sọc
+        let body = CGRect(x: 8, y: 50, width: 60, height: 38)
+        ctx.fill(Path(roundedRect: body, cornerRadius: 4), with: .color(rgb(0xFFF6EA)))
+        var st = ctx
+        st.clip(to: Path(roundedRect: body, cornerRadius: 4))
+        var sx: CGFloat = 8
+        while sx < 70 { st.rect(sx, 50, 5, 38, rgb(0xF7C1CC)); sx += 10 }
+        for k in 0..<8 { ctx.circle(11.5 + CGFloat(k) * 7.6, 52, 3.8, rgb(0xEE9EA6)) }
+        ctx.rect(5, 44, 66, 7, rgb(0xC9976A), radius: 2.5)
+        ctx.rect(5, 44, 66, 1.8, rgb(0xDDB088), radius: 0.9)
+        // bánh xe
+        for wx in [18.0, 58.0] as [CGFloat] {
+            ctx.circle(wx, 89, 5, rgb(0x8E8899))
+            ctx.circle(wx, 89, 2, rgb(0xD9DCE3))
+        }
+        // khuôn waffle đang mở
+        ctx.rect(9, 36, 30, 9, rgb(0x857A90), radius: 4)
+        ctx.rect(36, 38, 8, 3, rgb(0x6E6278), radius: 1.5)
+        ctx.ellipse(11, 33.5, 26, 6, rgb(0xE8B46A))
+        waffleGrid(ctx, CGRect(x: 13, y: 34.5, width: 22, height: 4), rgb(0xD39A50))
+        ctx.rotated(-18, around: pt(24, 34)) { c in
+            c.rect(9, 18, 30, 12, rgb(0x9E94A9), radius: 5)
+            c.rect(12, 20.5, 24, 7, rgb(0x857A90), radius: 3)
+            c.heart(center: pt(24, 24), size: 6, rgb(0xB7AEC2))
+        }
+        // chồng bánh waffle
+        for (k, wy) in [37.0, 31.5, 26.0].enumerated() {
+            let r = CGRect(x: 46 + CGFloat(k % 2), y: CGFloat(wy), width: 20, height: 6)
+            ctx.fill(Path(roundedRect: r, cornerRadius: 2.5), with: .color(rgb(0xEDBB72)))
+            waffleGrid(ctx, r, rgb(0xD39A50))
+        }
+        // si-rô, kem, dâu
+        ctx.rect(48, 24.5, 18, 3, rgb(0xC77F4A), radius: 1.5)
+        ctx.rect(50, 26, 2.2, 6, rgb(0xC77F4A), radius: 1.1)
+        ctx.rect(61, 26, 2.2, 4, rgb(0xC77F4A), radius: 1.1)
+        ctx.ellipse(50, 18, 14, 8, Color.white)
+        ctx.ellipse(53, 15, 8, 6, Color.white)
+        ctx.ellipse(54, 8.5, 7, 8, rgb(0xEE6F7C))
+        ctx.polygon([pt(54.5, 9.5), pt(57.5, 7), pt(60.5, 9.5), pt(57.5, 11)], rgb(0x8CC08F))
+        ctx.circle(56, 13, 0.6, rgb(0xFFF1B8))
+        ctx.circle(59, 12.5, 0.6, rgb(0xFFF1B8))
+        sparkle(ctx, 70, 20, 6, rgb(0xF6D867))
+    }
+
+    private static func stoveCat(_ ctx: GraphicsContext) {
+        ctx.ellipse(4, 89, 70, 8, shadow)
+        let fur = rgb(0xFFE2C6)
+        let furDark = rgb(0xF2C49E)
+        // tai
+        ctx.polygon([pt(10, 42), pt(14, 20), pt(30, 36)], fur)
+        ctx.polygon([pt(66, 42), pt(62, 20), pt(46, 36)], fur)
+        ctx.polygon([pt(14, 38), pt(16, 26), pt(25, 35)], rgb(0xF7B7B8))
+        ctx.polygon([pt(62, 38), pt(60, 26), pt(51, 35)], rgb(0xF7B7B8))
+        // thân
+        ctx.rect(6, 34, 64, 58, fur, radius: 14)
+        ctx.ellipse(46, 36, 22, 14, furDark)
+        // chảo trứng trên mặt bếp
+        ctx.ellipse(20, 31, 26, 6, rgb(0x6A6274))
+        ctx.rect(44, 32, 16, 3, rgb(0x6A6274), radius: 1.5)
+        ctx.ellipse(24, 30.6, 18, 4, Color.white)
+        ctx.circle(32, 32, 2.4, rgb(0xF6B04F))
+        // mặt mèo: núm là mắt
+        knob(ctx, 25, 47, 4.6, rgb(0x6F6680))
+        knob(ctx, 51, 47, 4.6, rgb(0x6F6680))
+        ctx.polygon([pt(35.5, 50), pt(40.5, 50), pt(38, 53)], rgb(0xEE8F8F))
+        ctx.strokePath(ink, width: 1.1) { p in
+            p.move(to: pt(38, 53)); p.addQuadCurve(to: pt(34.5, 54.5), control: pt(36.5, 55.6))
+            p.move(to: pt(38, 53)); p.addQuadCurve(to: pt(41.5, 54.5), control: pt(39.5, 55.6))
+        }
+        ctx.strokePath(rgb(0xC9A486), width: 1) { p in
+            p.move(to: pt(8, 50)); p.addLine(to: pt(18, 51.5))
+            p.move(to: pt(8, 55)); p.addLine(to: pt(18, 54))
+            p.move(to: pt(68, 50)); p.addLine(to: pt(58, 51.5))
+            p.move(to: pt(68, 55)); p.addLine(to: pt(58, 54))
+        }
+        ctx.ellipse(15, 54, 7, 3.6, rgb(0xF7B7B8).opacity(0.8))
+        ctx.ellipse(54, 54, 7, 3.6, rgb(0xF7B7B8).opacity(0.8))
+        // cửa lò có bánh hình cá
+        ctx.rect(14, 60, 48, 26, furDark, radius: 8)
+        ctx.rect(18, 63, 40, 19, rgb(0x6F6680), radius: 6)
+        ctx.ellipse(21, 66, 34, 13, rgb(0xF1B36B).opacity(0.5))
+        ctx.ellipse(28, 70, 16, 7, rgb(0xE6A866))
+        ctx.polygon([pt(43, 73.5), pt(49, 69.5), pt(49, 77.5)], rgb(0xE6A866))
+        ctx.circle(31.5, 72.5, 0.9, rgb(0x6B4A3A))
+        ctx.rect(30, 61, 16, 2.2, cream, radius: 1.1)
+        // chân đệm thịt
+        ctx.ellipse(10, 88, 16, 7, Color.white)
+        ctx.ellipse(50, 88, 16, 7, Color.white)
+        ctx.circle(18, 90.5, 1.4, rgb(0xF7B7B8))
+        ctx.circle(58, 90.5, 1.4, rgb(0xF7B7B8))
+        ctx.rect(9, 40, 3, 30, Color.white.opacity(0.5), radius: 1.5)
+    }
+
+    // MARK: - Tủ lạnh mới
+
+    private static func fridgeDouble(_ ctx: GraphicsContext) {
+        let body = rgb(0xEEF1F6)
+        fridgeBody(ctx, x: 6, y: 4, w: 70, h: 91, color: body, radius: 9)
+        let line = rgb(0xD5DAE3)
+        ctx.strokePath(line, width: 1.4) { p in
+            p.move(to: pt(41, 5)); p.addLine(to: pt(41, 66))
+            p.move(to: pt(7, 66)); p.addLine(to: pt(75, 66))
+        }
+        // tay nắm
+        ctx.rect(36, 24, 3, 26, steelDark, radius: 1.5)
+        ctx.rect(43, 24, 3, 26, steelDark, radius: 1.5)
+        ctx.rect(26, 71, 30, 3, steelDark, radius: 1.5)
+        // vòi lấy nước
+        ctx.rect(13, 28, 17, 21, rgb(0xC9CFDB), radius: 3)
+        ctx.rect(15.5, 31, 12, 3, rgb(0x9FC7EC), radius: 1.5)
+        ctx.rect(19.5, 36, 4, 3, steelDark, radius: 1)
+        ctx.ellipse(19.6, 42, 3.8, 4.6, rgb(0x9FC7EC))
+        // tranh vẽ cầu vồng và ngôi nhà
+        ctx.rotated(-5, around: pt(58, 22)) { c in
+            c.rect(48, 12, 22, 19, Color.white, radius: 1)
+            for (k, col) in [0xEE8F8F, 0xF6D867, 0x8FCDB9, 0x9FC7EC].enumerated() {
+                let r = 8 - CGFloat(k) * 1.6
+                c.strokePath(rgb(UInt32(col)), width: 1.5) { p in
+                    p.addArc(center: pt(59, 27), radius: r, startAngle: .degrees(180), endAngle: .degrees(0), clockwise: false)
+                }
+            }
+        }
+        ctx.circle(59, 13, 2.2, rgb(0xEE8F8F))
+        ctx.rotated(6, around: pt(60, 46)) { c in
+            c.rect(49, 37, 21, 19, rgb(0xFFF8E6), radius: 1)
+            c.rect(53, 46, 12, 8, rgb(0xF2B27A))
+            c.polygon([pt(51.5, 46.5), pt(59, 40), pt(66.5, 46.5)], rgb(0xEE8F8F))
+            c.rect(57.5, 49.5, 3, 4.5, rgb(0x8E6B5A))
+            c.circle(66, 40.5, 1.8, rgb(0xF6D867))
+        }
+        ctx.heart(center: pt(52, 38), size: 5, rgb(0xC9B6F0))
+        // giấy nhớ & nam châm ngăn đá
+        ctx.rotated(-4, around: pt(18, 80)) { c in
+            c.rect(12, 74, 13, 12, rgb(0xFFF1A8), radius: 1)
+            c.rect(14, 78, 9, 1, rgb(0xE5C85E))
+            c.rect(14, 81, 6, 1, rgb(0xE5C85E))
+        }
+        ctx.circle(66, 82, 3, rgb(0x8FCDB9))
+        ctx.rect(10, 10, 3, 50, Color.white.opacity(0.9), radius: 1.5)
+    }
+
+    private static func fridgeIcebox(_ ctx: GraphicsContext) {
+        let wood = rgb(0xCF9B6C)
+        let woodDark = rgb(0xAE7A4F)
+        let panel = rgb(0xE0B387)
+        let brass = rgb(0xEAC66A)
+        ctx.ellipse(6, 89, 72, 8, shadow)
+        // chân tiện cong
+        ctx.rect(14, 86, 7, 8, woodDark, radius: 3)
+        ctx.rect(61, 86, 7, 8, woodDark, radius: 3)
+        // thân tủ gỗ
+        ctx.rect(10, 30, 62, 58, wood, radius: 5)
+        ctx.rect(8, 27, 66, 6, woodDark, radius: 2.5)
+        ctx.rect(8, 27, 66, 1.6, rgb(0xDDB088), radius: 0.8)
+        // hai cửa
+        for (dy, dh) in [(37.0, 18.0), (59.0, 25.0)] as [(CGFloat, CGFloat)] {
+            ctx.rect(15, dy, 52, dh, woodDark, radius: 3)
+            ctx.rect(17, dy + 2, 48, dh - 4, panel, radius: 2.5)
+            ctx.rect(21, dy + 4, 40, dh - 8, rgb(0xE8C29C), radius: 2)
+            ctx.rect(14, dy + 3, 4, 4, brass, radius: 1)
+            ctx.rect(14, dy + dh - 7, 4, 4, brass, radius: 1)
+            ctx.rect(60, dy + dh / 2 - 3, 9, 6, brass, radius: 2)
+            ctx.circle(64.5, dy + dh / 2, 1.2, rgb(0xC9A04C))
+        }
+        // biển đồng nhỏ
+        ctx.ellipse(34, 39.5, 14, 6, brass)
+        ctx.ellipse(36, 40.8, 10, 3.4, rgb(0xF6DE95))
+        // khối đá lạnh và kẹp trên nóc
+        ctx.rect(22, 11, 20, 16, rgb(0xCDEBF7), radius: 2.5)
+        ctx.polygon([pt(22, 13.5), pt(27, 8), pt(47, 8), pt(42, 13.5)], rgb(0xE6F6FC))
+        ctx.polygon([pt(42, 13.5), pt(47, 8), pt(47, 22), pt(42, 27)], rgb(0xB4DDEE))
+        ctx.rect(25, 15, 2.5, 9, Color.white.opacity(0.8), radius: 1.2)
+        sparkle(ctx, 30, 7, 7, Color.white)
+        ctx.strokePath(rgb(0x8E8899), width: 1.8) { p in
+            p.move(to: pt(51, 26)); p.addQuadCurve(to: pt(60, 8), control: pt(50, 14))
+            p.move(to: pt(65, 26)); p.addQuadCurve(to: pt(60, 8), control: pt(66, 14))
+        }
+        ctx.circle(60, 8, 2, rgb(0x8E8899))
+        ctx.rect(13, 34, 2.5, 48, Color.white.opacity(0.25), radius: 1.2)
+    }
+
+    private static func fridgeGlass(_ ctx: GraphicsContext) {
+        let frame = rgb(0xB9D7F0)
+        fridgeBody(ctx, x: 8, y: 6, w: 66, h: 89, color: frame, radius: 10)
+        // biển trên đầu có đèn
+        ctx.rect(14, 10, 54, 7, rgb(0xFFFDF8), radius: 3.5)
+        ctx.heart(center: pt(41, 13.6), size: 5, rgb(0xEE8F8F))
+        ctx.circle(20, 13.5, 1.4, rgb(0x8FE3B9))
+        // cửa kính
+        let glass = CGRect(x: 14, y: 21, width: 50, height: 66)
+        ctx.fill(Path(roundedRect: glass, cornerRadius: 5), with: .color(rgb(0xEAF6FB)))
+        var g = ctx
+        g.clip(to: Path(roundedRect: glass, cornerRadius: 5))
+        for sy in [42.0, 63.0] as [CGFloat] { g.rect(14, sy, 50, 2, rgb(0xCFE3F1)) }
+        // tầng trên: chai sữa và nước cam
+        for (bx, col) in [(18.0, 0xFFFFFF), (26.0, 0xFFFFFF), (34.0, 0xF6C46B)] as [(CGFloat, UInt32)] {
+            g.rect(bx, 29, 6.5, 13, rgb(col), radius: 2)
+            g.rect(bx + 1.5, 25.5, 3.5, 4.5, rgb(col), radius: 1)
+            g.rect(bx + 1.2, 25, 4.1, 1.8, col == 0xFFFFFF ? rgb(0x9FC7EC) : rgb(0xF29E8E), radius: 0.8)
+        }
+        g.rect(44, 32, 16, 10, rgb(0xFFF4E8), radius: 2)
+        g.rect(44, 35, 16, 2.5, rgb(0xF29BA8))
+        g.ellipse(48, 28.5, 7, 6, rgb(0xEE6F7C))
+        // tầng giữa: dưa hấu, nho, táo
+        var melon = Path()
+        melon.move(to: pt(17, 51))
+        melon.addQuadCurve(to: pt(37, 51), control: pt(27, 70))
+        melon.closeSubpath()
+        g.fill(melon, with: .color(rgb(0x8CC08F)))
+        var flesh = Path()
+        flesh.move(to: pt(18.5, 51))
+        flesh.addQuadCurve(to: pt(35.5, 51), control: pt(27, 66))
+        flesh.closeSubpath()
+        g.fill(flesh, with: .color(rgb(0xF48C8C)))
+        for (sx, sy) in [(23.0, 54.0), (27.0, 56.5), (31.0, 54.0)] as [(CGFloat, CGFloat)] { g.circle(sx, sy, 0.8, ink) }
+        for (gx, gy) in [(44.0, 52.0), (49.0, 52.0), (46.5, 56.5), (41.5, 56.5), (44.0, 60.5)] as [(CGFloat, CGFloat)] {
+            g.circle(gx, gy, 3, rgb(0xB7A3E6))
+        }
+        g.circle(57, 57, 5, rgb(0xEE8686))
+        g.rect(56.4, 49.5, 1.4, 3.5, rgb(0x8E6B5A))
+        // tầng dưới: cà rốt và bông cải
+        for (cx, rot) in [(22.0, -10.0), (30.0, 8.0)] as [(CGFloat, Double)] {
+            g.rotated(rot, around: pt(cx, 76)) { c in
+                c.polygon([pt(cx - 3, 69), pt(cx + 3, 69), pt(cx, 84)], rgb(0xF4A25E))
+                c.ellipse(cx - 3, 65, 6, 5, rgb(0x7DB582))
+            }
+        }
+        g.rect(44.5, 76, 4, 8, rgb(0xB7DDA8), radius: 1.5)
+        for (bx, by) in [(43.0, 74.0), (47.0, 72.0), (51.0, 74.5)] as [(CGFloat, CGFloat)] { g.circle(bx, by, 3.6, rgb(0x8CC08F)) }
+        g.ellipse(53, 74, 9, 11, rgb(0xC9B6F0))
+        // phản chiếu kính
+        g.polygon([pt(14, 54), pt(36, 21), pt(43, 21), pt(14, 64)], Color.white.opacity(0.35))
+        g.polygon([pt(30, 87), pt(64, 40), pt(64, 46), pt(35, 87)], Color.white.opacity(0.3))
+        ctx.strokePath(Color.white.opacity(0.9), width: 1.2) { p in
+            p.addRoundedRect(in: glass, cornerSize: CGSize(width: 5, height: 5))
+        }
+        ctx.rect(66, 36, 4, 28, rgb(0xEDEBF1), radius: 2)
+    }
+
+    private static func fridgeCat(_ ctx: GraphicsContext) {
+        let body = rgb(0xFFF5E6)
+        let patch = rgb(0xF4B67E)
+        // đuôi cong bên trái
+        ctx.strokePath(patch, width: 5) { p in
+            p.move(to: pt(14, 80)); p.addCurve(to: pt(6, 50), control1: pt(0, 76), control2: pt(0, 58))
+        }
+        ctx.circle(6.5, 49, 3, rgb(0x6E6278).opacity(0.0))
+        // tai
+        ctx.polygon([pt(14, 34), pt(16, 6), pt(36, 22)], body)
+        ctx.polygon([pt(70, 34), pt(68, 6), pt(48, 22)], patch)
+        ctx.polygon([pt(18, 26), pt(19, 13), pt(29, 21)], rgb(0xF7B7B8))
+        ctx.polygon([pt(66, 26), pt(65, 13), pt(55, 21)], rgb(0xF7B7B8))
+        fridgeBody(ctx, x: 10, y: 16, w: 64, h: 79, color: body, radius: 20)
+        // mảng lông màu cam
+        var c = ctx
+        c.clip(to: Path(roundedRect: CGRect(x: 10, y: 16, width: 64, height: 78), cornerRadius: 20))
+        c.ellipse(46, 8, 40, 30, patch)
+        c.ellipse(4, 70, 20, 30, patch)
+        ctx.strokePath(rgb(0xE8D9C4), width: 1.6) { p in
+            p.move(to: pt(11, 50)); p.addLine(to: pt(73, 50))
+        }
+        // mặt đang ngủ
+        ctx.strokePath(ink, width: 1.6) { p in
+            p.move(to: pt(26, 34)); p.addQuadCurve(to: pt(34, 34), control: pt(30, 38))
+            p.move(to: pt(50, 34)); p.addQuadCurve(to: pt(58, 34), control: pt(54, 38))
+            p.move(to: pt(42, 40)); p.addQuadCurve(to: pt(38.5, 42), control: pt(40.5, 43))
+            p.move(to: pt(42, 40)); p.addQuadCurve(to: pt(45.5, 42), control: pt(43.5, 43))
+        }
+        ctx.polygon([pt(40, 37.5), pt(44, 37.5), pt(42, 40)], rgb(0xEE8F8F))
+        ctx.ellipse(20, 38, 8, 4, rgb(0xF7B7B8).opacity(0.8))
+        ctx.ellipse(56, 38, 8, 4, rgb(0xF7B7B8).opacity(0.8))
+        ctx.strokePath(rgb(0xC9B8A6), width: 0.9) { p in
+            p.move(to: pt(11, 39)); p.addLine(to: pt(19, 40))
+            p.move(to: pt(11, 43)); p.addLine(to: pt(19, 42))
+            p.move(to: pt(73, 39)); p.addLine(to: pt(65, 40))
+            p.move(to: pt(73, 43)); p.addLine(to: pt(65, 42))
+        }
+        // tay nắm hình đệm thịt
+        ctx.ellipse(57, 62, 9, 8, rgb(0xF7B7B8))
+        for (tx, ty) in [(56.5, 59.0), (60.0, 57.0), (64.0, 57.5), (66.5, 60.5)] as [(CGFloat, CGFloat)] {
+            ctx.circle(tx, ty, 1.7, rgb(0xF7B7B8))
+        }
+        // vòng cổ chuông
+        ctx.rect(30, 48.5, 24, 3.2, rgb(0xEE8F8F), radius: 1.6)
+        ctx.circle(42, 53.5, 3, rgb(0xF6D867))
+        ctx.rect(41.4, 54, 1.2, 2, rgb(0xC9A04C))
+        ctx.ellipse(60, 74, 3, 0, Color.clear)
+        ctx.rect(15, 56, 3, 30, Color.white.opacity(0.9), radius: 1.5)
+        sparkle(ctx, 22, 24, 6)
+    }
+
+    // MARK: - Bàn ăn mới
+
+    private static func diningKotatsu(_ ctx: GraphicsContext) {
+        ctx.ellipse(2, 86, 96, 10, shadow)
+        // chăn bông phủ bàn
+        var quilt = Path()
+        quilt.move(to: pt(12, 44))
+        quilt.addLine(to: pt(88, 44))
+        quilt.addCurve(to: pt(96, 86), control1: pt(92, 56), control2: pt(97, 72))
+        quilt.addLine(to: pt(4, 86))
+        quilt.addCurve(to: pt(12, 44), control1: pt(3, 72), control2: pt(8, 56))
+        quilt.closeSubpath()
+        for k in 0..<8 { quilt.addEllipse(in: CGRect(x: 4 + CGFloat(k) * 11.5, y: 82, width: 12, height: 8)) }
+        ctx.fill(quilt, with: .color(rgb(0xF6B9B4)))
+        var q = ctx
+        q.clip(to: quilt)
+        q.strokePath(rgb(0xEC9F9A), width: 1.2) { p in
+            for k in 0..<7 {
+                let x = 10 + CGFloat(k) * 13.5
+                p.move(to: pt(x, 44)); p.addLine(to: pt(x + (x - 50) * 0.18, 92))
+            }
+            p.move(to: pt(0, 66)); p.addLine(to: pt(100, 66))
+        }
+        for (fx, fy) in [(23.0, 56.0), (50.0, 74.0), (77.0, 57.0), (36.0, 80.0), (64.0, 80.0)] as [(CGFloat, CGFloat)] {
+            q.circle(fx, fy, 2.2, Color.white.opacity(0.9))
+            q.circle(fx, fy, 0.9, rgb(0xF6D867))
+        }
+        // mặt bàn gỗ
+        ctx.rect(8, 38.5, 84, 7, rgb(0xB98559), radius: 2.5)
+        ctx.rect(8, 38.5, 84, 3, rgb(0xD9A877), radius: 1.5)
+        ctx.rect(14, 39.2, 12, 1, Color.white.opacity(0.6), radius: 0.5)
+        // quýt ở góc bàn
+        ctx.circle(84, 35, 4, rgb(0xF4A25E))
+        ctx.circle(89, 36, 3.2, rgb(0xF6B04F))
+        ctx.ellipse(83, 30, 3.4, 1.8, rgb(0x7DB582))
+        ctx.circle(82.6, 33.8, 1, Color.white.opacity(0.6))
+        // đệm ngồi
+        for cx in [14.0, 86.0] as [CGFloat] {
+            ctx.rect(cx - 13, 84, 26, 9, rgb(0xA9D8C4), radius: 4)
+            ctx.rect(cx - 13, 84, 26, 3, rgb(0xC3E6D6), radius: 2)
+            ctx.circle(cx, 88.5, 1.2, rgb(0x86C2AA))
+        }
+    }
+
+    private static func diningBar(_ ctx: GraphicsContext) {
+        ctx.ellipse(2, 88, 96, 8, shadow)
+        // đèn thả hai bên
+        for lx in [12.0, 88.0] as [CGFloat] {
+            ctx.rect(lx - 0.5, 0, 1, 16, rgb(0x6E6278))
+            ctx.circle(lx, 25, 6, rgb(0xFFE6A0).opacity(0.3))
+            var shade = Path()
+            shade.move(to: pt(lx - 7, 24))
+            shade.addQuadCurve(to: pt(lx + 7, 24), control: pt(lx, 9))
+            shade.closeSubpath()
+            ctx.fill(shade, with: .color(rgb(0x8FCDB9)))
+            ctx.ellipse(lx - 2.5, 22.5, 5, 3.6, rgb(0xFFF2C8))
+        }
+        // quầy ốp ván
+        let front = CGRect(x: 10, y: 45, width: 80, height: 46)
+        ctx.fill(Path(roundedRect: front, cornerRadius: 3), with: .color(rgb(0xFFF4E4)))
+        ctx.strokePath(rgb(0xEDDCC4), width: 1) { p in
+            var x: CGFloat = 16
+            while x < 90 { p.move(to: pt(x, 47)); p.addLine(to: pt(x, 89)); x += 6 }
+        }
+        ctx.rect(10, 86, 80, 5, rgb(0xC9976A), radius: 2)
+        // mặt quầy đá
+        ctx.rect(6, 39.5, 88, 7, rgb(0xEDE8F3), radius: 2.5)
+        ctx.rect(6, 39.5, 88, 2.2, Color.white, radius: 1.1)
+        ctx.strokePath(rgb(0xD7CFE3), width: 0.7) { p in
+            p.move(to: pt(20, 43)); p.addQuadCurve(to: pt(34, 45), control: pt(28, 42))
+            p.move(to: pt(64, 44)); p.addQuadCurve(to: pt(80, 43), control: pt(72, 46))
+        }
+        // hai ghế cao
+        for sx in [24.0, 76.0] as [CGFloat] {
+            ctx.rect(sx - 8, 64, 2.6, 30, rgb(0x8E8899), radius: 1.3)
+            ctx.rect(sx + 5.4, 64, 2.6, 30, rgb(0x8E8899), radius: 1.3)
+            ctx.rect(sx - 9, 80, 18, 2.2, rgb(0x8E8899), radius: 1.1)
+            ctx.ellipse(sx - 12, 58, 24, 9, rgb(0xE48D72))
+            ctx.ellipse(sx - 11, 57, 22, 6.5, rgb(0xF3A58E))
+            ctx.ellipse(sx - 6, 58, 7, 2, Color.white.opacity(0.5))
+        }
+    }
+
+    private static func diningStump(_ ctx: GraphicsContext) {
+        ctx.ellipse(4, 87, 92, 9, shadow)
+        let bark = rgb(0xB58357)
+        // gốc cây có rễ
+        ctx.polygon([pt(14, 90), pt(20, 74), pt(26, 86)], bark)
+        ctx.polygon([pt(86, 90), pt(80, 74), pt(74, 86)], bark)
+        ctx.rect(18, 42, 64, 48, bark, radius: 6)
+        ctx.strokePath(rgb(0x9E6E46), width: 1.5) { p in
+            for x in [28.0, 40.0, 52.0, 64.0, 74.0] as [CGFloat] {
+                p.move(to: pt(x, 48)); p.addQuadCurve(to: pt(x + 1, 86), control: pt(x - 3, 66))
+            }
+        }
+        ctx.ellipse(22, 60, 10, 6, rgb(0x8CC08F))
+        ctx.ellipse(66, 78, 12, 6, rgb(0x8CC08F))
+        // mặt cắt có vòng tuổi
+        ctx.ellipse(12, 37, 76, 12, rgb(0xA87A50))
+        ctx.ellipse(13, 36, 74, 10, rgb(0xEBC79C))
+        ctx.strokePath(rgb(0xD6AC7D), width: 0.9) { p in
+            p.addEllipse(in: CGRect(x: 22, y: 37.5, width: 56, height: 7))
+            p.addEllipse(in: CGRect(x: 32, y: 39, width: 36, height: 4))
+        }
+        // mầm non
+        ctx.strokePath(rgb(0x7DB582), width: 1.4) { p in
+            p.move(to: pt(84, 40)); p.addQuadCurve(to: pt(86, 26), control: pt(87, 33))
+        }
+        ctx.ellipse(78, 22, 8, 5, rgb(0x8CC08F))
+        ctx.ellipse(86, 21, 8, 5, rgb(0xA8D3A6))
+        // ghế nấm
+        for (mx, cap) in [(10.0, 0xEE8B8B), (90.0, 0xF6B04F)] as [(CGFloat, UInt32)] {
+            ctx.rect(mx - 5, 80, 10, 13, rgb(0xFFF4E2), radius: 3)
+            ctx.ellipse(mx - 10, 72, 20, 12, rgb(cap))
+            ctx.circle(mx - 4, 76, 1.6, Color.white)
+            ctx.circle(mx + 3, 75, 2, Color.white)
+            ctx.circle(mx, 79, 1.2, Color.white)
+        }
+    }
+
+    private static func diningBooth(_ ctx: GraphicsContext) {
+        ctx.ellipse(0, 88, 100, 8, shadow)
+        let vinyl = rgb(0xF2A39C)
+        let vinylDark = rgb(0xE38A84)
+        // ghế băng hai bên
+        for (bx, flip) in [(0.0, false), (82.0, true)] as [(CGFloat, Bool)] {
+            ctx.rect(bx, 20, 18, 72, vinyl, radius: 7)
+            ctx.strokePath(vinylDark, width: 1) { p in
+                for k in 0..<3 {
+                    let x = bx + 4.5 + CGFloat(k) * 4.5
+                    p.move(to: pt(x, 25)); p.addLine(to: pt(x, 62))
+                }
+            }
+            ctx.rect(bx - (flip ? 4 : 0), 62, 22, 9, vinylDark, radius: 4)
+            ctx.rect(bx - (flip ? 4 : 0), 61, 22, 4, vinyl, radius: 2)
+            ctx.rect(bx + 1, 70, 16, 22, rgb(0xD97D78), radius: 2)
+            ctx.rect(bx + 2, 23, 3, 30, Color.white.opacity(0.35), radius: 1.5)
+        }
+        // bàn chân trụ
+        ctx.rect(46, 46, 8, 40, steelDark, radius: 2)
+        ctx.ellipse(34, 85, 32, 7, rgb(0xB9BCC8))
+        ctx.rect(48, 48, 2, 34, Color.white.opacity(0.5), radius: 1)
+        ctx.rect(16, 39.5, 68, 7, rgb(0xC9CCD6), radius: 3)
+        ctx.rect(16, 39.5, 68, 5, rgb(0xA9D8C4), radius: 2.5)
+        ctx.rect(16, 39.5, 68, 1.4, Color.white.opacity(0.7), radius: 0.7)
+        // tương cà, mù tạt
+        ctx.rect(17.5, 30, 4, 10, rgb(0xEE6F6F), radius: 1.5)
+        ctx.rect(18.8, 27, 1.4, 3.5, rgb(0xEE6F6F))
+        ctx.rect(21.5, 31.5, 4, 8.5, rgb(0xF6D05A), radius: 1.5)
+        ctx.rect(22.8, 28.5, 1.4, 3.5, rgb(0xF6D05A))
+    }
+
+    // MARK: - Đồ treo tường mới
+
+    private static func wallShelf(_ ctx: GraphicsContext, y: CGFloat) {
+        ctx.rect(6, y, 88, 6, rgb(0xC9976A), radius: 2)
+        ctx.rect(6, y, 88, 1.6, rgb(0xDDB088), radius: 0.8)
+        ctx.polygon([pt(14, y + 6), pt(21, y + 6), pt(14, y + 14)], rgb(0xA87A50))
+        ctx.polygon([pt(86, y + 6), pt(79, y + 6), pt(86, y + 14)], rgb(0xA87A50))
+    }
+
+    private static func spiceBottle(_ ctx: GraphicsContext, x: CGFloat, bottom: CGFloat, w: CGFloat, h: CGFloat, fill: Color, lid: Color, round: Bool = false) {
+        let top = bottom - h
+        ctx.rect(x, top + 4, w, h - 4, rgb(0xF1F7FA), radius: round ? w / 2 : 2.5)
+        ctx.rect(x + 1, top + h * 0.42, w - 2, h * 0.58 - 1, fill, radius: 2)
+        ctx.rect(x + 1.5, top, w - 3, 5, lid, radius: 1.5)
+        ctx.rect(x + 1.5, top + 6, 1.8, h - 10, Color.white.opacity(0.7), radius: 0.9)
+    }
+
+    private static func wallSpice(_ ctx: GraphicsContext) {
+        // tầng trên
+        spiceBottle(ctx, x: 12, bottom: 40, w: 12, h: 24, fill: rgb(0xEE7F6E), lid: rgb(0x6E6278))
+        spiceBottle(ctx, x: 27, bottom: 40, w: 12, h: 20, fill: rgb(0x8CC08F), lid: rgb(0xC9976A))
+        spiceBottle(ctx, x: 42, bottom: 40, w: 14, h: 26, fill: rgb(0xF6C94F), lid: rgb(0xEE8F8F))
+        // cối giã nhỏ
+        ctx.rect(62, 30, 22, 10, rgb(0xB9BCC8), radius: 4)
+        ctx.ellipse(61, 27, 24, 6, rgb(0xD9DCE3))
+        ctx.ellipse(64, 28, 18, 3, rgb(0x9E98A9))
+        ctx.rotated(28, around: pt(74, 24)) { c in c.rect(72, 10, 5, 20, rgb(0xC9976A), radius: 2.5) }
+        wallShelf(ctx, y: 40)
+        // tầng dưới
+        spiceBottle(ctx, x: 12, bottom: 76, w: 11, h: 22, fill: rgb(0xB58357), lid: rgb(0x8FCDB9))
+        spiceBottle(ctx, x: 26, bottom: 76, w: 13, h: 18, fill: rgb(0xF4A25E), lid: rgb(0x6E6278), round: true)
+        spiceBottle(ctx, x: 42, bottom: 76, w: 11, h: 24, fill: rgb(0xC9B6F0), lid: rgb(0xF6D867))
+        spiceBottle(ctx, x: 56, bottom: 76, w: 12, h: 20, fill: rgb(0xEFE3C8), lid: rgb(0xEE8F8F))
+        // tỏi và ớt
+        ctx.ellipse(72, 66, 10, 10, rgb(0xFFF8EC))
+        ctx.strokePath(rgb(0xE6DCCB), width: 0.8) { p in
+            p.move(to: pt(77, 67)); p.addLine(to: pt(77, 75))
+        }
+        ctx.polygon([pt(75.5, 67), pt(77, 62), pt(78.5, 67)], rgb(0xFFF8EC))
+        ctx.rotated(-30, around: pt(86, 70)) { c in
+            c.ellipse(82, 66, 12, 5, rgb(0xEE6F6F))
+            c.rect(92, 67, 3, 2.4, rgb(0x7DB582), radius: 1)
+        }
+        wallShelf(ctx, y: 76)
+    }
+
+    private static func herbBunch(_ ctx: GraphicsContext, x: CGFloat, top: CGFloat, leaf: Color, leafDark: Color, flower: Color?) {
+        ctx.strokePath(rgb(0xC9A486), width: 1) { p in
+            p.move(to: pt(x, 16)); p.addLine(to: pt(x, top))
+        }
+        ctx.strokePath(rgb(0x7DA06F), width: 1.2) { p in
+            for dx in [-4.0, 0.0, 4.0] as [CGFloat] {
+                p.move(to: pt(x, top)); p.addLine(to: pt(x + dx * 1.6, top + 34))
+            }
+        }
+        for k in 0..<5 {
+            let yy = top + 8 + CGFloat(k) * 6
+            let spread = 3 + CGFloat(k) * 1.4
+            ctx.ellipse(x - spread - 4, yy, 7, 4.4, k % 2 == 0 ? leaf : leafDark)
+            ctx.ellipse(x + spread - 3, yy + 1.5, 7, 4.4, k % 2 == 0 ? leafDark : leaf)
+            if let f = flower {
+                ctx.circle(x - spread * 1.3, yy + 6, 1.6, f)
+                ctx.circle(x + spread * 1.3, yy + 7, 1.6, f)
+            }
+        }
+        ctx.rect(x - 4, top - 1, 8, 4, rgb(0xEE8F8F), radius: 1.5)
+    }
+
+    private static func wallHerbs(_ ctx: GraphicsContext) {
+        // cành gỗ treo bằng dây
+        ctx.strokePath(rgb(0xC9A486), width: 1) { p in
+            p.move(to: pt(10, 14)); p.addLine(to: pt(50, 2)); p.addLine(to: pt(90, 14))
+        }
+        ctx.circle(50, 2.5, 2, rgb(0xA87A50))
+        ctx.rect(4, 12, 92, 5, rgb(0xA87A50), radius: 2.5)
+        ctx.ellipse(86, 9, 8, 4, rgb(0x8CC08F))
+        // húng quế, oải hương, hương thảo
+        herbBunch(ctx, x: 18, top: 24, leaf: rgb(0x8CC08F), leafDark: rgb(0x6FA373), flower: nil)
+        herbBunch(ctx, x: 42, top: 22, leaf: rgb(0xA8C7A0), leafDark: rgb(0x8DB487), flower: rgb(0xB7A3E6))
+        // dây tỏi
+        ctx.strokePath(rgb(0xD9C9A6), width: 2) { p in
+            p.move(to: pt(64, 16)); p.addLine(to: pt(64, 82))
+        }
+        for k in 0..<5 {
+            let gy = 30 + CGFloat(k) * 11
+            let gx: CGFloat = k % 2 == 0 ? 61 : 67
+            ctx.ellipse(gx - 6, gy - 5, 12, 11, rgb(0xFFF8EC))
+            ctx.polygon([pt(gx - 1.5, gy - 4), pt(gx, gy - 9), pt(gx + 1.5, gy - 4)], rgb(0xFFF8EC))
+            ctx.strokePath(rgb(0xE8DCC8), width: 0.8) { p in
+                p.move(to: pt(gx, gy - 4)); p.addLine(to: pt(gx, gy + 5))
+            }
+        }
+        // chuỗi ớt đỏ
+        ctx.strokePath(rgb(0xC9A486), width: 1) { p in
+            p.move(to: pt(84, 16)); p.addLine(to: pt(84, 74))
+        }
+        for k in 0..<6 {
+            let cy = 24 + CGFloat(k) * 9
+            let dir: Double = k % 2 == 0 ? 25 : -25
+            ctx.rotated(dir, around: pt(84, cy)) { c in
+                c.ellipse(81, cy, 6, 12, rgb(k % 3 == 1 ? 0xF29E5E : 0xEE6F6F))
+                c.rect(82.6, cy - 1.5, 2.8, 3, rgb(0x7DB582), radius: 1)
+            }
+        }
+    }
+
+    private static func plate(_ ctx: GraphicsContext, _ cx: CGFloat, _ cy: CGFloat, _ r: CGFloat, rim: Color, inner: Color) {
+        ctx.circle(cx + 1, cy + 1.5, r, Color.black.opacity(0.08))
+        ctx.circle(cx, cy, r, rim)
+        ctx.circle(cx, cy, r * 0.78, Color.white)
+        ctx.circle(cx, cy, r * 0.66, inner)
+    }
+
+    private static func wallPlates(_ ctx: GraphicsContext) {
+        // đĩa lớn hoa xanh ở giữa
+        plate(ctx, 50, 50, 22, rim: rgb(0x9FC7EC), inner: rgb(0xFFFDF8))
+        for a in 0..<6 {
+            let ang = Double(a) * Double.pi / 3
+            ctx.ellipse(50 + CGFloat(cos(ang)) * 6 - 3.5, 50 + CGFloat(sin(ang)) * 6 - 3.5, 7, 7, rgb(0x9FC7EC))
+        }
+        ctx.circle(50, 50, 3, rgb(0xF6D867))
+        ctx.strokePath(rgb(0x9FC7EC), width: 1) { p in
+            p.addEllipse(in: CGRect(x: 36, y: 36, width: 28, height: 28))
+        }
+        // đĩa nhỏ xung quanh
+        plate(ctx, 18, 22, 13, rim: rgb(0xF7B7C2), inner: rgb(0xFFF4F6))
+        ctx.heart(center: pt(18, 22), size: 9, rgb(0xEE8F9E))
+        plate(ctx, 82, 22, 13, rim: rgb(0xF6D867), inner: rgb(0xFFFBEA))
+        ctx.circle(82, 22, 5.5, rgb(0xF6D867))
+        ctx.circle(82, 22, 4.3, rgb(0xFFF6D2))
+        ctx.strokePath(rgb(0xF6D867), width: 0.8) { p in
+            for a in 0..<6 {
+                let ang = Double(a) * Double.pi / 3
+                p.move(to: pt(82, 22)); p.addLine(to: pt(82 + CGFloat(cos(ang)) * 4.3, 22 + CGFloat(sin(ang)) * 4.3))
+            }
+        }
+        plate(ctx, 18, 80, 12, rim: rgb(0x8FCDB9), inner: rgb(0xF2FAF6))
+        ctx.strokePath(rgb(0x8FCDB9), width: 1.4) { p in
+            for dx in [-4.0, 0.0, 4.0] as [CGFloat] { p.move(to: pt(18 + dx, 74.5)); p.addLine(to: pt(18 + dx, 85.5)) }
+        }
+        plate(ctx, 82, 80, 12, rim: rgb(0xC9B6F0), inner: rgb(0xF7F3FD))
+        ctx.draw(Text("★").font(.system(size: 10)).foregroundColor(rgb(0xB7A3E6)), at: pt(82, 80))
+        // móc treo
+        for (hx, hy) in [(50.0, 27.0), (18.0, 8.0), (82.0, 8.0), (18.0, 67.0), (82.0, 67.0)] as [(CGFloat, CGFloat)] {
+            ctx.rect(hx - 1, hy - 1, 2, 3, steelDark, radius: 1)
+        }
+    }
+
+    private static func wallMenu(_ ctx: GraphicsContext) {
+        // dây treo
+        ctx.strokePath(rgb(0xA87A50), width: 1.2) { p in
+            p.move(to: pt(22, 16)); p.addLine(to: pt(50, 4)); p.addLine(to: pt(78, 16))
+        }
+        ctx.circle(50, 4, 2.2, rgb(0x8E8899))
+        // bảng phấn khung gỗ
+        ctx.rect(8, 14, 84, 70, rgb(0xC9976A), radius: 5)
+        ctx.rect(13, 19, 74, 60, rgb(0x56706A), radius: 2.5)
+        let chalk = Color.white.opacity(0.85)
+        ctx.draw(Text("Menu").font(.system(size: 11, weight: .bold, design: .rounded)).foregroundColor(chalk), at: pt(50, 27))
+        ctx.strokePath(chalk, width: 0.8) { p in
+            p.move(to: pt(33, 33)); p.addQuadCurve(to: pt(67, 33), control: pt(50, 36))
+        }
+        // tách cà phê
+        ctx.strokePath(chalk, width: 1.2) { p in
+            p.move(to: pt(20, 44)); p.addLine(to: pt(22, 54)); p.addLine(to: pt(30, 54)); p.addLine(to: pt(32, 44)); p.closeSubpath()
+            p.addEllipse(in: CGRect(x: 31, y: 46, width: 4, height: 4))
+            p.move(to: pt(24, 41)); p.addQuadCurve(to: pt(25, 36), control: pt(22, 38))
+            p.move(to: pt(28, 41)); p.addQuadCurve(to: pt(29, 36), control: pt(26, 38))
+        }
+        // dòng chữ phấn
+        ctx.strokePath(rgb(0xF6D867).opacity(0.9), width: 1.2) { p in
+            p.move(to: pt(40, 45)); p.addLine(to: pt(66, 45))
+            p.move(to: pt(40, 50)); p.addLine(to: pt(58, 50))
+        }
+        ctx.strokePath(chalk, width: 1) { p in
+            p.move(to: pt(72, 47)); p.addLine(to: pt(80, 47))
+        }
+        // lát bánh
+        ctx.strokePath(chalk, width: 1.2) { p in
+            p.move(to: pt(20, 72)); p.addLine(to: pt(32, 72)); p.addLine(to: pt(32, 64)); p.addLine(to: pt(20, 68)); p.closeSubpath()
+        }
+        ctx.circle(28, 62, 1.8, rgb(0xF7A7B8))
+        ctx.strokePath(rgb(0xF7A7B8).opacity(0.9), width: 1.2) { p in
+            p.move(to: pt(40, 63)); p.addLine(to: pt(62, 63))
+            p.move(to: pt(40, 68)); p.addLine(to: pt(54, 68))
+        }
+        ctx.strokePath(chalk, width: 1) { p in
+            p.move(to: pt(72, 65)); p.addLine(to: pt(80, 65))
+        }
+        ctx.heart(center: pt(78, 74), size: 5, rgb(0xF7A7B8).opacity(0.9))
+        // máng phấn
+        ctx.rect(10, 83, 80, 4, rgb(0xA87A50), radius: 2)
+        ctx.rect(24, 80.5, 9, 3, Color.white, radius: 1.5)
+        ctx.rect(36, 81, 7, 2.6, rgb(0xF7A7B8), radius: 1.3)
+        ctx.rect(46, 81, 6, 2.6, rgb(0xF6D867), radius: 1.3)
+    }
+
+    private static func wallCherry(_ ctx: GraphicsContext) {
+        // cuống và lá
+        ctx.strokePath(rgb(0x7DA06F), width: 3) { p in
+            p.move(to: pt(36, 44)); p.addQuadCurve(to: pt(56, 10), control: pt(38, 20))
+            p.move(to: pt(72, 54)); p.addQuadCurve(to: pt(56, 10), control: pt(70, 26))
+        }
+        ctx.rotated(-20, around: pt(64, 12)) { c in
+            c.ellipse(56, 6, 24, 11, rgb(0x8CC08F))
+            c.rect(58, 11, 18, 1.2, rgb(0x6FA373))
+        }
+        ctx.circle(56, 10, 2.6, rgb(0x6FA373))
+        // quả nhỏ
+        ctx.circle(72, 70, 17, rgb(0xE8606E))
+        ctx.circle(67, 63, 4, Color.white.opacity(0.55))
+        // quả lớn là mặt đồng hồ
+        ctx.circle(36, 62, 25, rgb(0xEE6F7C))
+        ctx.circle(36, 63, 19, rgb(0xFFF6F2))
+        for (dx, dy) in [(36.0, 47.5), (51.5, 63.0), (36.0, 78.5), (20.5, 63.0)] as [(CGFloat, CGFloat)] {
+            ctx.circle(dx, dy, 1.8, rgb(0xEE8F9E))
+        }
+        ctx.strokePath(ink, width: 2.8) { p in
+            p.move(to: pt(36, 63)); p.addLine(to: pt(36, 51))
+        }
+        ctx.strokePath(ink, width: 2.2) { p in
+            p.move(to: pt(36, 63)); p.addLine(to: pt(45, 68))
+        }
+        ctx.circle(36, 63, 2.6, rgb(0xEE6F7C))
+        ctx.ellipse(18, 42, 12, 7, Color.white.opacity(0.5))
+        sparkle(ctx, 88, 46, 7, rgb(0xF6D867))
+    }
+
+    // MARK: - Món ăn mới
+
+    private static func treatDumpling(_ ctx: GraphicsContext) {
+        // nắp xửng dựa phía sau
+        ctx.ellipse(52, 36, 42, 40, rgb(0xD9B57F))
+        ctx.ellipse(56, 40, 34, 32, rgb(0xE8CA96))
+        ctx.strokePath(rgb(0xD9B57F), width: 1) { p in
+            for k in 0..<4 { let y = 46 + CGFloat(k) * 6; p.move(to: pt(58, y)); p.addLine(to: pt(88, y)) }
+        }
+        // chén nước tương & đũa
+        ctx.strokePath(rgb(0xC9976A), width: 2.4) { p in
+            p.move(to: pt(4, 80)); p.addLine(to: pt(30, 92))
+            p.move(to: pt(4, 85)); p.addLine(to: pt(28, 94))
+        }
+        // xửng hấp
+        ctx.rect(12, 66, 62, 26, rgb(0xE2C08A), radius: 6)
+        ctx.strokePath(rgb(0xCBA46D), width: 1.2) { p in
+            p.move(to: pt(14, 74)); p.addLine(to: pt(72, 74))
+            p.move(to: pt(14, 84)); p.addLine(to: pt(72, 84))
+        }
+        ctx.ellipse(10, 60, 66, 12, rgb(0xCBA46D))
+        ctx.ellipse(13, 61, 60, 9, rgb(0xF1E3C2))
+        // ba chiếc há cảo
+        for (dx, dy) in [(22.0, 58.0), (43.0, 56.0), (33.0, 61.0)] as [(CGFloat, CGFloat)] {
+            ctx.ellipse(dx - 9, dy - 6, 18, 13, rgb(0xFFF9F2))
+            ctx.ellipse(dx - 6, dy - 4, 10, 6, rgb(0xFBE3D8).opacity(0.7))
+            ctx.strokePath(rgb(0xEAD9CC), width: 0.9) { p in
+                for k in 0..<3 {
+                    let x = dx - 4 + CGFloat(k) * 4
+                    p.move(to: pt(x, dy - 5)); p.addLine(to: pt(x + 1, dy - 1))
+                }
+            }
+        }
+        ctx.circle(33, 54.6, 1, rgb(0x8CC08F))
+        steam(ctx, 24, 46, 12)
+        steam(ctx, 40, 44, 14)
+        // chén nước chấm
+        ctx.ellipse(74, 84, 22, 9, rgb(0xF7F1EA))
+        ctx.ellipse(76, 84.6, 18, 5.5, rgb(0x8E6450))
+        ctx.circle(84, 86, 1, rgb(0xEE6F6F))
+    }
+
+    private static func treatPho(_ ctx: GraphicsContext) {
+        // đũa và thìa sứ
+        ctx.strokePath(rgb(0xC9976A), width: 2.6) { p in
+            p.move(to: pt(62, 60)); p.addLine(to: pt(94, 28))
+            p.move(to: pt(66, 61)); p.addLine(to: pt(98, 34))
+        }
+        ctx.rotated(32, around: pt(16, 50)) { c in
+            c.rect(14, 30, 4, 20, Color.white, radius: 2)
+            c.ellipse(10, 46, 12, 14, Color.white)
+            c.ellipse(12, 48, 8, 9, rgb(0xF6E7C1))
+        }
+        // nước dùng trong
+        ctx.ellipse(12, 54, 76, 16, rgb(0xF4DFB4))
+        ctx.strokePath(Color.white.opacity(0.95), width: 1.6) { p in
+            p.move(to: pt(20, 62)); p.addCurve(to: pt(46, 61), control1: pt(28, 56), control2: pt(38, 66))
+            p.move(to: pt(30, 64)); p.addCurve(to: pt(60, 63), control1: pt(40, 58), control2: pt(50, 68))
+            p.move(to: pt(50, 60)); p.addCurve(to: pt(78, 61), control1: pt(58, 56), control2: pt(68, 66))
+        }
+        // thịt bò tái
+        for (bx, by, rot) in [(36.0, 57.0, -10.0), (50.0, 56.0, 12.0), (44.0, 61.5, 4.0)] as [(CGFloat, CGFloat, Double)] {
+            ctx.rotated(rot, around: pt(bx, by)) { c in
+                c.ellipse(bx - 7, by - 3, 14, 6, rgb(0xC98B7E))
+                c.ellipse(bx - 5, by - 2.2, 8, 2.4, rgb(0xE2AFA3))
+            }
+        }
+        // rau, hành, chanh, ớt
+        for (gx, gy) in [(24.0, 58.0), (58.0, 62.0), (30.0, 63.0), (64.0, 57.0)] as [(CGFloat, CGFloat)] {
+            ctx.ellipse(gx - 3.5, gy - 2, 7, 4, rgb(0x7DB582))
+        }
+        for (gx, gy) in [(40.0, 54.5), (54.0, 63.0), (27.0, 55.0)] as [(CGFloat, CGFloat)] {
+            ctx.circle(gx, gy, 1.5, rgb(0x8CC08F))
+            ctx.circle(gx, gy, 0.6, rgb(0xDDF1E5))
+        }
+        ctx.circle(70, 61, 1.5, rgb(0xEE6F6F))
+        ctx.circle(73, 58.5, 1.3, rgb(0xEE6F6F))
+        var lime = Path()
+        lime.move(to: pt(70, 52)); lime.addArc(center: pt(76, 52), radius: 6, startAngle: .degrees(180), endAngle: .degrees(0), clockwise: true)
+        lime.closeSubpath()
+        ctx.fill(lime, with: .color(rgb(0x9CCB6E)))
+        ctx.ellipse(71.5, 50.5, 9, 3, rgb(0xDDEFB8))
+        // tô sứ viền xanh
+        var bowl = Path()
+        bowl.move(to: pt(10, 62))
+        bowl.addLine(to: pt(90, 62))
+        bowl.addCurve(to: pt(50, 90), control1: pt(88, 82), control2: pt(70, 90))
+        bowl.addCurve(to: pt(10, 62), control1: pt(30, 90), control2: pt(12, 82))
+        bowl.closeSubpath()
+        ctx.rect(36, 86, 28, 8, rgb(0xD9E3EE), radius: 3)
+        ctx.fill(bowl, with: .color(rgb(0xFBFCFE)))
+        ctx.strokePath(rgb(0x8EB4DE), width: 2.2) { p in
+            p.move(to: pt(13, 67)); p.addLine(to: pt(87, 67))
+        }
+        ctx.strokePath(rgb(0x8EB4DE), width: 1.2) { p in
+            var x: CGFloat = 20
+            while x < 80 {
+                p.move(to: pt(x, 76)); p.addQuadCurve(to: pt(x + 8, 76), control: pt(x + 4, 71))
+                x += 10
+            }
+        }
+        ctx.ellipse(10, 60, 80, 4, rgb(0xE9EEF5))
+        steam(ctx, 34, 48, 14)
+        steam(ctx, 52, 46, 16)
+    }
+
+    private static func treatBanhMi(_ ctx: GraphicsContext) {
+        // giấy gói
+        ctx.rotated(-6, around: pt(50, 78)) { c in
+            c.rect(12, 70, 76, 20, Color.white, radius: 2)
+            c.strokePath(rgb(0xF29E96).opacity(0.7), width: 1.6) { p in
+                var x: CGFloat = 16
+                while x < 88 { p.move(to: pt(x, 70)); p.addLine(to: pt(x, 90)); x += 6 }
+            }
+        }
+        ctx.rotated(-12, around: pt(50, 66)) { c in
+            // nửa dưới ổ bánh
+            c.ellipse(8, 64, 84, 20, rgb(0xDE9F5C))
+            // nhân: thịt, đồ chua, dưa leo, ngò, ớt
+            c.ellipse(14, 60, 72, 10, rgb(0xE6A79A))
+            c.rect(18, 58.5, 64, 4, rgb(0xC98B7E), radius: 2)
+            for k in 0..<7 {
+                let x = 18 + CGFloat(k) * 9.5
+                c.rect(x, 55, 8, 2.4, rgb(0xF4A25E), radius: 1.2)
+                c.ellipse(x + 2, 57, 7, 3.6, rgb(0xA8D08D))
+            }
+            for (gx, gy) in [(22.0, 53.0), (40.0, 52.0), (58.0, 53.0), (74.0, 52.5)] as [(CGFloat, CGFloat)] {
+                c.ellipse(gx - 4, gy - 2, 8, 5, rgb(0x6FA373))
+                c.ellipse(gx, gy - 3, 5, 4, rgb(0x8CC08F))
+            }
+            c.circle(32, 54, 1.4, rgb(0xEE6F6F))
+            c.circle(64, 54, 1.4, rgb(0xEE6F6F))
+            // nửa trên ổ bánh, giòn vàng
+            var crust = Path()
+            crust.move(to: pt(8, 54))
+            crust.addCurve(to: pt(92, 54), control1: pt(16, 30), control2: pt(84, 30))
+            crust.addQuadCurve(to: pt(8, 54), control: pt(50, 48))
+            c.fill(crust, with: .color(rgb(0xE8AE6A)))
+            c.strokePath(rgb(0xF8D9A6), width: 2) { p in
+                for sx in [26.0, 42.0, 58.0, 74.0] as [CGFloat] {
+                    p.move(to: pt(sx - 4, 44)); p.addQuadCurve(to: pt(sx + 5, 42), control: pt(sx, 40))
+                }
+            }
+            c.ellipse(20, 41, 14, 4, Color.white.opacity(0.35))
+        }
+        sparkle(ctx, 84, 30, 7, rgb(0xF6D867))
+    }
+
+    private static func treatMooncake(_ ctx: GraphicsContext) {
+        // đèn ông sao
+        ctx.strokePath(rgb(0xC9976A), width: 1.6) { p in
+            p.move(to: pt(16, 92)); p.addLine(to: pt(16, 52))
+        }
+        ctx.circle(16, 40, 12, rgb(0xF6D867).opacity(0.25))
+        ctx.polygon(starPoints(16, 40, 11, 5), rgb(0xEE6F6F))
+        ctx.polygon(starPoints(16, 40, 6, 2.8), rgb(0xF6D867))
+        ctx.strokePath(rgb(0xF6D867), width: 0.8) { p in
+            p.move(to: pt(10, 50)); p.addLine(to: pt(8, 58))
+            p.move(to: pt(22, 50)); p.addLine(to: pt(24, 58))
+        }
+        // đĩa
+        ctx.ellipse(22, 80, 74, 14, rgb(0xE9E3F5))
+        ctx.ellipse(26, 80, 66, 10, Color.white)
+        // bánh nguyên
+        ctx.rect(48, 56, 36, 30, rgb(0xC98A4E), radius: 10)
+        ctx.ellipse(48, 50, 36, 14, rgb(0xE0A764))
+        ctx.strokePath(rgb(0xC98A4E), width: 1.2) { p in
+            p.addEllipse(in: CGRect(x: 52, y: 52, width: 28, height: 10))
+            for a in 0..<4 {
+                let ang = Double(a) * Double.pi / 2
+                p.move(to: pt(66, 57)); p.addLine(to: pt(66 + CGFloat(cos(ang)) * 9, 57 + CGFloat(sin(ang)) * 3.4))
+            }
+        }
+        ctx.circle(66, 57, 2, rgb(0xC98A4E))
+        ctx.rect(51, 60, 3, 20, Color.white.opacity(0.3), radius: 1.5)
+        // miếng cắt có trứng muối
+        ctx.ellipse(26, 61, 26, 9, rgb(0xE0A764))
+        ctx.rect(26, 65, 26, 23, rgb(0xC98A4E), radius: 7)
+        ctx.rect(28.5, 66, 21, 19.5, rgb(0xE9C9A0), radius: 5)
+        ctx.circle(39, 75.5, 5.5, rgb(0xF4A63C))
+        ctx.circle(37.8, 74.2, 1.8, rgb(0xFBD07A))
+        // tách trà nhỏ
+        ctx.rect(84, 76, 12, 10, rgb(0xA9D8C4), radius: 4)
+        ctx.ellipse(84, 74, 12, 4, rgb(0xC8B27A))
+        steam(ctx, 90, 70, 9)
+    }
+
+    private static func treatBoba(_ ctx: GraphicsContext) {
+        // bánh quy bên cạnh
+        ctx.circle(22, 84, 10, rgb(0xDDA35F))
+        for (dx, dy) in [(18.0, 80.0), (25.0, 83.0), (20.0, 88.0), (27.0, 89.0)] as [(CGFloat, CGFloat)] {
+            ctx.circle(dx, dy, 1.4, rgb(0x6B4A3A))
+        }
+        // cốc
+        var cup = Path()
+        cup.move(to: pt(36, 34))
+        cup.addLine(to: pt(70, 34))
+        cup.addLine(to: pt(66, 90))
+        cup.addQuadCurve(to: pt(40, 90), control: pt(53, 95))
+        cup.closeSubpath()
+        ctx.fill(cup, with: .color(rgb(0xF4ECF6)))
+        var tea = ctx
+        tea.clip(to: cup)
+        tea.rect(30, 44, 50, 52, rgb(0xE9C9A2))
+        tea.rect(30, 44, 50, 3, rgb(0xF4DEC2))
+        for (px, py) in [(42.0, 87.0), (48.0, 89.0), (54.0, 88.0), (60.0, 87.0), (45.0, 82.0), (51.0, 83.0), (57.0, 82.0), (63.0, 83.0), (48.0, 77.5), (55.0, 77.0)] as [(CGFloat, CGFloat)] {
+            tea.circle(px, py, 2.6, rgb(0x5E4A52))
+            tea.circle(px - 0.8, py - 0.9, 0.7, Color.white.opacity(0.5))
+        }
+        tea.rect(38, 36, 3.5, 50, Color.white.opacity(0.45), radius: 1.7)
+        // nắp có mặt mèo
+        ctx.rect(34, 31, 38, 5, rgb(0xF7C1CC), radius: 2.5)
+        ctx.circle(53, 60, 7, Color.white.opacity(0.85))
+        ctx.polygon([pt(47, 57), pt(47.5, 51), pt(51, 55)], Color.white.opacity(0.85))
+        ctx.polygon([pt(59, 57), pt(58.5, 51), pt(55, 55)], Color.white.opacity(0.85))
+        ctx.circle(50.5, 60, 0.9, ink)
+        ctx.circle(55.5, 60, 0.9, ink)
+        ctx.polygon([pt(52.2, 61.6), pt(53.8, 61.6), pt(53, 62.6)], rgb(0xEE8F8F))
+        // ống hút to
+        ctx.rotated(14, around: pt(56, 30)) { c in
+            c.rect(53, 6, 7, 32, rgb(0xEE8F9E), radius: 2)
+            c.rect(54.5, 8, 2, 26, Color.white.opacity(0.5), radius: 1)
+        }
+        sparkle(ctx, 78, 44, 7)
     }
 }
