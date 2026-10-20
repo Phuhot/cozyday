@@ -72,6 +72,11 @@ thời chỉ một lần, capsule thử lại ra đúng kết quả cũ, bạn b
 xu/email/kho đồ, khen và tưới giúp có hạn mức (kể cả gửi đồng thời), bảng xếp hạng chạy lại lượt chơi, chặn nộp nhanh hơn
 thời gian thật và nộp hai lần, khách không lên bảng công khai.
 
+Kiểm tra trong trình duyệt (Chromium, `node scripts/dev/flow.mjs <kịch-bản>` khi `npm run dev` đang chạy ở cổng 5199):
+`tour` (cốt truyện → nhà → vườn → thị trấn → capsule → minigame → hộ chiếu → ảnh), `games` (6 minigame), `pause` (chuyển
+nền tự tạm dừng; chơi lại 3 lần đồng hồ game vẫn đúng tốc độ), và `scripts/dev/online-flow.mjs` (hai người chơi: kết bạn,
+đăng nhà, thăm, khen, tưới giúp, hộp thư, Thử thách tuần, bảng xếp hạng — cần `npm run dev:online -- --port 5199`).
+
 ## Triển khai (Vercel + Supabase, gói miễn phí)
 
 ### 1. Supabase
