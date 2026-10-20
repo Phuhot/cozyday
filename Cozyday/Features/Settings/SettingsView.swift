@@ -29,6 +29,8 @@ struct SettingsView: View {
     @State private var versionTaps = 0
     @State private var giftCode = ""
     @State private var giftMessage: String?
+    @State private var confirmTester = false
+    @State private var confirmTesterOff = false
 
     var body: some View {
         NavigationStack {
@@ -73,8 +75,11 @@ struct SettingsView: View {
                     LabeledContent("Bundle ID", value: Bundle.main.bundleIdentifier ?? "?")
                 }
 
-                if versionTaps >= 7 {
+                if versionTaps >= 7 || store.isTesterMode {
                     giftSection
+                }
+                if store.isTesterMode {
+                    testerSection
                 }
 
                 Section {
@@ -96,6 +101,15 @@ struct SettingsView: View {
                 }
             }
             .overlay(alignment: .top) { ErrorOverlay() }
+            .alert("Bật Dữ liệu thử nghiệm?", isPresented: $confirmTester) {
+                Button("Tạo bản sao lưu trước") { exportBackup() }
+                Button("Bật") {
+                    if ui.run({ try store.enableTesterMode() }) { giftMessage = "Đã bật Dữ liệu thử nghiệm." }
+                }
+                Button("Hủy", role: .cancel) {}
+            } message: {
+                Text("Chế độ này dành cho chủ dự án kiểm tra nội dung trên máy: mở mọi loài, màu, trang phục, nội thất, phòng và hiện cấp \(LevelCurve.maxLevel). Dữ liệu sẽ được gắn cờ “Dữ liệu thử nghiệm”. Tắt chế độ không trả lại nguyên trạng mọi thứ, nên sao lưu trước.")
+            }
             .alert("Xóa toàn bộ dữ liệu?", isPresented: $confirmErase) {
                 Button("Tạo bản sao lưu trước") { exportBackup() }
                 Button("Tiếp tục", role: .destructive) { confirmEraseFinal = true }
@@ -157,11 +171,40 @@ struct SettingsView: View {
 
     private func redeem() {
         do {
-            let coins = try store.redeemGiftCode(giftCode)
-            giftMessage = "Đã nhận \(coins) xu."
+            switch try store.redeemGiftCode(giftCode) {
+            case .coins(let coins):
+                giftMessage = coins > 0 ? "Đã nhận \(coins) xu." : "Bộ dữ liệu này đã nhận đủ quyền lợi của mã ở bản trước."
+            case .needsTesterConfirmation:
+                confirmTester = true
+            case .testerAlreadyOn:
+                giftMessage = "Dữ liệu thử nghiệm đang bật."
+            }
             giftCode = ""
         } catch {
             giftMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+
+    // MARK: Dữ liệu thử nghiệm (mã phuhotdz)
+
+    private var testerSection: some View {
+        Section {
+            Label("Dữ liệu thử nghiệm đang bật", systemImage: "flask.fill")
+                .foregroundStyle(Palette.peach)
+            NavigationLink("Bảng công cụ thử nghiệm") { TesterToolsView() }
+            Button("Tắt Dữ liệu thử nghiệm", role: .destructive) { confirmTesterOff = true }
+        } header: {
+            Text("Dữ liệu thử nghiệm")
+        } footer: {
+            Text("Mọi món và phòng đang mở để kiểm tra, cấp hiển thị là \(LevelCurve.maxLevel). Việc, nhật ký, huy hiệu, chuỗi ngày và kết quả chơi không bị thay đổi. Mã nằm trong app nên không phải cách bảo vệ quyền quản trị.")
+        }
+        .alert("Tắt Dữ liệu thử nghiệm?", isPresented: $confirmTesterOff) {
+            Button("Tắt", role: .destructive) {
+                ui.run { try store.disableTesterMode() }
+            }
+            Button("Hủy", role: .cancel) {}
+        } message: {
+            Text("Đồ chưa thật sự có sẽ được tháo ra. Xu và vé thử nghiệm đã cộng, cùng đồ đã mua bằng chúng, vẫn còn trong dữ liệu (được đánh dấu). App không có bản chụp để trả lại nguyên trạng trước khi bật.")
         }
     }
 

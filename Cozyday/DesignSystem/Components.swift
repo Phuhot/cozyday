@@ -193,6 +193,7 @@ extension LedgerEntry {
         var parts: [String] = []
         if xp > 0 { parts.append("+\(xp) XP") }
         if coins > 0 { parts.append("+\(coins) xu") }
+        if tickets > 0 { parts.append("+\(tickets) vé") }
         return parts.joined(separator: " · ")
     }
 }

@@ -101,7 +101,7 @@ struct StatsView: View {
     }
 
     private var ledgerSection: some View {
-        let entries = store.ledger.sorted { $0.createdAt > $1.createdAt }.prefix(60)
+        let entries = store.ledger.filter { !$0.kind.isHidden }.sorted { $0.createdAt > $1.createdAt }.prefix(60)
         return VStack(alignment: .leading, spacing: Spacing.s) {
             Text("Lịch sử xu & vật phẩm").font(Typography.headline)
             if entries.isEmpty {
@@ -128,6 +128,9 @@ struct StatsView: View {
                         Text(e.coins == 0 ? "0 xu" : (e.coins > 0 ? "+\(e.coins) xu" : "\(e.coins) xu"))
                             .font(Typography.callout.weight(.semibold).monospacedDigit())
                             .foregroundStyle(e.coins < 0 ? Palette.danger : Palette.ink)
+                        if e.tickets != 0 {
+                            Text(e.tickets > 0 ? "+\(e.tickets) vé" : "\(e.tickets) vé").font(Typography.caption.monospacedDigit()).foregroundStyle(Palette.inkMuted)
+                        }
                         if e.xp > 0 {
                             Text("+\(e.xp) XP").font(Typography.caption.monospacedDigit()).foregroundStyle(Palette.inkMuted)
                         }
@@ -201,13 +204,20 @@ struct StatsView: View {
         case .foodPurchase: return "fork.knife"
         case .gacha: return "gift"
         case .gift: return "star"
+        case .quest: return "checklist.checked"
+        case .levelReward: return "rosette"
+        case .badge: return "medal"
+        case .event: return "party.popper"
+        case .system: return "gearshape"
+        case .tester: return "flask"
         }
     }
 
     private func subtitle(_ e: LedgerEntry) -> String {
         let when = DateText.dateTime(e.createdAt, calendar: store.calendar)
         switch e.kind {
-        case .taskCompleted, .focusCompleted, .adventure, .minigame, .care, .foodPurchase, .gacha, .gift: return "\(when) · \(e.memo)"
+        case .taskCompleted, .focusCompleted, .adventure, .minigame, .care, .foodPurchase, .gacha, .gift,
+             .quest, .levelReward, .badge, .event, .tester: return "\(when) · \(e.memo)"
         default: return when
         }
     }
