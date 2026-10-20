@@ -153,8 +153,9 @@ final class MergeController {
     @ObservationIgnored private var bestLevel: Int
 
     init(seed: UInt64) {
-        engine = SweetMergeEngine(seed: seed)
-        bestLevel = engine.highestLevel
+        let start = SweetMergeEngine(seed: seed)
+        engine = start
+        bestLevel = start.highestLevel
     }
 
     var isOver: Bool { engine.isOver }
