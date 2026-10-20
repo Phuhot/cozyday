@@ -20,7 +20,8 @@ final class CareAndPlayStoreTests: XCTestCase {
 
     private func grantCoins(_ store: AppStore, _ coins: Int, xp: Int = 0) throws {
         try store.commit {
-            store.insertLedger(LedgerEntry(id: UUID(), key: "test:\(UUID())", kind: .taskCompleted, xp: xp, coins: coins,
+            // Xu thêm cho test ghi như mã quà (sao lưu chặn dòng "thưởng việc" vượt mức 8 xu).
+            store.insertLedger(LedgerEntry(id: UUID(), key: "test:\(UUID())", kind: xp > 0 ? .taskCompleted : .gift, xp: xp, coins: coins,
                                            createdAt: store.now, refID: nil, memo: "test"))
         }
     }
