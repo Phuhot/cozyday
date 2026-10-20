@@ -85,13 +85,14 @@ struct MainTabView: View {
                 .tabItem { Label("Tiến bộ", systemImage: "chart.bar") }
                 .tag(AppTab.progress)
         }
-        .overlay(alignment: .bottomTrailing) {
+        .overlay(alignment: .bottomLeading) {
             // Đang có phiên mà bạn ở tab khác: đồng hồ nhỏ nổi trên thanh tab, chạm để quay lại.
+            // Đặt bên trái để không che nút "+" thêm việc ở góc phải màn Hôm nay.
             if let session = store.activeFocus, router.selectedTab != .focus {
                 FocusMiniBar(session: session) { router.selectedTab = .focus }
-                    .padding(.trailing, Spacing.l)
+                    .padding(.leading, Spacing.l)
                     .padding(.bottom, 92)
-                    .transition(.move(edge: .trailing).combined(with: .opacity))
+                    .transition(.move(edge: .leading).combined(with: .opacity))
             }
         }
         .animation(Motion.gentle, value: store.activeFocus?.id)
