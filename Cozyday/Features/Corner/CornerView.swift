@@ -344,7 +344,7 @@ struct CornerTile: View {
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isButton)
-
+    }
 }
 
 /// Mở cửa hàng ở một phòng / vị trí cụ thể.
