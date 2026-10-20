@@ -117,3 +117,12 @@ nhưng giới hạn số phút mỗi tháng. Lưu ý:
 
 Các ảnh trên do CI chụp ở lần chạy có `[ui-preview]` kế tiếp; nếu job lưu ảnh không chạy được (giới hạn chi tiêu GitHub Actions) thì ảnh chỉ nằm trong artifact.
 
+
+## Gacha, minigame xếp khối, sàn nhà (phiên 8)
+
+| | | |
+|---|---|---|
+| ![Xếp Khối](screenshots/43-blocks.jpg) Xếp Khối (bản xem trước tự chơi) | ![Gộp Bánh](screenshots/44-merge.jpg) Gộp Bánh | ![Giới thiệu](screenshots/45-tour.jpg) Trang giới thiệu tính năng sau video |
+| ![Máy gacha](screenshots/46-gacha.jpg) Máy gacha: giá, tỉ lệ, bộ đếm bảo đảm | ![Kết quả 10 lượt](screenshots/47-gacha-result.jpg) Kết quả quay 10 lượt | ![Mua sàn](screenshots/48-shop-floor.jpg) Cửa hàng, mục Sàn nhà |
+| ![Đồ bí mật](screenshots/49-wardrobe-secret.jpg) Tủ đồ: món Bí mật chỉ hiện bóng | ![Gacha — tối](screenshots/dark-46-gacha.jpg) Máy gacha, chế độ tối | ![Gacha — chữ lớn](screenshots/large-46-gacha.jpg) Máy gacha, chữ lớn |
+| ![Góc nhỏ — chữ lớn](screenshots/large-07-corner.jpg) Góc nhỏ bố cục mới, chữ lớn | | |
