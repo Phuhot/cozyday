@@ -182,7 +182,7 @@ struct PetPainter {
         if let hat = appearance.hat {
             drawHat(ctx, hat)
             // Tai thỏ dài: thò ra ngoài mũ len / mũ cói thay vì bị che mất.
-            if appearance.species == .bunny && (hat == "hat.beanie" || hat == "hat.straw") { drawEars(ctx, fur) }
+            if appearance.species == .bunny && ["hat.beanie", "hat.straw", "hat.bucket", "hat.sailorcap", "hat.viking"].contains(hat) { drawEars(ctx, fur) }
         }
         drawPaws(ctx, fur)
         if let back = appearance.back { CostumeArt.back(back, ctx, appearance, front: true) }
