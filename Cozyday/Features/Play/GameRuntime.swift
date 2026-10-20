@@ -122,6 +122,20 @@ func spriteDrawer(_ sprites: [PetSpriteKind: Image]) -> PetSpriteDrawer {
 
 enum GameCue: CaseIterable {
     case bounce, star, good, bad, flip, match, miss, win, tick, go, fall
+    // Xếp Khối & Gộp Bánh: tiếng giàu hơn (chuông + lấp lánh), cao dần theo chuỗi / bậc món.
+    case pickup, place, refill, whoosh, newBest, gameOver
+    case clear1, clear2, clear3, clear4, clear5, combo2, combo3
+    case merge1, merge2, merge3, merge4
+
+    /// Tiếng xóa đường theo độ dài chuỗi liền tay (1…5, quá 5 giữ nốt cao nhất).
+    static func clear(streak: Int) -> GameCue {
+        [.clear1, .clear2, .clear3, .clear4, .clear5][min(4, max(0, streak - 1))]
+    }
+
+    /// Tiếng gộp theo bậc món vừa tạo.
+    static func merge(level: Int) -> GameCue {
+        level >= 8 ? .merge4 : level >= 6 ? .merge3 : level >= 4 ? .merge2 : .merge1
+    }
 }
 
 /// Âm thanh ngắn tự tổng hợp (không dùng tệp âm thanh ngoài). Phiên âm thanh `.ambient` + trộn với âm thanh khác:
@@ -145,7 +159,7 @@ final class GameSound {
         guard let format = AVAudioFormat(standardFormatWithSampleRate: 44_100, channels: 1) else { return }
         let engine = AVAudioEngine()
         var nodes: [AVAudioPlayerNode] = []
-        for _ in 0..<4 {
+        for _ in 0..<6 {
             let node = AVAudioPlayerNode()
             engine.attach(node)
             engine.connect(node, to: engine.mainMixerNode, format: format)
@@ -196,6 +210,7 @@ final class GameSound {
 
     /// Tiếng "bíp/bóp" mềm: sóng sin + họa âm nhẹ, đường bao tắt dần.
     static func synthesize(_ cue: GameCue, format: AVAudioFormat) -> AVAudioPCMBuffer? {
+        if let tones = richTones(cue) { return GameSynth.render(tones, format: format) }
         let notes: [(Double, Double, Double)]
         switch cue {
         case .bounce: notes = [(420, 640, 0.09)]
@@ -209,6 +224,7 @@ final class GameSound {
         case .tick: notes = [(880, 880, 0.05)]
         case .go: notes = [(1175, 1175, 0.12)]
         case .fall: notes = [(520, 260, 0.32)]
+        default: notes = [(660, 660, 0.05)]
         }
         let rate = format.sampleRate
         let total = notes.reduce(0) { $0 + $1.2 }

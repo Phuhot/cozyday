@@ -501,6 +501,12 @@ final class PlayHostModel: Identifiable {
         }
     }
 
+    /// Tiếng/rung do giao diện gọi trực tiếp (nhấc khối lên…).
+    func cue(_ cue: GameCue, haptic: GameFeedbackEvent.Haptic? = nil) {
+        guard session.isRunning else { return }
+        handle(GameFeedbackEvent(cue: cue, haptic: haptic))
+    }
+
     private func handle(_ event: GameFeedbackEvent) {
         if let cue = event.cue { sound.play(cue) }
         switch event.haptic {

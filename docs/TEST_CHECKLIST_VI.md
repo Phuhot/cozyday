@@ -176,3 +176,13 @@ Xem `PROJECT_STATUS.md` — mục "Kết quả kiểm tra thực tế". Mục n�
 - [ ] Âm nền: chọn Mưa nhẹ, bắt đầu phiên, khóa máy: vẫn nghe tiếng mưa; tạm dừng thì tắt; đang nghe nhạc app khác thì nhạc không bị ngắt.
 - [ ] "Toàn màn hình": nền tối, đồng hồ lớn, màn hình không tự tắt khi bật "Giữ màn hình sáng".
 - [ ] Xóa toàn bộ dữ liệu: cài đặt hẹn giờ về mặc định.
+
+## Hiệu ứng & âm thanh minigame (phiên 8)
+
+- [ ] Xếp Khối: nhấc khối có tiếng "pốp" và khối phóng to nhẹ; thả xuống có tiếng "bộp" và ô lóe sáng.
+- [ ] Xóa 1 đường: vệt sáng quét qua, kẹo vỡ + hạt kẹo bắn ra, chuông 3 nốt. Xóa liền tay nhiều lần: nốt cao dần, HUD hiện lửa ×N.
+- [ ] Xóa 2–3 đường cùng lúc: bàn rung, chữ "Combo ×2/×3" to nảy ra giữa bàn, tiếng chuông dài + rung máy.
+- [ ] Bộ 3 khối mới vào khay nảy lần lượt, có 3 tiếng "tinh" nhỏ.
+- [ ] Gộp Bánh: mỗi lần vuốt có tiếng gió; gộp có vòng sáng nở + hạt bánh, tiếng cao dần theo món; ra món mới (từ cupcake) có hình món + "Món mới!" + nhạc ngắn.
+- [ ] Bật Giảm chuyển động: không rung bàn, không hạt bay; vẫn có âm thanh.
+- [ ] Tắt âm thanh trong Sân chơi: không có tiếng nào; nhạc của app khác không bị ngắt.

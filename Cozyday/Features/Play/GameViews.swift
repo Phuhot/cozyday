@@ -130,8 +130,10 @@ struct GameHostView: View {
             ForEach(Array(stats.enumerated()), id: \.offset) { _, stat in
                 Label(stat.1, systemImage: stat.0)
                     .font(Typography.headline.monospacedDigit())
-                    .foregroundStyle(Palette.ink)
+                    .foregroundStyle(stat.0 == "flame.fill" ? Palette.peach : Palette.ink)
                     .lineLimit(1)
+                    .contentTransition(.numericText())
+                    .animation(reduceMotion ? nil : .snappy(duration: 0.25), value: stat.1)
             }
         }
     }
@@ -150,7 +152,9 @@ struct GameHostView: View {
             return [("hand.tap.fill", "\(host.memory?.board.moves ?? 0) lượt"), ("timer", MemoryTimeText.text(host))]
         case .blockPuzzle:
             let e = host.blocks?.engine
-            return [("star.fill", "\(e?.score ?? 0)"), ("line.3.horizontal", "\(e?.linesCleared ?? 0) đường")]
+            var list = [("star.fill", "\(e?.score ?? 0)"), ("line.3.horizontal", "\(e?.linesCleared ?? 0) đường")]
+            if let streak = e?.streak, streak >= 2 { list.append(("flame.fill", "×\(streak)")) }
+            return list
         case .sweetMerge:
             let e = host.merge?.engine
             return [("star.fill", "\(e?.score ?? 0)"), ("birthday.cake.fill", "\(e?.highestValue ?? 2)")]
