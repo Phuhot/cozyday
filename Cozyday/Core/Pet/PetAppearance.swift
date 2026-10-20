@@ -4,6 +4,8 @@ import Foundation
 enum PetSpecies: String, CaseIterable {
     case cat, bunny, hamster, bear, fox
     case puppy, duck, frog, capybara, panda, penguin
+    // Dáng người khác hẳn khối tròn: bay lơ lửng, dẻo, mũ nấm, vây, cánh, sừng.
+    case ghost, slime, mushroom, shark, owl, dragon, unicorn
 
     var name: String {
         switch self {
@@ -18,6 +20,13 @@ enum PetSpecies: String, CaseIterable {
         case .capybara: return "capybara"
         case .panda: return "gấu trúc"
         case .penguin: return "chim cánh cụt"
+        case .ghost: return "ma bông"
+        case .slime: return "thạch dẻo"
+        case .mushroom: return "nấm nhỏ"
+        case .shark: return "cá mập con"
+        case .owl: return "cú mèo"
+        case .dragon: return "rồng con"
+        case .unicorn: return "kỳ lân"
         }
     }
 }
