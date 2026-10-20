@@ -125,6 +125,14 @@ struct PetPose: Equatable {
     var petted: CGFloat = 0
     /// Đang được nhấc lên (mắt tròn ngạc nhiên, chân lủng lẳng).
     var lifted = false
+    // Diễn xuất (màn mở viên nang gacha). Mặc định 0 nên mọi hình vẽ cũ giữ nguyên.
+    /// Nghiêng đầu (độ) quanh cổ, thân đứng yên; âm = nghiêng về bên trái màn hình.
+    var headTilt: Double = 0
+    /// 0…1: cúi nhìn xuống (mặt hạ thấp một chút, mắt nhìn xuống).
+    var lookDown: CGFloat = 0
+    /// Chân trước bên trái màn hình: nhấc lên / vươn ra ngoài (đơn vị 100×100).
+    var pawLift: CGFloat = 0
+    var pawReach: CGFloat = 0
 }
 
 /// Vẽ thú cưng trong hệ tọa độ 100×100, theo lớp:
@@ -167,27 +175,39 @@ struct PetPainter {
         ctx.scaleBy(x: stageScale * sq.x, y: stageScale * sq.y)
         ctx.translateBy(x: -anchor.x, y: -anchor.y)
 
+        // Đầu (tai, mặt, kính, mũ) có thể nghiêng / cúi riêng; mặc định trùng với thân.
+        let head = headContext(ctx)
         drawTail(ctx, fur)
         if let back = appearance.back { CostumeArt.back(back, ctx, appearance, front: false) }
         if appearance.outfit == "outfit.cape" { drawCapeBack(ctx) }
-        drawEars(ctx, fur)
+        drawEars(head, fur)
         let body = bodyPath
         ctx.fill(body, with: .color(bodyColor(fur)))
         drawBelly(ctx, fur, body: body)
         if let outfit = appearance.outfit { drawOutfit(ctx, outfit, body: body) }
         drawSideParts(ctx, fur)
-        drawFace(ctx, fur)
-        if let glasses = appearance.glasses { drawGlasses(ctx, glasses) }
+        drawFace(head, fur)
+        if let glasses = appearance.glasses { drawGlasses(head, glasses) }
         if let neck = appearance.neck { drawNeck(ctx, neck) }
         if let hat = appearance.hat {
-            drawHat(ctx, hat)
+            drawHat(head, hat)
             // Tai thỏ dài: thò ra ngoài mũ len / mũ cói thay vì bị che mất.
-            if appearance.species == .bunny && ["hat.beanie", "hat.straw", "hat.bucket", "hat.sailorcap", "hat.viking"].contains(hat) { drawEars(ctx, fur) }
+            if appearance.species == .bunny && ["hat.beanie", "hat.straw", "hat.bucket", "hat.sailorcap", "hat.viking"].contains(hat) { drawEars(head, fur) }
         }
         drawPaws(ctx, fur)
         if let back = appearance.back { CostumeArt.back(back, ctx, appearance, front: true) }
         drawMoodExtras(ctx)
         drawHearts(base)
+    }
+
+    /// Hệ tọa độ của đầu: nghiêng quanh cổ và hạ thấp khi cúi nhìn. Không có tư thế đầu thì trả lại nguyên `ctx`.
+    private func headContext(_ ctx: GraphicsContext) -> GraphicsContext {
+        guard pose.headTilt != 0 || pose.lookDown != 0 else { return ctx }
+        var c = ctx
+        c.translateBy(x: 50, y: 66 + pose.lookDown * 2.4)
+        c.rotate(by: .degrees(pose.headTilt))
+        c.translateBy(x: -50, y: -66)
+        return c
     }
 
     private var bodyRect: CGRect {
@@ -463,8 +483,8 @@ struct PetPainter {
         // Cú mèo: mắt to tròn hơn một chút.
         let f = eyeScale * (appearance.species == .owl ? 1.12 : 1)
         let dx = pose.look * 1.3
-        let left = CGPoint(x: 37.5 + dx, y: 50)
-        let right = CGPoint(x: 62.5 + dx, y: 50)
+        let left = CGPoint(x: 37.5 + dx, y: 50 + pose.lookDown * 1.2)
+        let right = CGPoint(x: 62.5 + dx, y: 50 + pose.lookDown * 1.2)
         let closed = pose.blink && (mood == .idle || mood == .happy)
         let faceMood: PetMood = pose.petted > 0.15 ? .happy : mood
         // Gấu trúc: mắt nằm trên quầng đen nên nét mắt nhắm/cười dùng màu sáng.
@@ -824,7 +844,7 @@ struct PetPainter {
     private func drawPaws(_ ctx: GraphicsContext, _ fur: FurPalette) {
         let step = pose.walk.map { sin($0) * 2.2 } ?? 0
         let dangle: CGFloat = pose.lifted ? 4 : 0
-        let feet: [(x: CGFloat, y: CGFloat, side: CGFloat)] = [(41, 80 - step + dangle, -1), (59, 80 + step + dangle, 1)]
+        let feet: [(x: CGFloat, y: CGFloat, side: CGFloat)] = [(41 - pose.pawReach, 80 - step + dangle - pose.pawLift, -1), (59, 80 + step + dangle, 1)]
         switch appearance.species {
         case .duck, .penguin:
             // Chân màng màu cam.
@@ -865,7 +885,7 @@ struct PetPainter {
         case .ghost, .slime, .mushroom, .shark, .owl, .dragon, .unicorn:
             drawShapePaws(ctx, fur, feet: feet, dangle: dangle)
         default:
-            ctx.ellipse(36, 80 - step + dangle, 10, 7 + dangle / 2, fur.base)
+            ctx.ellipse(36 - pose.pawReach, 80 - step + dangle - pose.pawLift, 10, 7 + dangle / 2, fur.base)
             ctx.ellipse(54, 80 + step + dangle, 10, 7 + dangle / 2, fur.base)
         }
     }

@@ -1,0 +1,1241 @@
+import SwiftUI
+
+// Màn mở viên nang của máy gacha: hình 2D vẽ bằng code (GraphicsContext), dàn thành cảnh 2.5D gồm
+// lớp nền / lớp giữa / lớp trước có thị sai, co giãn phối cảnh theo độ sâu, máy quay ảo (lia, phóng, đẩy nhẹ),
+// bóng đổ và khung hình khóa có làm mượt. Đây KHÔNG phải 3D: mọi thứ là hình phẳng xếp lớp.
+// Hàm vẽ thuần túy và tất định: cùng (t, cảnh) luôn ra cùng một khung hình, nên vẽ được ngoài máy (Linux) để kiểm tra.
+
+// MARK: - Loại phần thưởng
+
+/// Món vừa quay thuộc nhóm nào: quyết định cách khoe (mặc lên người, đổi lông, đổi hình dạng, hay đặt trong hốc trưng bày).
+enum GachaRevealKind: Equatable {
+    case wearable(ItemSlot)
+    case fur
+    case species
+    case furniture(scene: Bool)
+
+    init(itemID: String) {
+        guard let item = Catalog.item(itemID) else {
+            self = .furniture(scene: false)
+            return
+        }
+        switch item.slot {
+        case .species: self = .species
+        case .fur: self = .fur
+        case .hat, .glasses, .neck, .outfit, .back: self = .wearable(item.slot)
+        default: self = .furniture(scene: item.slot.isScene)
+        }
+    }
+
+    /// Món thay đổi ngoại hình thú cưng (khoe trên người thú cưng).
+    var changesPet: Bool {
+        if case .furniture = self { return false }
+        return true
+    }
+}
+
+extension PetAppearance {
+    /// Bỏ hết đồ đang mặc (mũ, kính, cổ, áo, phụ kiện); giữ loài, màu lông và giai đoạn lớn.
+    var withoutCostume: PetAppearance {
+        var copy = self
+        copy.hat = nil
+        copy.glasses = nil
+        copy.neck = nil
+        copy.outfit = nil
+        copy.back = nil
+        return copy
+    }
+
+    /// Ngoại hình để khoe một món: bỏ hết đồ đang mặc rồi chỉ mặc món mới (cộng các món cùng bộ nếu có truyền vào).
+    /// Chỉ để xem, không đổi đồ thật.
+    func showcasing(_ item: CatalogItem, alsoWearing extra: [CatalogItem] = []) -> PetAppearance {
+        var look = withoutCostume
+        for piece in extra where piece.slot.isPet && piece.id != item.id { look = look.trying(piece) }
+        return look.trying(item)
+    }
+}
+
+extension CatalogItem {
+    /// Tên bộ ("Bộ Mùa xuân") đọc từ đầu lời giới thiệu của món gacha; nil nếu món không thuộc bộ nào.
+    var gachaSetName: String? {
+        guard blurb.hasPrefix("Bộ "), let dot = blurb.firstIndex(of: ".") else { return nil }
+        return String(blurb[..<dot])
+    }
+}
+
+// MARK: - Màu theo độ hiếm
+
+/// Màu cố định (không đổi theo dark mode) của ánh sáng mỗi độ hiếm, cùng mức "hoành tráng" của từng bậc.
+struct GachaTierLook {
+    let main: Color
+    let light: Color
+    let deep: Color
+    /// Số hạt bung ra lúc mở.
+    let particles: Int
+    /// Quý trở lên: vòng sáng lan + chùm lấp lánh.
+    let burst: Bool
+    /// Bí mật: tia sáng xoay chậm phía sau, giấy kim tuyến rơi.
+    let rays: Bool
+
+    static func of(_ tier: ItemRarity) -> GachaTierLook {
+        switch tier {
+        case .common:
+            return GachaTierLook(main: rgb(0x8FC79A), light: rgb(0xDDF2E0), deep: rgb(0x5E9A6A), particles: 12, burst: false, rays: false)
+        case .rare:
+            return GachaTierLook(main: rgb(0x7FA6E0), light: rgb(0xDCE8FB), deep: rgb(0x4F78B8), particles: 20, burst: false, rays: false)
+        case .epic:
+            return GachaTierLook(main: rgb(0xB49AF0), light: rgb(0xEEE6FF), deep: rgb(0x7A5CC8), particles: 32, burst: true, rays: false)
+        case .secret:
+            return GachaTierLook(main: rgb(0xF5C451), light: rgb(0xFFF2C9), deep: rgb(0xC98516), particles: 48, burst: true, rays: true)
+        }
+    }
+}
+
+// MARK: - Âm thanh theo kịch bản
+
+/// Các tiếng trong màn mở viên nang (tự tổng hợp trong code, xem GachaSound.swift).
+enum GachaCue: String, CaseIterable {
+    case whir, clunk, bounce1, bounce2, bounce3, roll, wonder, tap1, tap2, tremble, build
+    case crack1, crack2, crack3
+    case openCommon, openRare, openEpic, openSecret
+    case jingle, jingleGrand, coins
+
+    static func open(_ tier: ItemRarity) -> GachaCue {
+        switch tier {
+        case .common: return .openCommon
+        case .rare: return .openRare
+        case .epic: return .openEpic
+        case .secret: return .openSecret
+        }
+    }
+}
+
+// MARK: - Kịch bản thời gian
+
+/// Mốc thời gian của câu chuyện (giây, bản đầy đủ). Bản ngắn phát lại một phần câu chuyện nhanh hơn (xem `segments`).
+enum GachaBeat {
+    static let knob = 1.0
+    static let eject = 2.05
+    static let land1 = 2.35
+    static let land2 = 2.62
+    static let land3 = 2.82
+    static let rest = 3.9
+    static let lookDown = 3.95
+    static let wonder = 4.3
+    static let reach = 4.75
+    static let tap1 = 5.0
+    static let tap2 = 5.4
+    static let tremble = 5.7
+    static let crack1 = 6.25
+    static let crack2 = 6.55
+    static let crack3 = 6.8
+    static let open = 7.0
+    static let orbTop = 7.45
+    static let orbFly = 7.55
+    static let reveal = 8.0
+    static let chip = 8.25
+    static let name = 8.45
+    static let end = 9.6
+}
+
+struct GachaCutsceneScript: Equatable {
+    /// Một đoạn câu chuyện [from, to) phát với tốc độ `speed`. Giữa hai đoạn không liền nhau là một cú cắt cảnh.
+    struct Segment: Equatable {
+        let from: Double
+        let to: Double
+        let speed: Double
+        var length: Double { (to - from) / speed }
+    }
+
+    let segments: [Segment]
+
+    init(short: Bool) {
+        if short {
+            // Khoảng 2,8 giây: máy nhả viên nang → cắt cảnh tới lúc viên nang nứt dưới chân thú cưng → mở → khoe.
+            segments = [Segment(from: 1.55, to: 2.45, speed: 1.5),
+                        Segment(from: 5.95, to: 7.25, speed: 1.6),
+                        Segment(from: 7.25, to: 9.0, speed: 1.25)]
+        } else {
+            segments = [Segment(from: 0, to: GachaBeat.end, speed: 1)]
+        }
+    }
+
+    var duration: Double { segments.reduce(0) { $0 + $1.length } }
+
+    /// Thời gian câu chuyện ứng với thời gian thật `t` (giây kể từ lúc bắt đầu).
+    func story(_ t: Double) -> Double {
+        var start = 0.0
+        for seg in segments {
+            if t < start + seg.length { return seg.from + max(0, t - start) * seg.speed }
+            start += seg.length
+        }
+        return segments.last?.to ?? 0
+    }
+
+    /// Thời gian thật của một mốc câu chuyện; nil nếu mốc đó nằm trong phần bị cắt.
+    func realTime(ofStory s: Double) -> Double? {
+        var start = 0.0
+        for seg in segments {
+            if s >= seg.from && s < seg.to { return start + (s - seg.from) / seg.speed }
+            start += seg.length
+        }
+        return nil
+    }
+
+    /// Danh sách tiếng (thời gian thật, tiếng) cho một cảnh.
+    func cues(tier: ItemRarity, duplicate: Bool) -> [(time: Double, cue: GachaCue)] {
+        var story: [(Double, GachaCue)] = [
+            (0.15, .whir), (2.0, .clunk), (GachaBeat.land1, .bounce1), (GachaBeat.land2, .bounce2), (GachaBeat.land3, .bounce3),
+            (2.86, .roll), (GachaBeat.wonder + 0.05, .wonder), (GachaBeat.tap1, .tap1), (GachaBeat.tap2, .tap2),
+            (GachaBeat.tremble, .tremble), (6.05, .build),
+            (GachaBeat.crack1, .crack1), (GachaBeat.crack2, .crack2), (GachaBeat.crack3, .crack3),
+            (GachaBeat.open, .open(tier)), (GachaBeat.reveal + 0.05, tier >= .epic ? .jingleGrand : .jingle)
+        ]
+        if duplicate { story.append((8.75, .coins)) }
+        var out: [(time: Double, cue: GachaCue)] = []
+        for (s, cue) in story {
+            if let t = realTime(ofStory: s) { out.append((t, cue)) }
+        }
+        // Bản ngắn bắt đầu giữa lúc máy quay: vẫn cho một tiếng máy nhả viên nang ngay đầu.
+        if segments.first?.from ?? 0 > 0.15, !out.contains(where: { $0.cue == .clunk }) { out.insert((0.02, .clunk), at: 0) }
+        return out.sorted { $0.time < $1.time }
+    }
+}
+
+// MARK: - Cảnh
+
+struct GachaCutsceneScene: Equatable {
+    /// Ngoại hình hiện tại của thú cưng (giữ nguyên đồ đang mặc cho tới lúc khoe).
+    var appearance: PetAppearance
+    var itemID: String
+    var tier: ItemRarity
+    var isDuplicate = false
+    var refund = 0
+    /// Bản ngắn (~2,8 giây).
+    var short = false
+    /// Giảm chuyển động: bản ngắn, máy quay đứng yên, không lóe sáng, không rung.
+    var reduceMotion = false
+
+    var item: CatalogItem? { Catalog.item(itemID) }
+    var kind: GachaRevealKind { GachaRevealKind(itemID: itemID) }
+    var script: GachaCutsceneScript { GachaCutsceneScript(short: short || reduceMotion) }
+    var duration: Double { script.duration }
+
+    /// Ngoại hình sau khi khoe: món mặc/lông/hình dạng thì bỏ hết đồ đang mặc và chỉ thử món mới.
+    var revealAppearance: PetAppearance {
+        guard let item, kind.changesPet else { return appearance }
+        return appearance.showcasing(item)
+    }
+
+    /// Cảnh mẫu cho mỗi độ hiếm (xem thử ở chế độ người thử nghiệm, ảnh CI): không có giao dịch nào.
+    static func sample(tier: ItemRarity, appearance: PetAppearance, preferFurniture: Bool = false) -> GachaCutsceneScene {
+        let pool = Catalog.items.filter { $0.gachaOnly && !$0.isDefault && $0.tier == tier }
+        let pick = preferFurniture ? pool.first { !$0.slot.isPet } ?? pool.first : pool.first
+        let fallback: [ItemRarity: String] = [.common: "hat.sprout", .rare: "glasses.heart", .epic: "hat.sakura", .secret: "hat.galaxy"]
+        let id = pick?.id ?? fallback[tier] ?? "hat.sprout"
+        return GachaCutsceneScene(appearance: appearance, itemID: id, tier: tier)
+    }
+}
+
+// MARK: - Hàm vẽ
+
+enum GachaCutscenePainter {
+    // Bố cục thế giới (đơn vị cảnh): tường gặp sàn ở y = 150, càng xuống càng gần máy quay.
+    static let wallBase: CGFloat = 150
+    static let machineContact = CGPoint(x: 118, y: 194)
+    static let petContact = CGPoint(x: 252, y: 224)
+    static let petSize: CGFloat = 92
+    /// Vị trí nghỉ của viên nang trong hệ 100×100 của thú cưng: sát chân trước bên trái, sau thân một chút.
+    static let capsuleRestLocal = CGPoint(x: 17, y: 79)
+    static let neutral = CGPoint(x: 190, y: 150)
+
+    /// Hệ số phối cảnh: vật càng gần (y lớn) càng to.
+    static func persp(_ y: CGFloat) -> CGFloat { 0.78 + (y - wallBase) / 100 * 0.38 }
+    static var petScale: CGFloat { petSize / 100 * persp(petContact.y) }
+    static var machineScale: CGFloat { 150 * persp(machineContact.y) / 260 }
+
+    static func petPoint(_ local: CGPoint) -> CGPoint {
+        CGPoint(x: petContact.x + (local.x - 50) * petScale, y: petContact.y + (local.y - 88) * petScale)
+    }
+
+    static var chute: CGPoint {
+        let m = machineScale
+        return CGPoint(x: machineContact.x + (86 - 100) * m, y: machineContact.y + (214 - 246) * m)
+    }
+
+    static var capsuleRadius: CGFloat { 10 * petScale }
+
+    // MARK: Vẽ một khung
+
+    static func draw(_ ctx: GraphicsContext, size: CGSize, t: Double, scene: GachaCutsceneScene) {
+        guard size.width > 1, size.height > 1 else { return }
+        let script = scene.script
+        let s = script.story(min(max(0, t), script.duration))
+        let look = GachaTierLook.of(scene.tier)
+        let rm = scene.reduceMotion
+        let cam = camera(s, scene: scene)
+
+        // Nền phủ cả khung (phòng tràn ra ngoài cảnh khi tỉ lệ màn hình khác).
+        ctx.fill(Path(CGRect(origin: .zero, size: size)), with: .color(rgb(0xF1E6F4)))
+
+        let back = layer(ctx, size: size, cam: cam, depth: 0.55)
+        let mid = layer(ctx, size: size, cam: cam, depth: 1)
+        let front = layer(ctx, size: size, cam: cam, depth: 1.35)
+
+        drawRoom(back, s: s)
+        drawFloor(mid, s: s)
+        drawMidProps(mid, s: s, scene: scene, look: look)
+
+        let capsule = capsuleState(s, rm: rm)
+        drawMachine(mid, s: s, rm: rm)
+        if let top = capsule.topHalf, top.landed { drawHalf(mid, top, color: shellColor, top: true) }
+        drawCapsule(mid, capsule, s: s, look: look, rm: rm)
+        drawFloorGlow(mid, capsule: capsule, s: s, look: look, scene: scene)
+
+        // Thú cưng: đổi sang ngoại hình mới đúng lúc màn sáng che kín.
+        let revealed = s >= GachaBeat.reveal
+        let appearance = revealed ? scene.revealAppearance : scene.appearance
+        let (mood, pose) = petActing(s, scene: scene, capsule: capsule)
+        drawPet(mid, appearance: appearance, mood: mood, pose: pose)
+        drawThoughts(mid, s: s, rm: rm)
+
+        if let top = capsule.topHalf, !top.landed { drawHalf(mid, top, color: shellColor, top: true) }
+        drawLight(mid, capsule: capsule, s: s, look: look, scene: scene)
+        drawOrb(mid, s: s, look: look, scene: scene, capsule: capsule)
+        drawParticles(mid, s: s, look: look, scene: scene, capsule: capsule)
+
+        drawForeground(front, s: s)
+        drawScreenEffects(ctx, size: size, s: s, look: look, scene: scene, cam: cam, capsule: capsule)
+        drawTitles(ctx, size: size, s: s, look: look, scene: scene)
+    }
+
+    // MARK: Máy quay
+
+    struct Camera {
+        var cx: CGFloat
+        var cy: CGFloat
+        var zoom: CGFloat
+        var shake: CGPoint = .zero
+    }
+
+    private struct Key {
+        let s: Double
+        let x: CGFloat
+        let y: CGFloat
+        let z: CGFloat
+    }
+
+    static func camera(_ s: Double, scene: GachaCutsceneScene) -> Camera {
+        if scene.reduceMotion {
+            // Giảm chuyển động: một khung trung cảnh cố định thấy cả máy và thú cưng.
+            return Camera(cx: 196, cy: 168, zoom: 1.42)
+        }
+        let px = petContact.x
+        let furniture = !scene.kind.changesPet
+        let keys: [Key] = [
+            Key(s: 0.0, x: 192, y: 146, z: 1.0),
+            Key(s: 1.7, x: 150, y: 156, z: 1.28),
+            Key(s: 2.15, x: 146, y: 164, z: 1.32),
+            Key(s: 3.0, x: 184, y: 172, z: 1.36),
+            Key(s: 3.9, x: 214, y: 178, z: 1.5),
+            Key(s: 4.6, x: 222, y: 182, z: 1.68),
+            Key(s: 5.9, x: 220, y: 182, z: 1.76),
+            Key(s: 6.9, x: 222, y: 182, z: 1.9),
+            Key(s: 7.3, x: 232, y: 162, z: 1.5),
+            Key(s: 7.9, x: 240, y: 160, z: 1.5),
+            Key(s: 8.6, x: furniture ? px - 14 : px, y: furniture ? 150 : 168, z: furniture ? 1.72 : 1.9),
+            Key(s: 9.6, x: furniture ? px - 14 : px, y: furniture ? 148 : 166, z: furniture ? 1.8 : 2.0)
+        ]
+        var cam = Camera(cx: keys[0].x, cy: keys[0].y, zoom: keys[0].z)
+        if let last = keys.last, s >= last.s {
+            cam = Camera(cx: last.x, cy: last.y, zoom: last.z)
+        } else {
+            for i in 0..<(keys.count - 1) where s >= keys[i].s && s < keys[i + 1].s {
+                let a = keys[i], b = keys[i + 1]
+                let u = CGFloat(easeInOut((s - a.s) / (b.s - a.s)))
+                cam = Camera(cx: a.x + (b.x - a.x) * u, cy: a.y + (b.y - a.y) * u, zoom: a.z + (b.z - a.z) * u)
+            }
+        }
+        // Rung máy quay rất nhẹ khi viên nang chạm đất và lúc bung sáng.
+        var shake: CGFloat = 0
+        shake += decay(s, GachaBeat.land1, amp: 1.4, freq: 38, rate: 9)
+        shake += decay(s, GachaBeat.open, amp: scene.tier >= .epic ? 2.2 : 1.2, freq: 30, rate: 7)
+        cam.shake = CGPoint(x: shake * 0.6, y: shake)
+        return cam
+    }
+
+    /// Hệ tọa độ của một lớp: lớp xa (depth < 1) lia và phóng ít hơn, lớp gần (depth > 1) nhiều hơn → thị sai.
+    static func layer(_ ctx: GraphicsContext, size: CGSize, cam: Camera, depth: CGFloat) -> GraphicsContext {
+        let base = min(size.width / 260, size.height / 330)
+        let zoom = 1 + (cam.zoom - 1) * depth
+        var c = ctx
+        c.translateBy(x: size.width / 2 + cam.shake.x * depth * base, y: size.height * 0.5 + cam.shake.y * depth * base)
+        c.scaleBy(x: base * zoom, y: base * zoom)
+        c.translateBy(x: -(neutral.x + (cam.cx - neutral.x) * depth), y: -(neutral.y + (cam.cy - neutral.y) * depth))
+        return c
+    }
+
+    /// Điểm trên lớp giữa → tọa độ màn hình.
+    static func screenPoint(_ p: CGPoint, size: CGSize, cam: Camera) -> CGPoint {
+        let base = min(size.width / 260, size.height / 330)
+        let k = base * cam.zoom
+        return CGPoint(x: size.width / 2 + cam.shake.x * base + (p.x - cam.cx) * k,
+                       y: size.height * 0.5 + cam.shake.y * base + (p.y - cam.cy) * k)
+    }
+
+    // MARK: Lớp nền: tường, cửa sổ, kệ
+
+    private static func drawRoom(_ c: GraphicsContext, s: Double) {
+        // Tường: dải màu ấm dần xuống chân tường.
+        c.fill(Path(CGRect(x: -700, y: -900, width: 1800, height: 900 + wallBase)),
+               with: .linearGradient(Gradient(colors: [rgb(0xEADFF3), rgb(0xF4EAF6), rgb(0xF8EEF2)]),
+                                     startPoint: CGPoint(x: 0, y: -120), endPoint: CGPoint(x: 0, y: wallBase)))
+        // Chấm hoa nhỏ trên giấy dán tường.
+        for row in -6..<6 {
+            for col in -8..<16 {
+                let x = CGFloat(col) * 26 + (row % 2 == 0 ? 0 : 13)
+                let y = CGFloat(row) * 24 + 4
+                guard y < wallBase - 28 else { continue }
+                c.circle(x, y, 1.6, rgb(0xDCCDEB))
+            }
+        }
+        // Ốp chân tường.
+        c.rect(-700, wallBase - 26, 1800, 26, rgb(0xE8D6E4))
+        c.rect(-700, wallBase - 27, 1800, 3, rgb(0xFFF8FB))
+        c.rect(-700, wallBase - 3, 1800, 3, rgb(0xD7C0D2))
+
+        // Cửa sổ: trời xanh, mây trôi chậm.
+        let win = CGRect(x: 196, y: 22, width: 96, height: 84)
+        c.rect(win.minX - 6, win.minY - 6, win.width + 12, win.height + 12, rgb(0xFFFDF8), radius: 10)
+        var sky = c
+        sky.clip(to: Path(roundedRect: win, cornerRadius: 6))
+        sky.fill(Path(win), with: .linearGradient(Gradient(colors: [rgb(0xA9D3F5), rgb(0xDCEFFC)]),
+                                                  startPoint: CGPoint(x: 0, y: win.minY), endPoint: CGPoint(x: 0, y: win.maxY)))
+        let drift = CGFloat((s * 3).truncatingRemainder(dividingBy: 140))
+        for (i, base) in [(0, CGPoint(x: 206, y: 46)), (1, CGPoint(x: 252, y: 74)), (2, CGPoint(x: 150, y: 60))] {
+            let x = base.x + drift * (i == 1 ? 0.7 : 1)
+            sky.ellipse(x - 14, base.y - 5, 28, 11, Color.white.opacity(0.9))
+            sky.ellipse(x - 6, base.y - 10, 16, 12, Color.white.opacity(0.9))
+        }
+        c.rect(win.midX - 2, win.minY, 4, win.height, rgb(0xFFFDF8))
+        c.rect(win.minX, win.midY - 2, win.width, 4, rgb(0xFFFDF8))
+        // Rèm hai bên.
+        c.rect(win.minX - 16, win.minY - 10, 14, win.height + 26, rgb(0xF6C9D6), radius: 6)
+        c.rect(win.maxX + 2, win.minY - 10, 14, win.height + 26, rgb(0xF6C9D6), radius: 6)
+        c.rect(win.minX - 20, win.minY - 14, win.width + 40, 6, rgb(0xC89B6D), radius: 3)
+
+        // Kệ treo tường và tranh nhỏ (vẽ bằng bộ vẽ đồ có sẵn).
+        drawItem(c, "wall.shelf", at: CGRect(x: 18, y: 18, width: 64, height: 64))
+        drawItem(c, "wall.clock", at: CGRect(x: 318, y: 34, width: 40, height: 40))
+        // Cây góc phòng và đèn giấy đứng sát tường.
+        drawItem(c, "plant.monstera", at: CGRect(x: -22, y: 92, width: 66, height: 66))
+        drawItem(c, "lamp.paper", at: CGRect(x: 330, y: 70, width: 84, height: 84))
+    }
+
+    private static func drawItem(_ c: GraphicsContext, _ id: String, at r: CGRect) {
+        var k = c
+        k.translateBy(x: r.minX, y: r.minY)
+        k.scaleBy(x: r.width / 100, y: r.height / 100)
+        ItemPainter.draw(id, in: k)
+    }
+
+    // MARK: Lớp giữa: sàn gỗ phối cảnh, thảm
+
+    private static func drawFloor(_ c: GraphicsContext, s: Double) {
+        c.fill(Path(CGRect(x: -700, y: wallBase, width: 1800, height: 900)),
+               with: .linearGradient(Gradient(colors: [rgb(0xE6D0B5), rgb(0xEFDDC6), rgb(0xF3E4CF)]),
+                                     startPoint: CGPoint(x: 0, y: wallBase), endPoint: CGPoint(x: 0, y: 330)))
+        // Ván sàn hội tụ về điểm tụ phía trên tường.
+        let vanish = CGPoint(x: neutral.x, y: -260)
+        let far: CGFloat = 640
+        c.strokePath(rgb(0xD9BF9F).opacity(0.75), width: 0.8) { p in
+            for i in -16...26 {
+                let x = CGFloat(i) * 22
+                let k = (far - vanish.y) / (wallBase - vanish.y)
+                p.move(to: CGPoint(x: x, y: wallBase))
+                p.addLine(to: CGPoint(x: vanish.x + (x - vanish.x) * k, y: far))
+            }
+            var y = wallBase
+            var gap: CGFloat = 7
+            while y < far {
+                y += gap
+                gap *= 1.22
+                p.move(to: CGPoint(x: -700, y: y)); p.addLine(to: CGPoint(x: 1100, y: y))
+            }
+        }
+        // Vệt nắng từ cửa sổ hắt xuống sàn.
+        var sun = Path()
+        sun.addLines([CGPoint(x: 200, y: wallBase), CGPoint(x: 290, y: wallBase), CGPoint(x: 340, y: 236), CGPoint(x: 214, y: 236)])
+        sun.closeSubpath()
+        c.fill(sun, with: .linearGradient(Gradient(colors: [Color.white.opacity(0.32), Color.white.opacity(0)]),
+                                          startPoint: CGPoint(x: 0, y: wallBase), endPoint: CGPoint(x: 0, y: 236)))
+        // Thảm tròn dưới chỗ thú cưng đứng.
+        c.ellipse(170, 208, 150, 34, rgb(0xE9B9C8))
+        c.ellipse(178, 211, 134, 27, rgb(0xF6D3DE))
+        c.strokePath(Color.white.opacity(0.7), width: 1.2) { p in
+            p.addEllipse(in: CGRect(x: 186, y: 214, width: 118, height: 21))
+        }
+    }
+
+    private static func drawMidProps(_ c: GraphicsContext, s: Double, scene: GachaCutsceneScene, look: GachaTierLook) {
+        // Đệm ngồi nhỏ phía sau bên phải.
+        c.ellipse(300, 176, 44, 14, Color.black.opacity(0.06))
+        c.ellipse(302, 160, 40, 22, rgb(0xC7B4F0))
+        c.ellipse(308, 160, 28, 12, rgb(0xE3D8F8))
+    }
+
+    // MARK: Máy gacha
+
+    private static func drawMachine(_ c: GraphicsContext, s: Double, rm: Bool) {
+        let m = machineScale
+        // Rung rì rì khi máy chạy (0,4 → 2,1 giây).
+        let running = smooth(0.35, 0.6, s) * (1 - smooth(1.95, 2.15, s))
+        let hum = rm ? 0 : CGFloat(sin(s * 61) * 0.5 + sin(s * 37) * 0.35) * CGFloat(running)
+        let kick = rm ? 0 : CGFloat(bump(s, 2.0, 0.16)) * 2.2
+        var k = c
+        k.translateBy(x: machineContact.x - 100 * m + hum, y: machineContact.y - 246 * m - kick)
+        k.scaleBy(x: m, y: m * (1 + 0.012 * CGFloat(bump(s, 2.0, 0.16))))
+        // Núm xoay từ giây 1,0; không vẽ viên lăn ra máng (viên nang của cảnh vẽ riêng).
+        let spin = s < GachaBeat.knob ? -1 : min(1.5, (s - GachaBeat.knob) * 0.95)
+        GachaMachineArt.draw(k, size: CGSize(width: 200, height: 260), spin: spin, dropsCapsule: false)
+        // Đèn ngôi sao trên nắp nhấp nháy nhẹ khi máy chạy.
+        let glow = 0.25 + 0.35 * running * (0.5 + 0.5 * sin(s * 9))
+        k.circle(100, 6, 14, rgb(0xFFE7A6).opacity(glow * 0.6))
+        // Hơi "xì" nhỏ khi nhả viên nang.
+        if !rm, s > 2.0, s < 2.5 {
+            let u = CGFloat((s - 2.0) / 0.5)
+            for i in 0..<3 {
+                let x = 70 + CGFloat(i) * 16 + u * CGFloat(i - 1) * 10
+                k.circle(x, 232 - u * 18, 4 + u * 5, Color.white.opacity(0.5 * Double(1 - u)))
+            }
+        }
+    }
+
+    // MARK: Viên nang
+
+    static let shellColor = rgb(0xF4A6B8)
+
+    struct HalfState {
+        var center: CGPoint
+        var angle: Double
+        var radius: CGFloat
+        var landed: Bool
+    }
+
+    struct CapsuleState {
+        var visible: Bool
+        /// Điểm chạm đất (độ sâu) và tâm.
+        var contact: CGPoint
+        var center: CGPoint
+        var radius: CGFloat
+        var height: CGFloat
+        var angle: Double
+        var squashX: CGFloat
+        var squashY: CGFloat
+        /// 0…3 vết nứt.
+        var cracks: Int
+        var crackLight: Double
+        var opened: Bool
+        var topHalf: HalfState?
+    }
+
+    static func capsuleState(_ s: Double, rm: Bool) -> CapsuleState {
+        let r = capsuleRadius
+        let rest = petPoint(capsuleRestLocal)
+        let restContact = CGPoint(x: rest.x, y: rest.y + r)
+        let startContact = CGPoint(x: chute.x, y: machineContact.y + 10)
+        var st = CapsuleState(visible: s >= GachaBeat.eject, contact: restContact, center: rest, radius: r, height: 0, angle: 720,
+                              squashX: 1, squashY: 1, cracks: 0, crackLight: 0, opened: s >= GachaBeat.open, topHalf: nil)
+        guard st.visible else { return st }
+
+        // Đường lăn: nhanh lúc đầu, chậm dần tới chân thú cưng.
+        let u = clamp01((s - GachaBeat.eject) / (GachaBeat.rest - GachaBeat.eject))
+        let p = CGFloat(1 - pow(1 - u, 2.6))
+        var contact = CGPoint(x: startContact.x + (restContact.x - startContact.x) * p,
+                              y: startContact.y + (restContact.y - startContact.y) * p)
+        let h = capsuleHeight(s, r: r, startContact: startContact)
+        var angle = 720 * Double(p)
+
+        // Lắc khi nằm yên, khi bị khều và khi tự rung.
+        if s >= GachaBeat.rest { angle += decay(s, GachaBeat.rest, amp: 7, freq: 17, rate: 5) }
+        angle += decay(s, GachaBeat.tap1, amp: 15, freq: 21, rate: 4.2)
+        angle += decay(s, GachaBeat.tap2, amp: 22, freq: 20, rate: 3.8)
+        var nudge: CGFloat = 0
+        nudge -= CGFloat(smooth(GachaBeat.tap1, GachaBeat.tap1 + 0.18, s)) * 1.5 * r / 10
+        nudge -= CGFloat(smooth(GachaBeat.tap2, GachaBeat.tap2 + 0.25, s)) * 3 * r / 10
+        contact.x += nudge
+        angle += Double(nudge / r) * 180 / .pi
+
+        var hop: CGFloat = 0
+        if s >= GachaBeat.tremble && s < GachaBeat.open {
+            let amp = (rm ? 0.4 : 1) * 1.5 + 4.5 * smooth(GachaBeat.tremble, GachaBeat.open, s)
+            angle += amp * sin(s * 57) * (rm ? 0.3 : 1)
+            if !rm {
+                for t0 in [6.32, 6.62, 6.88] { hop += CGFloat(bump(s, t0, 0.14)) * 3.2 }
+            }
+        }
+
+        // Co giãn: bẹp khi chạm đất / bị khều, dài ra khi bay.
+        var q: CGFloat = 0
+        for (t0, k) in [(GachaBeat.land1, 1.0), (GachaBeat.land2, 0.6), (GachaBeat.land3, 0.32), (GachaBeat.tap1 + 0.02, 0.35), (GachaBeat.tap2 + 0.02, 0.5)] {
+            q += CGFloat(k * exp(-pow((s - t0 - 0.015) / 0.035, 2)))
+        }
+        let v = (capsuleHeight(s + 0.005, r: r, startContact: startContact) - capsuleHeight(s - 0.005, r: r, startContact: startContact)) / 0.01
+        let stretch = min(0.14, abs(v) * 0.0011)
+        let squashAmt: CGFloat = rm ? 0.1 : 0.26
+        st.squashX = 1 + squashAmt * q - stretch * 0.6
+        st.squashY = 1 - squashAmt * q + stretch
+
+        st.contact = contact
+        st.height = h + hop
+        st.center = CGPoint(x: contact.x, y: contact.y - r - st.height)
+        st.angle = angle
+        st.radius = r * persp(contact.y) / persp(restContact.y)
+        st.cracks = (s >= GachaBeat.crack1 ? 1 : 0) + (s >= GachaBeat.crack2 ? 1 : 0) + (s >= GachaBeat.crack3 ? 1 : 0)
+        st.crackLight = smooth(GachaBeat.tremble, GachaBeat.open, s)
+
+        if st.opened {
+            // Nửa trên bật lên, xoay rồi rơi nằm nghiêng trên sàn.
+            let tau = s - GachaBeat.open
+            let landT = 0.72
+            let tt = min(tau, landT)
+            let dx = CGFloat(-30 * tt - (tau > landT ? 4 * min(1, (tau - landT) / 0.4) : 0)) * st.radius / 10
+            let dy = CGFloat(-50 * tt + 70 * tt * tt) * st.radius / 10
+            let spinA = tau < landT ? -230 * tau : -230 * landT - 12 * (1 - exp(-(tau - landT) * 6))
+            st.topHalf = HalfState(center: CGPoint(x: st.center.x + dx, y: st.center.y - st.radius * 0.2 + dy),
+                                   angle: spinA, radius: st.radius, landed: tau >= landT)
+        }
+        return st
+    }
+
+    /// Độ cao của viên nang so với sàn: bật khỏi máng, nảy ba lần, rồi lăn.
+    private static func capsuleHeight(_ s: Double, r: CGFloat, startContact: CGPoint) -> CGFloat {
+        let h0 = max(0, startContact.y - r - chute.y)
+        func arc(_ a: Double, _ b: Double, _ peak: CGFloat, from start: CGFloat = 0) -> CGFloat? {
+            guard s >= a && s < b else { return nil }
+            let tau = CGFloat((s - a) / (b - a))
+            return start * (1 - tau) + 4 * peak * tau * (1 - tau)
+        }
+        if s < GachaBeat.eject { return h0 }
+        if let h = arc(GachaBeat.eject, GachaBeat.land1, 26, from: h0) { return h }
+        if let h = arc(GachaBeat.land1, GachaBeat.land2, 11) { return h }
+        if let h = arc(GachaBeat.land2, GachaBeat.land3, 4) { return h }
+        return 0
+    }
+
+    private static func drawCapsule(_ c: GraphicsContext, _ st: CapsuleState, s: Double, look: GachaTierLook, rm: Bool) {
+        guard st.visible else { return }
+        let r = st.radius
+        // Bóng tiếp xúc: nhỏ và nhạt khi viên nang ở trên cao.
+        let lift = min(1, st.height / 30)
+        let sw = r * 2.1 * (1 - lift * 0.45)
+        c.ellipse(st.contact.x - sw / 2, st.contact.y - r * 0.22, sw, r * 0.44, Color.black.opacity(0.16 * Double(1 - lift * 0.6)))
+
+        // Vừa ra khỏi máng: hiện dần (đang ở trong máng).
+        let emerge = smooth(GachaBeat.eject, GachaBeat.eject + 0.08, s)
+        var k = c
+        // Co giãn quanh điểm chạm đất.
+        let base = CGPoint(x: st.center.x, y: st.center.y + r)
+        k.translateBy(x: base.x, y: base.y)
+        k.scaleBy(x: st.squashX, y: st.squashY)
+        k.translateBy(x: -base.x, y: -base.y)
+        k.opacity = emerge
+
+        if st.opened {
+            // Còn lại nửa dưới, lắc lư.
+            let tau = s - GachaBeat.open
+            let wob = decay(s, GachaBeat.open, amp: 18, freq: 20, rate: 5)
+            let half = HalfState(center: CGPoint(x: st.center.x, y: st.center.y + r * 0.05 * CGFloat(min(1, tau * 8))),
+                                 angle: 180 + wob, radius: r, landed: true)
+            drawHalf(k, half, color: rgb(0xFFFDF9), top: false)
+            return
+        }
+
+        let center = st.center
+        k.rotated(st.angle, around: center) { g in
+            let circle = Path(ellipseIn: CGRect(x: center.x - r, y: center.y - r, width: 2 * r, height: 2 * r))
+            g.fill(circle, with: .color(rgb(0xFFFDF9)))
+            var top = Path()
+            top.addArc(center: center, radius: r, startAngle: .degrees(180), endAngle: .degrees(0), clockwise: false)
+            top.closeSubpath()
+            g.fill(top, with: .color(shellColor))
+            g.fill(Path(CGRect(x: center.x - r, y: center.y - r * 0.09, width: 2 * r, height: r * 0.18)), with: .color(rgb(0xE48FA7)))
+            // Ánh sáng màu độ hiếm rỉ ra theo đường nối khi sắp mở.
+            if st.crackLight > 0 {
+                g.fill(Path(CGRect(x: center.x - r, y: center.y - r * 0.07, width: 2 * r, height: r * 0.14)),
+                       with: .color(look.light.opacity(st.crackLight)))
+            }
+            g.circle(center.x - r * 0.38, center.y - r * 0.5, r * 0.2, Color.white.opacity(0.75))
+            g.circle(center.x + r * 0.42, center.y + r * 0.45, r * 0.1, Color.white.opacity(0.6))
+            g.stroke(circle, with: .color(rgb(0xD98AA2).opacity(0.55)), lineWidth: max(0.6, r * 0.08))
+            // Vết nứt zigzag phát sáng.
+            if st.cracks > 0 {
+                let crackPaths: [[CGPoint]] = [
+                    [CGPoint(x: -0.15, y: -0.05), CGPoint(x: -0.32, y: -0.38), CGPoint(x: -0.18, y: -0.55), CGPoint(x: -0.36, y: -0.85)],
+                    [CGPoint(x: 0.3, y: -0.05), CGPoint(x: 0.42, y: -0.4), CGPoint(x: 0.26, y: -0.6), CGPoint(x: 0.4, y: -0.82)],
+                    [CGPoint(x: 0.0, y: 0.05), CGPoint(x: 0.12, y: 0.35), CGPoint(x: -0.06, y: 0.55), CGPoint(x: 0.08, y: 0.86)]
+                ]
+                for i in 0..<min(st.cracks, crackPaths.count) {
+                    let pts = crackPaths[i].map { CGPoint(x: center.x + $0.x * r, y: center.y + $0.y * r) }
+                    g.strokePath(look.main, width: max(1, r * 0.2)) { p in p.addLines(pts) }
+                    g.strokePath(Color.white.opacity(0.95), width: max(0.5, r * 0.08)) { p in p.addLines(pts) }
+                }
+            }
+        }
+    }
+
+    private static func drawHalf(_ c: GraphicsContext, _ h: HalfState, color: Color, top: Bool) {
+        let r = h.radius
+        c.rotated(h.angle, around: h.center) { g in
+            var p = Path()
+            p.addArc(center: h.center, radius: r, startAngle: .degrees(180), endAngle: .degrees(0), clockwise: false)
+            p.closeSubpath()
+            g.fill(p, with: .color(top ? color : rgb(0xFFFDF9)))
+            g.fill(Path(CGRect(x: h.center.x - r, y: h.center.y - r * 0.09, width: 2 * r, height: r * 0.09)),
+                   with: .color(rgb(0xE48FA7)))
+            g.stroke(p, with: .color(rgb(0xD98AA2).opacity(0.55)), lineWidth: max(0.6, r * 0.08))
+            if top { g.circle(h.center.x - r * 0.38, h.center.y - r * 0.5, r * 0.2, Color.white.opacity(0.7)) }
+        }
+    }
+
+    // MARK: Thú cưng diễn
+
+    static func petActing(_ s: Double, scene: GachaCutsceneScene, capsule: CapsuleState) -> (PetMood, PetPose) {
+        var p = PetPose()
+        let rm = scene.reduceMotion
+        // Luôn có sự sống: thở, chớp mắt, vẫy đuôi.
+        p.breath = CGFloat(sin(s * 2 * .pi / 2.8))
+        let blinkTimes = [0.8, 3.3, 4.62, 6.2, 8.9]
+        p.blink = blinkTimes.contains { s >= $0 && s < $0 + 0.12 }
+        let happy = s >= GachaBeat.reveal
+        p.tail = CGFloat(sin(s * 2 * .pi / (happy ? 0.55 : 1.7)))
+        p.ear = CGFloat(bump(s, GachaBeat.knob, 0.3) + bump(s, GachaBeat.land1, 0.25) + bump(s, GachaBeat.tremble + 0.05, 0.3))
+
+        // Nhìn theo: máy → viên nang lăn tới → xuống chân → lên quả cầu sáng.
+        let px = petContact.x
+        var look: Double = -0.9
+        if s >= GachaBeat.eject {
+            look = Double(max(-1, min(1, (capsule.contact.x - px) / 45)))
+        }
+        if s >= GachaBeat.open {
+            let up = smooth(GachaBeat.open, GachaBeat.orbTop, s)
+            look = look * (1 - up) + (-0.3) * up
+        }
+        if happy { look = sin(s * 1.8) * 0.25 }
+        p.look = CGFloat(look)
+
+        // Phấn khích khi núm xoay.
+        p.hop += CGFloat(bump(s, 1.3, 0.3)) * 5
+
+        // Cúi nhìn, nghiêng đầu tò mò.
+        var down = smooth(GachaBeat.lookDown, GachaBeat.lookDown + 0.35, s)
+        down -= 0.45 * smooth(GachaBeat.tremble, GachaBeat.tremble + 0.3, s)
+        down -= 0.55 * smooth(GachaBeat.open - 0.05, GachaBeat.open + 0.25, s)
+        p.lookDown = CGFloat(max(0, down))
+        var tiltHead = 13 * smooth(GachaBeat.wonder, GachaBeat.wonder + 0.3, s)
+        tiltHead *= 1 - smooth(GachaBeat.reach - 0.1, GachaBeat.reach + 0.1, s)
+        tiltHead += -7 * smooth(GachaBeat.tremble, GachaBeat.tremble + 0.25, s) * (1 - smooth(6.8, 7.1, s))
+        p.headTilt = tiltHead
+
+        // Khều viên nang hai lần bằng chân trước bên trái.
+        if !rm || s < GachaBeat.tremble {
+            let reach = smooth(GachaBeat.reach, GachaBeat.reach + 0.18, s) * (1 - smooth(5.55, 5.8, s))
+            var lift = 23 * smooth(GachaBeat.reach, GachaBeat.reach + 0.2, s)
+            lift -= 7 * tapCurve(s, GachaBeat.tap1)
+            lift -= 7.5 * tapCurve(s, GachaBeat.tap2)
+            lift *= 1 - smooth(5.55, 5.8, s)
+            p.pawReach = CGFloat(18 * reach)
+            p.pawLift = CGFloat(max(0, lift))
+        }
+        // Nghiêng người về phía viên nang lúc khều, rồi giật lùi lại khi nó tự rung.
+        var tilt = -4 * smooth(GachaBeat.reach, GachaBeat.reach + 0.2, s) * (1 - smooth(5.55, 5.8, s))
+        tilt += 6 * smooth(GachaBeat.tremble, GachaBeat.tremble + 0.2, s) * (1 - smooth(6.6, 7.0, s))
+
+        // Giật mình khi viên nang bung (bậc cao: nhảy cao hơn, lâu hơn).
+        var mood: PetMood = .idle
+        let big = scene.tier >= .epic
+        let startle = big ? 0.6 : 0.35
+        if s >= GachaBeat.open && s < GachaBeat.open + startle {
+            p.lifted = true
+            p.hop += CGFloat(bump(s, GachaBeat.open, startle)) * (big ? 10 : 5)
+        }
+        if scene.tier == .secret { p.hop += CGFloat(bump(s, 7.62, 0.3)) * 6 }
+
+        // Khoe: vui, nhảy hai nhịp (Bí mật ba nhịp), tim bay.
+        if happy {
+            mood = .happy
+            var hops = [8.05, 8.45]
+            if scene.tier == .secret { hops.append(8.85) }
+            for t0 in hops { p.hop += CGFloat(bump(s, t0, 0.32)) * (rm ? 4 : 9) }
+            tilt += sin((s - GachaBeat.reveal) * 2 * .pi / 1.4) * 4
+            if s > 8.5 && s < 9.6 { p.hearts = CGFloat((s - 8.5) / 1.1) }
+        }
+        p.tilt = rm ? tilt * 0.4 : tilt
+        return (mood, p)
+    }
+
+    /// Nhấn xuống nhanh rồi nhấc lên chậm hơn (0…1).
+    private static func tapCurve(_ s: Double, _ t0: Double) -> Double {
+        let d = s - t0
+        if d < -0.07 || d > 0.3 { return 0 }
+        if d < 0 { return smooth(-0.07, 0, d) }
+        return 1 - smooth(0.05, 0.3, d)
+    }
+
+    private static func drawPet(_ c: GraphicsContext, appearance: PetAppearance, mood: PetMood, pose: PetPose) {
+        let k = petScale
+        var p = c
+        p.translateBy(x: petContact.x - 50 * k, y: petContact.y - 88 * k)
+        p.scaleBy(x: k, y: k)
+        PetPainter(mood: mood, appearance: appearance, pose: pose).draw(in: p)
+    }
+
+    /// Bong bóng "?" khi tò mò và "!" khi viên nang tự rung.
+    private static func drawThoughts(_ c: GraphicsContext, s: Double, rm: Bool) {
+        let marks: [(String, Double, Double)] = [("?", GachaBeat.wonder + 0.1, 0.65), ("!", GachaBeat.tremble + 0.05, 0.5)]
+        for (mark, t0, dur) in marks where s >= t0 && s < t0 + dur {
+            let u = (s - t0) / dur
+            let pop = rm ? 1 : CGFloat(min(1, overshoot(min(1, u / 0.35))))
+            let fade = 1 - smooth(0.75, 1, u)
+            let at = petPoint(CGPoint(x: mark == "?" ? 78 : 22, y: 14))
+            var k = c
+            k.translateBy(x: at.x, y: at.y - CGFloat(u) * 3)
+            k.scaleBy(x: pop, y: pop)
+            k.opacity = fade
+            k.circle(0, 0, 9, rgb(0xFFFDF8))
+            k.strokePath(rgb(0xE8DCCB), width: 0.8) { p in p.addEllipse(in: CGRect(x: -9, y: -9, width: 18, height: 18)) }
+            k.draw(Text(mark).font(.system(size: 12, weight: .heavy, design: .rounded)).foregroundColor(rgb(0x8D78CF)), at: .zero)
+        }
+    }
+
+    // MARK: Ánh sáng
+
+    /// Cường độ ánh sáng từ viên nang (0…1): rỉ ra khi nứt, bừng lên lúc mở, còn lại vầng nhẹ.
+    static func lightLevel(_ s: Double, rm: Bool) -> Double {
+        if s < GachaBeat.tremble { return 0 }
+        if s < GachaBeat.open { return 0.45 * smooth(GachaBeat.tremble, GachaBeat.open, s) }
+        let rise = rm ? smooth(GachaBeat.open, GachaBeat.open + 0.5, s) : smooth(GachaBeat.open - 0.02, GachaBeat.open + 0.12, s)
+        let fall = smooth(GachaBeat.open + 0.25, GachaBeat.open + 1.0, s)
+        return 0.45 + (rise - fall * 0.75) * 0.55
+    }
+
+    private static func drawFloorGlow(_ c: GraphicsContext, capsule: CapsuleState, s: Double, look: GachaTierLook, scene: GachaCutsceneScene) {
+        let level = lightLevel(s, rm: scene.reduceMotion)
+        guard level > 0.01 else { return }
+        let r = capsule.radius * CGFloat(3 + 3 * level)
+        let center = capsule.contact
+        c.fill(Path(ellipseIn: CGRect(x: center.x - r * 1.6, y: center.y - r * 0.45, width: r * 3.2, height: r * 0.9)),
+               with: .radialGradient(Gradient(colors: [look.main.opacity(0.55 * level), look.main.opacity(0)]),
+                                     center: center, startRadius: 0, endRadius: r * 1.6))
+    }
+
+    private static func drawLight(_ c: GraphicsContext, capsule: CapsuleState, s: Double, look: GachaTierLook, scene: GachaCutsceneScene) {
+        let rm = scene.reduceMotion
+        let level = lightLevel(s, rm: rm)
+        guard level > 0.01 else { return }
+        let center = capsule.center
+        let r = capsule.radius
+        // Vầng sáng quanh viên nang.
+        let halo = r * CGFloat(2.2 + 3.2 * level)
+        c.fill(Path(ellipseIn: CGRect(x: center.x - halo, y: center.y - halo, width: halo * 2, height: halo * 2)),
+               with: .radialGradient(Gradient(colors: [look.light.opacity(0.85 * level), look.main.opacity(0.35 * level), look.main.opacity(0)]),
+                                     center: center, startRadius: 0, endRadius: halo))
+        // Tia sáng ngắn rỉ qua khe nứt trước khi mở.
+        if s < GachaBeat.open && capsule.cracks > 0 {
+            let n = 3 + capsule.cracks * 2
+            for i in 0..<n {
+                let a = Double(i) / Double(n) * 2 * .pi + s * 0.6
+                let len = r * CGFloat(1.4 + 0.9 * level + 0.25 * sin(s * 9 + Double(i)))
+                let dir = CGPoint(x: CGFloat(cos(a)), y: CGFloat(sin(a)))
+                c.strokePath(look.light.opacity(0.7 * level), width: max(0.8, r * 0.18)) { p in
+                    p.move(to: CGPoint(x: center.x + dir.x * r * 0.9, y: center.y + dir.y * r * 0.9))
+                    p.addLine(to: CGPoint(x: center.x + dir.x * (r + len), y: center.y + dir.y * (r + len)))
+                }
+            }
+        }
+        // Cột sáng mềm bốc lên khi mở.
+        if s >= GachaBeat.open {
+            let beam = (rm ? 0.35 : 0.65) * smooth(GachaBeat.open, GachaBeat.open + 0.12, s) * (1 - smooth(GachaBeat.open + 0.35, GachaBeat.reveal, s))
+            if beam > 0.01 {
+                let w = r * 2.6
+                var col = Path()
+                col.addLines([CGPoint(x: center.x - w * 0.35, y: center.y), CGPoint(x: center.x + w * 0.35, y: center.y),
+                              CGPoint(x: center.x + w, y: center.y - 260), CGPoint(x: center.x - w, y: center.y - 260)])
+                col.closeSubpath()
+                c.fill(col, with: .linearGradient(Gradient(colors: [look.light.opacity(beam), look.main.opacity(beam * 0.45), look.main.opacity(0)]),
+                                                  startPoint: center, endPoint: CGPoint(x: center.x, y: center.y - 260)))
+            }
+        }
+    }
+
+    // MARK: Quả cầu sáng → khoe
+
+    /// Vị trí hốc trưng bày đồ nội thất (bong bóng nổi cạnh đầu thú cưng).
+    static var displayPoint: CGPoint { petPoint(CGPoint(x: 18, y: -46)) }
+
+    private static func drawOrb(_ c: GraphicsContext, s: Double, look: GachaTierLook, scene: GachaCutsceneScene, capsule: CapsuleState) {
+        guard s >= GachaBeat.open else { return }
+        let rm = scene.reduceMotion
+        let start = capsule.center
+        let top = CGPoint(x: start.x + 8, y: start.y - 58)
+        let k = petScale
+        let furniture = !scene.kind.changesPet
+
+        // Tia sáng xoay chậm sau lưng (Bí mật).
+        if look.rays && !rm {
+            let center = furniture ? displayPoint : petPoint(CGPoint(x: 50, y: 50))
+            let fade = smooth(GachaBeat.open + 0.1, GachaBeat.reveal, s)
+            let n = 14
+            for i in 0..<n {
+                let a = Double(i) / Double(n) * 2 * .pi + s * 0.18
+                let len: CGFloat = 150
+                var p = Path()
+                p.move(to: center)
+                p.addLine(to: CGPoint(x: center.x + CGFloat(cos(a - 0.07)) * len, y: center.y + CGFloat(sin(a - 0.07)) * len))
+                p.addLine(to: CGPoint(x: center.x + CGFloat(cos(a + 0.07)) * len, y: center.y + CGFloat(sin(a + 0.07)) * len))
+                p.closeSubpath()
+                c.fill(p, with: .radialGradient(Gradient(colors: [look.light.opacity(0.45 * fade), look.main.opacity(0)]),
+                                                center: center, startRadius: 4, endRadius: len))
+            }
+        }
+
+        var center = start
+        var radius: CGFloat = 6 * k
+        var alpha = 1.0
+        if s < GachaBeat.orbTop {
+            let u = CGFloat(easeOut((s - GachaBeat.open) / (GachaBeat.orbTop - GachaBeat.open)))
+            center = CGPoint(x: start.x + (top.x - start.x) * u, y: start.y + (top.y - start.y) * u)
+            radius = (6 + 5 * u) * k
+        } else if s < GachaBeat.orbFly {
+            center = CGPoint(x: top.x, y: top.y + CGFloat(sin((s - GachaBeat.orbTop) * 14)) * 1.5)
+            radius = 11 * k
+        } else {
+            let target = furniture ? displayPoint : petPoint(CGPoint(x: 50, y: 52))
+            let u = CGFloat(easeInOut(min(1, (s - GachaBeat.orbFly) / (GachaBeat.reveal - 0.05 - GachaBeat.orbFly))))
+            // Bay theo đường cong lên rồi xuống.
+            let arcLift = sin(Double(u) * .pi) * 22
+            center = CGPoint(x: top.x + (target.x - top.x) * u, y: top.y + (target.y - top.y) * u - CGFloat(arcLift))
+            if furniture {
+                radius = (11 + 25 * u) * k
+            } else {
+                radius = (11 + 38 * u) * k
+                alpha = 1 - smooth(GachaBeat.reveal, GachaBeat.reveal + 0.3, s)
+            }
+        }
+
+        if furniture && s >= GachaBeat.reveal - 0.05 {
+            drawDisplayBubble(c, s: s, look: look, scene: scene)
+            return
+        }
+        guard alpha > 0.01 else { return }
+        // Quả cầu (hoặc màn sáng phủ lên thú cưng ngay trước khi đổi ngoại hình).
+        let veil = !furniture && s >= GachaBeat.orbFly
+        let core = veil ? 0.92 * alpha : 1.0
+        c.fill(Path(ellipseIn: CGRect(x: center.x - radius * 1.9, y: center.y - radius * 1.9, width: radius * 3.8, height: radius * 3.8)),
+               with: .radialGradient(Gradient(colors: [look.main.opacity(0.45 * alpha), look.main.opacity(0)]),
+                                     center: center, startRadius: radius * 0.6, endRadius: radius * 1.9))
+        c.fill(Path(ellipseIn: CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2)),
+               with: .radialGradient(Gradient(colors: [Color.white.opacity(core), look.light.opacity(core), look.main.opacity(core * 0.85)]),
+                                     center: CGPoint(x: center.x - radius * 0.25, y: center.y - radius * 0.3), startRadius: 0, endRadius: radius * 1.1))
+        if !veil {
+            c.circle(center.x - radius * 0.35, center.y - radius * 0.4, radius * 0.22, Color.white.opacity(0.9))
+        }
+    }
+
+    /// Đồ nội thất: bong bóng sáng nổi cạnh đầu thú cưng, món đồ phóng to dần bên trong.
+    private static func drawDisplayBubble(_ c: GraphicsContext, s: Double, look: GachaTierLook, scene: GachaCutsceneScene) {
+        let k = petScale
+        let bob = CGFloat(sin((s - GachaBeat.reveal) * 2.4)) * (scene.reduceMotion ? 0.5 : 2)
+        let center = CGPoint(x: displayPoint.x, y: displayPoint.y + bob)
+        let grow = scene.reduceMotion ? smooth(GachaBeat.reveal - 0.05, GachaBeat.reveal + 0.3, s)
+            : overshoot(min(1, (s - GachaBeat.reveal + 0.05) / 0.35))
+        let r = 36 * k * CGFloat(max(0, grow))
+        guard r > 0.5 else { return }
+        c.fill(Path(ellipseIn: CGRect(x: center.x - r * 1.5, y: center.y - r * 1.5, width: r * 3, height: r * 3)),
+               with: .radialGradient(Gradient(colors: [look.main.opacity(0.4), look.main.opacity(0)]),
+                                     center: center, startRadius: r * 0.8, endRadius: r * 1.5))
+        let disc = Path(ellipseIn: CGRect(x: center.x - r, y: center.y - r, width: 2 * r, height: 2 * r))
+        c.fill(disc, with: .radialGradient(Gradient(colors: [Color.white.opacity(0.97), look.light.opacity(0.95)]),
+                                           center: center, startRadius: 0, endRadius: r))
+        c.stroke(disc, with: .color(look.main), lineWidth: max(1, r * 0.06))
+        var inner = c
+        inner.clip(to: disc)
+        let scene125 = scene.item?.slot.isScene == true
+        let w = scene125 ? r * 1.9 : r * 1.55
+        let h = scene125 ? w * 0.8 : w
+        var k2 = inner
+        k2.translateBy(x: center.x - w / 2, y: center.y - h / 2)
+        k2.scaleBy(x: w / (scene125 ? 125 : 100), y: h / 100)
+        ItemPainter.draw(scene.itemID, in: k2)
+        c.circle(center.x - r * 0.45, center.y - r * 0.55, r * 0.12, Color.white.opacity(0.85))
+    }
+
+    // MARK: Hạt
+
+    private static func drawParticles(_ c: GraphicsContext, s: Double, look: GachaTierLook, scene: GachaCutsceneScene, capsule: CapsuleState) {
+        let rm = scene.reduceMotion
+        let center = capsule.center
+        let colors = [look.light, look.main, Color.white, look.deep.opacity(0.8)]
+
+        // Gom lại: hạt sáng xoáy vào viên nang (6,1 → 7,0).
+        if s > 6.0 && s < GachaBeat.open {
+            let n = rm ? 6 : look.particles / 2 + 4
+            for i in 0..<n {
+                let delay = hash(i, 3) * 0.4
+                let q = clamp01((s - 6.05 - delay) / 0.6)
+                guard q > 0 && q < 1 else { continue }
+                let a = hash(i, 1) * 2 * .pi + q * 2.4
+                let r0 = CGFloat(40 + hash(i, 2) * 38)
+                let rr = r0 * CGFloat(1 - q)
+                let pt = CGPoint(x: center.x + CGFloat(cos(a)) * rr, y: center.y + CGFloat(sin(a)) * rr * 0.75)
+                c.circle(pt.x, pt.y, CGFloat(1 + hash(i, 4) * 1.4), colors[i % 3].opacity(sin(q * .pi)))
+            }
+        }
+
+        // Bung ra khi mở.
+        if s >= GachaBeat.open && s < GachaBeat.open + 1.8 {
+            let tau = s - GachaBeat.open
+            let n = rm ? max(6, look.particles / 4) : look.particles
+            let speedScale = rm ? 0.35 : 1.0
+            for i in 0..<n {
+                let life = 0.9 + hash(i, 7) * 0.8
+                guard tau < life else { continue }
+                // Phần lớn bay lên trên (không văng vào mắt).
+                let a = -Double.pi / 2 + (hash(i, 5) - 0.5) * 2.6
+                let v = (45 + hash(i, 6) * 85) * speedScale
+                let x = center.x + CGFloat(cos(a) * v * tau)
+                let y = center.y + CGFloat(sin(a) * v * tau + 55 * tau * tau * speedScale)
+                let fade = 1 - smooth(life * 0.55, life, tau)
+                let size = CGFloat(1.4 + hash(i, 8) * 2.4)
+                let col = colors[i % colors.count].opacity(fade)
+                if look.burst && i % 2 == 0 {
+                    sparkle(c, at: CGPoint(x: x, y: y), r: size * 1.9, color: col, angle: tau * 3 + Double(i))
+                } else {
+                    c.circle(x, y, size, col)
+                }
+            }
+            // Vòng sáng lan (Quý trở lên; Bí mật hai vòng).
+            if look.burst && !rm {
+                let rings = look.rays ? [0.0, 0.16] : [0.0]
+                for d in rings where tau >= d && tau < d + 0.7 {
+                    let u = (tau - d) / 0.7
+                    let rr = capsule.radius * CGFloat(1.5 + 9 * easeOut(u))
+                    c.strokePath(look.light.opacity(0.8 * (1 - u)), width: CGFloat(3 * (1 - u) + 0.6)) { p in
+                        p.addEllipse(in: CGRect(x: center.x - rr, y: center.y - rr * 0.8, width: rr * 2, height: rr * 1.6))
+                    }
+                }
+            }
+        }
+
+        // Lấp lánh xoáy quanh thú cưng lúc đổi đồ.
+        if scene.kind.changesPet && s > GachaBeat.orbFly && s < GachaBeat.reveal + 0.6 {
+            let mid = petPoint(CGPoint(x: 50, y: 52))
+            let n = rm ? 5 : 10 + look.particles / 4
+            for i in 0..<n {
+                let q = (s - GachaBeat.orbFly) / (GachaBeat.reveal + 0.6 - GachaBeat.orbFly)
+                let a = hash(i, 9) * 2 * .pi + q * 7
+                let rr = CGFloat(30 + hash(i, 10) * 18) * petScale * CGFloat(1 - q * 0.3)
+                let pt = CGPoint(x: mid.x + CGFloat(cos(a)) * rr, y: mid.y + CGFloat(sin(a)) * rr * 0.7 - CGFloat(q) * 12)
+                let fade = sin(q * .pi)
+                sparkle(c, at: pt, r: CGFloat(2 + hash(i, 11) * 2.5), color: colors[i % 3].opacity(fade), angle: q * 4)
+            }
+        }
+
+        // Kim tuyến rơi (Bí mật) và lấp lánh nhẹ quanh khung khoe.
+        if s >= GachaBeat.reveal {
+            let tau = s - GachaBeat.reveal
+            let mid = petPoint(CGPoint(x: 50, y: 40))
+            if look.rays && !rm {
+                for i in 0..<26 {
+                    let start = hash(i, 12) * 0.9
+                    let u = tau - start
+                    guard u > 0 else { continue }
+                    let x = mid.x + CGFloat((hash(i, 13) - 0.5) * 210) + CGFloat(sin(u * 3 + Double(i))) * 6
+                    let y = mid.y - 150 + CGFloat(u * (40 + hash(i, 14) * 30))
+                    let col = [look.main, look.light, rgb(0xF4A6B8), rgb(0xA9D3F5)][i % 4]
+                    c.rotated(u * 140 + Double(i) * 30, around: CGPoint(x: x, y: y)) { g in
+                        g.rect(x - 2, y - 1, 4, 2.2, col.opacity(0.9 * (1 - smooth(1.2, 1.6, tau))))
+                    }
+                }
+            }
+            for i in 0..<(rm ? 4 : 8) {
+                let phase = hash(i, 15) * 2 * .pi
+                let tw = 0.5 + 0.5 * sin(tau * 3.2 + phase)
+                let pt = CGPoint(x: mid.x + CGFloat((hash(i, 16) - 0.5) * 120), y: mid.y + CGFloat((hash(i, 17) - 0.6) * 90))
+                sparkle(c, at: pt, r: CGFloat(2 + 2 * tw), color: look.main.opacity(0.35 + 0.5 * tw * smooth(0, 0.4, tau)), angle: 0)
+            }
+        }
+    }
+
+    /// Ngôi sao lấp lánh bốn cánh.
+    static func sparkle(_ c: GraphicsContext, at p: CGPoint, r: CGFloat, color: Color, angle: Double) {
+        c.rotated(angle * 20, around: p) { g in
+            var path = Path()
+            for i in 0..<8 {
+                let rad = i % 2 == 0 ? r : r * 0.32
+                let a = Double(i) * .pi / 4 - .pi / 2
+                let q = CGPoint(x: p.x + rad * CGFloat(cos(a)), y: p.y + rad * CGFloat(sin(a)))
+                if i == 0 { path.move(to: q) } else { path.addLine(to: q) }
+            }
+            path.closeSubpath()
+            g.fill(path, with: .color(color))
+        }
+    }
+
+    // MARK: Lớp trước
+
+    private static func drawForeground(_ c: GraphicsContext, s: Double) {
+        // Lá cây sát ống kính ở góc trái và chậu tròn bên phải: chỉ thấy rõ ở cảnh rộng, tạo chiều sâu khi máy quay lia.
+        let leaf = rgb(0x8DB890), leafDark = rgb(0x6F9A72)
+        for (i, l) in [(30.0, 300.0, -30.0), (12.0, 290.0, 10.0), (46.0, 312.0, -60.0)].enumerated() {
+            let sway = sin(s * 1.3 + Double(i)) * 3
+            c.rotated(l.2 + sway, around: CGPoint(x: l.0, y: l.1)) { g in
+                g.ellipse(CGFloat(l.0) - 14, CGFloat(l.1) - 52, 28, 56, i % 2 == 0 ? leaf : leafDark)
+                g.strokePath(Color.white.opacity(0.35), width: 1.2) { p in
+                    p.move(to: CGPoint(x: l.0, y: l.1)); p.addLine(to: CGPoint(x: l.0, y: l.1 - 46))
+                }
+            }
+        }
+        c.ellipse(372, 290, 70, 40, rgb(0xE59A7A))
+        c.ellipse(378, 288, 58, 18, rgb(0xF0B49A))
+    }
+
+    // MARK: Hiệu ứng toàn màn hình
+
+    private static func drawScreenEffects(_ ctx: GraphicsContext, size: CGSize, s: Double, look: GachaTierLook,
+                                          scene: GachaCutsceneScene, cam: Camera, capsule: CapsuleState) {
+        let rm = scene.reduceMotion
+        let w = size.width, h = size.height
+        let center = CGPoint(x: w / 2, y: h / 2)
+        let big = scene.tier >= .epic
+        // Tối dần quanh viền khi viên nang sắp mở (dồn mắt vào giữa), sáng lại khi khoe.
+        let dimPeak = big ? 0.42 : 0.3
+        var dim = dimPeak * smooth(5.8, 6.9, s)
+        dim -= (dimPeak - 0.16) * smooth(GachaBeat.open, GachaBeat.reveal + 0.2, s)
+        if rm { dim *= 0.6 }
+        if dim > 0.01 {
+            ctx.fill(Path(CGRect(origin: .zero, size: size)),
+                     with: .radialGradient(Gradient(colors: [Color.black.opacity(0), Color.black.opacity(dim * 0.35), rgb(0x2B2240).opacity(dim)]),
+                                           center: center, startRadius: min(w, h) * 0.25, endRadius: max(w, h) * 0.75))
+        }
+        // Bừng sáng mềm một nhịp lúc mở: ánh màu độ hiếm, không trắng xóa, không nhấp nháy. Tắt khi Giảm chuyển động.
+        if !rm && s >= GachaBeat.open - 0.03 && s < GachaBeat.open + 0.6 {
+            let up = smooth(GachaBeat.open - 0.03, GachaBeat.open + 0.08, s)
+            let down = smooth(GachaBeat.open + 0.12, GachaBeat.open + 0.6, s)
+            let a = (big ? 0.5 : 0.32) * (up - down)
+            let at = screenPoint(capsule.center, size: size, cam: cam)
+            ctx.fill(Path(CGRect(origin: .zero, size: size)),
+                     with: .radialGradient(Gradient(colors: [look.light.opacity(a), look.main.opacity(a * 0.5), look.main.opacity(0)]),
+                                           center: at, startRadius: 0, endRadius: max(w, h) * 0.7))
+        }
+        // Khoe: nền ửng màu độ hiếm sau lưng thú cưng.
+        if s >= GachaBeat.reveal - 0.1 {
+            let a = 0.28 * smooth(GachaBeat.reveal - 0.1, GachaBeat.reveal + 0.5, s)
+            let focus = scene.kind.changesPet ? petPoint(CGPoint(x: 50, y: 50)) : displayPoint
+            let at = screenPoint(focus, size: size, cam: cam)
+            ctx.fill(Path(CGRect(origin: .zero, size: size)),
+                     with: .radialGradient(Gradient(colors: [look.light.opacity(a), look.main.opacity(a * 0.35), look.main.opacity(0)]),
+                                           center: at, startRadius: 0, endRadius: min(w, h) * 0.75))
+        }
+    }
+
+    // MARK: Chữ (độ hiếm + tên) vào đúng nhịp
+
+    private static func drawTitles(_ ctx: GraphicsContext, size: CGSize, s: Double, look: GachaTierLook, scene: GachaCutsceneScene) {
+        guard s >= GachaBeat.chip else { return }
+        let rm = scene.reduceMotion
+        let unit = min(size.width / 390, size.height / 700)
+        let x = size.width / 2
+        let y0 = size.height * 0.15
+
+        // Nhãn độ hiếm.
+        let u1 = min(1, (s - GachaBeat.chip) / 0.3)
+        let pop1 = rm ? CGFloat(u1) : CGFloat(overshoot(u1))
+        let label = scene.tier == .secret ? "✦ \(scene.tier.label) ✦" : scene.tier.label
+        let chipW = (CGFloat(label.count) * 10 + 34) * unit
+        var chip = ctx
+        chip.translateBy(x: x, y: y0)
+        chip.scaleBy(x: pop1, y: pop1)
+        chip.opacity = min(1, u1 * 2)
+        chip.fill(Path(roundedRect: CGRect(x: -chipW / 2, y: -15 * unit, width: chipW, height: 30 * unit), cornerRadius: 15 * unit),
+                  with: .color(look.deep))
+        chip.draw(Text(label).font(.system(size: 16 * unit, weight: .bold, design: .rounded)).foregroundColor(.white), at: .zero)
+
+        // Tên món.
+        guard s >= GachaBeat.name else { return }
+        let u2 = min(1, (s - GachaBeat.name) / 0.35)
+        let name = scene.item?.name ?? scene.itemID
+        let fontSize = (name.count > 18 ? 22 : 27) * unit
+        let plateW = min(size.width - 32, CGFloat(name.count) * fontSize * 0.56 + 40 * unit)
+        var title = ctx
+        title.translateBy(x: x, y: y0 + 46 * unit + (rm ? 0 : CGFloat(1 - easeOut(u2)) * 10 * unit))
+        title.opacity = u2
+        title.fill(Path(roundedRect: CGRect(x: -plateW / 2, y: -24 * unit, width: plateW, height: 48 * unit), cornerRadius: 18 * unit),
+                   with: .color(rgb(0xFFFDF8).opacity(0.94)))
+        title.stroke(Path(roundedRect: CGRect(x: -plateW / 2, y: -24 * unit, width: plateW, height: 48 * unit), cornerRadius: 18 * unit),
+                     with: .color(look.main), lineWidth: 2 * unit)
+        title.draw(Text(name).font(.system(size: fontSize, weight: .bold, design: .rounded)).foregroundColor(rgb(0x3E3550)), at: .zero)
+
+        // Món trùng: hoàn xu rõ ràng.
+        if scene.isDuplicate && s >= 8.7 {
+            let u3 = min(1, (s - 8.7) / 0.3)
+            var dup = ctx
+            dup.translateBy(x: x, y: y0 + 88 * unit)
+            dup.opacity = u3
+            let text = "Đã có rồi · +\(scene.refund) xu"
+            let w = CGFloat(text.count) * 8.4 * unit + 30 * unit
+            dup.fill(Path(roundedRect: CGRect(x: -w / 2, y: -14 * unit, width: w, height: 28 * unit), cornerRadius: 14 * unit),
+                     with: .color(rgb(0xFFF2C9)))
+            dup.draw(Text(text).font(.system(size: 15 * unit, weight: .semibold, design: .rounded)).foregroundColor(rgb(0x8F6410)), at: .zero)
+        }
+    }
+
+    // MARK: Hàm thời gian
+
+    static func clamp01(_ x: Double) -> Double { min(1, max(0, x)) }
+
+    static func smooth(_ a: Double, _ b: Double, _ x: Double) -> Double {
+        let u = clamp01((x - a) / (b - a))
+        return u * u * (3 - 2 * u)
+    }
+
+    static func easeInOut(_ x: Double) -> Double {
+        let u = clamp01(x)
+        return u < 0.5 ? 4 * u * u * u : 1 - pow(-2 * u + 2, 3) / 2
+    }
+
+    static func easeOut(_ x: Double) -> Double { 1 - pow(1 - clamp01(x), 3) }
+
+    /// Vượt quá một chút rồi về 1 (cho chữ và bong bóng "nảy" ra).
+    static func overshoot(_ x: Double) -> Double {
+        let u = clamp01(x)
+        let c1 = 1.70158, c3 = c1 + 1
+        return 1 + c3 * pow(u - 1, 3) + c1 * pow(u - 1, 2)
+    }
+
+    /// Một nhịp sin dương trong [t0, t0 + d].
+    static func bump(_ s: Double, _ t0: Double, _ d: Double) -> Double {
+        guard s >= t0 && s <= t0 + d else { return 0 }
+        return sin((s - t0) / d * .pi)
+    }
+
+    /// Dao động tắt dần bắt đầu từ t0.
+    static func decay(_ s: Double, _ t0: Double, amp: Double, freq: Double, rate: Double) -> Double {
+        guard s >= t0 else { return 0 }
+        let d = s - t0
+        return amp * exp(-d * rate) * sin(d * freq)
+    }
+
+    static func decay(_ s: Double, _ t0: Double, amp: Double, freq: Double, rate: Double) -> CGFloat {
+        CGFloat(decay(s, t0, amp: amp, freq: freq, rate: rate) as Double)
+    }
+
+    /// Số giả ngẫu nhiên tất định trong [0, 1) cho hạt thứ i.
+    static func hash(_ i: Int, _ salt: Int) -> Double {
+        var z = UInt64(truncatingIfNeeded: i &* 7919 &+ salt &* 104_729) &+ 0x9E37_79B9_7F4A_7C15
+        z = (z ^ (z >> 30)) &* 0xBF58_476D_1CE4_E5B9
+        z = (z ^ (z >> 27)) &* 0x94D0_49BB_1331_11EB
+        z ^= z >> 31
+        return Double(z >> 11) / Double(UInt64(1) << 53)
+    }
+}
