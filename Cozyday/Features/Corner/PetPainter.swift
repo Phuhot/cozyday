@@ -634,6 +634,7 @@ struct PetPainter {
     // MARK: Kính
 
     private func drawGlasses(_ ctx: GraphicsContext, _ id: String) {
+        if let v = CostumeArt.tinted(id, ctx) { drawGlasses(v.ctx, v.base); return }
         let frame = rgb(0x3E3550)
         switch id {
         case "glasses.round":
@@ -675,6 +676,7 @@ struct PetPainter {
     // MARK: Cổ
 
     private func drawNeck(_ ctx: GraphicsContext, _ id: String) {
+        if let v = CostumeArt.tinted(id, ctx) { drawNeck(v.ctx, v.base); return }
         switch id {
         case "neck.scarf":
             let red = rgb(0xD9667A)
@@ -721,6 +723,7 @@ struct PetPainter {
     }
 
     private func drawOutfit(_ ctx: GraphicsContext, _ id: String, body: Path) {
+        if let v = CostumeArt.tinted(id, ctx) { drawOutfit(v.ctx, v.base, body: body); return }
         var clipped = ctx
         clipped.clip(to: body)
         switch id {
@@ -762,6 +765,7 @@ struct PetPainter {
     // MARK: Mũ
 
     private func drawHat(_ ctx: GraphicsContext, _ id: String) {
+        if let v = CostumeArt.tinted(id, ctx) { drawHat(v.ctx, v.base); return }
         let dy = hatTop - 28
         var c = ctx
         c.translateBy(x: 0, y: dy)
