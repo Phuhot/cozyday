@@ -8,7 +8,7 @@ function serviceWorker(): Plugin {
     name: 'cozii-sw',
     apply: 'build',
     generateBundle(_opts, bundle) {
-      const files = Object.keys(bundle).filter(f => !f.endsWith('.map') && f !== 'sw.js')
+      const files = Object.keys(bundle).filter(f => !f.endsWith('.map') && f !== 'sw.js' && !f.includes('cyrillic'))
       const precache = ['/', '/index.html', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png', ...files.filter(f => f !== 'index.html').map(f => '/' + f)]
       const version = Date.now().toString(36)
       const src = readFileSync(new URL('./src/sw-template.js', import.meta.url), 'utf8')

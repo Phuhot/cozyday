@@ -6,6 +6,7 @@ import { ITEMS, ROOMS, SLOT_LABEL, type RoomId } from '../../content/catalog'
 import { ECONOMY } from '../../content/economy'
 import { npc, type Npc } from '../../content/town'
 import { rankOf } from '../../core/state'
+import { sellQuote, marketProfitLeft } from '../../core/engine'
 import { formatDuration } from '../../core/time'
 import { Coins, Empty, ItemThumb, ScreenHead, Sheet } from '../kit'
 import { PetCanvas } from '../PetCanvas'
@@ -94,21 +95,22 @@ function Market() {
         </div>
       ) : (
         <div className="stack" style={{ gap: 8 }}>
-          <p className="muted small">Giao đơn hàng cho Bé Bơ được nhiều xu hơn bán ở đây.</p>
+          <p className="muted small">Giao đơn hàng cho Bé Bơ được nhiều xu hơn bán ở đây. Hôm nay bạn còn lãi được <b>{marketProfitLeft(state, Date.now())}</b>/{ECONOMY.farm.marketProfitPerDay} xu khi bán ở quầy; vượt mức thì quầy mua đúng giá vốn hạt giống (không lỗ), sang ngày mới lại đủ giá.</p>
           {CROPS.filter(c => (state.stock[c.produceId] ?? 0) > 0).length === 0 && <Empty>Chưa có nông sản để bán.</Empty>}
           {CROPS.filter(c => (state.stock[c.produceId] ?? 0) > 0).map(c => {
             const have = state.stock[c.produceId] ?? 0
             const n = Math.min(have, q(c.produceId))
+            const quote = sellQuote(state, Date.now(), c, n)
             return (
               <div key={c.id} className="card row">
                 <ItemThumb id={c.produceId} size={48} />
-                <div style={{ flex: 1 }}><div className="bold">{c.name} ×{have}</div><div className="muted tiny">{c.sellPrice} xu mỗi quả</div></div>
+                <div style={{ flex: 1 }}><div className="bold">{c.name} ×{have}</div><div className="muted tiny">{c.sellPrice} xu mỗi quả{quote.atCost > 0 ? ` · ${quote.atCost} quả giá vốn` : ''}</div></div>
                 <div className="stack" style={{ gap: 4, alignItems: 'flex-end' }}>
                   <Qty value={n} set={v => setQty({ ...qty, [c.produceId]: v })} max={have} />
                   <button className="btn small sage" onClick={async () => {
                     const r = await act({ type: 'sell', id: c.produceId, count: n })
                     if (r) { sfx('coin'); toast(`+${(r as { coins: number }).coins} xu`, 'good') }
-                  }}>Bán <Coins n={c.sellPrice * n} /></button>
+                  }}>Bán <Coins n={quote.coins} /></button>
                 </div>
               </div>
             )

@@ -18,12 +18,12 @@ export interface Crop {
 }
 
 export const CROPS: Crop[] = [
-  { id: 'radish', name: 'Củ cải hồng', seedId: 'seed.radish', produceId: 'crop.radish', growSec: 90, seedPrice: 2, yield: 1, sellPrice: 4, rank: 1, color: 0xf29bb4, leaf: 0x7fbf7a, blurb: 'Lớn nhanh như thổi. Hợp để chơi một buổi.' },
-  { id: 'carrot', name: 'Cà rốt', seedId: 'seed.carrot', produceId: 'crop.carrot', growSec: 300, seedPrice: 5, yield: 2, sellPrice: 5, rank: 1, color: 0xf2a65a, leaf: 0x6fae6a, blurb: 'Năm phút là có hai củ giòn.' },
-  { id: 'strawberry', name: 'Dâu tây', seedId: 'seed.strawberry', produceId: 'crop.strawberry', growSec: 900, seedPrice: 10, yield: 3, sellPrice: 7, rank: 1, color: 0xe8566b, leaf: 0x5f9d5c, blurb: 'Mười lăm phút, ba quả đỏ mọng.' },
-  { id: 'pumpkin', name: 'Bí ngô', seedId: 'seed.pumpkin', produceId: 'crop.pumpkin', growSec: 2400, seedPrice: 18, yield: 2, sellPrice: 20, rank: 2, color: 0xf0a040, leaf: 0x6f9a52, blurb: 'Bốn mươi phút. Nấu súp rất ngon.' },
-  { id: 'corn', name: 'Ngô ngọt', seedId: 'seed.corn', produceId: 'crop.corn', growSec: 7200, seedPrice: 25, yield: 4, sellPrice: 15, rank: 2, color: 0xf6d35e, leaf: 0x7aa860, blurb: 'Hai giờ. Gieo rồi đi chơi đâu đó.' },
-  { id: 'sunflower', name: 'Hướng dương', seedId: 'seed.sunflower', produceId: 'crop.sunflower', growSec: 14400, seedPrice: 35, yield: 3, sellPrice: 30, rank: 3, color: 0xf7c843, leaf: 0x6d9a50, blurb: 'Bốn giờ. Sáng mai quay lại là nở rộ.' },
+  { id: 'radish', name: 'Củ cải hồng', seedId: 'seed.radish', produceId: 'crop.radish', growSec: 90, seedPrice: 2, yield: 1, sellPrice: 3, rank: 1, color: 0xf29bb4, leaf: 0x7fbf7a, blurb: 'Lớn nhanh như thổi. Hợp để chơi một buổi.' },
+  { id: 'carrot', name: 'Cà rốt', seedId: 'seed.carrot', produceId: 'crop.carrot', growSec: 300, seedPrice: 4, yield: 2, sellPrice: 4, rank: 1, color: 0xf2a65a, leaf: 0x6fae6a, blurb: 'Năm phút là có hai củ giòn.' },
+  { id: 'strawberry', name: 'Dâu tây', seedId: 'seed.strawberry', produceId: 'crop.strawberry', growSec: 900, seedPrice: 6, yield: 3, sellPrice: 4, rank: 1, color: 0xe8566b, leaf: 0x5f9d5c, blurb: 'Mười lăm phút, ba quả đỏ mọng.' },
+  { id: 'pumpkin', name: 'Bí ngô', seedId: 'seed.pumpkin', produceId: 'crop.pumpkin', growSec: 2400, seedPrice: 10, yield: 2, sellPrice: 9, rank: 2, color: 0xf0a040, leaf: 0x6f9a52, blurb: 'Bốn mươi phút. Nấu súp rất ngon.' },
+  { id: 'corn', name: 'Ngô ngọt', seedId: 'seed.corn', produceId: 'crop.corn', growSec: 7200, seedPrice: 16, yield: 4, sellPrice: 7, rank: 2, color: 0xf6d35e, leaf: 0x7aa860, blurb: 'Hai giờ. Gieo rồi đi chơi đâu đó.' },
+  { id: 'sunflower', name: 'Hướng dương', seedId: 'seed.sunflower', produceId: 'crop.sunflower', growSec: 14400, seedPrice: 21, yield: 3, sellPrice: 12, rank: 3, color: 0xf7c843, leaf: 0x6d9a50, blurb: 'Bốn giờ. Sáng mai quay lại là nở rộ.' },
 ]
 
 /** Cây hướng dẫn: chỉ gieo được một lần trong bước hướng dẫn, lớn trong 20 giây (quy tắc riêng, ghi rõ trong game). */

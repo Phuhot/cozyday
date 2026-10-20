@@ -1,5 +1,5 @@
 // MỌI CON SỐ KINH TẾ CỦA COZII! nằm ở file này.
-// File được sinh sang SQL (scripts/gen-content-sql.ts → supabase/migrations/*_content.sql) để máy chủ dùng đúng cùng số liệu.
+// Máy chủ (server/, đóng gói thành api/cozii.js) import đúng file này nên client và máy chủ luôn cùng số liệu.
 // Lý do chọn từng con số: docs/ECONOMY_VI.md (có bảng mô phỏng chạy bằng `npm run sim:economy`).
 
 export const ECONOMY = {
@@ -19,11 +19,16 @@ export const ECONOMY = {
     maxPlots: 12,
     /** Giá mở ô thứ 5…12 và hạng cần có. */
     plotPrices: [
-      { plot: 5, price: 80, rank: 1 }, { plot: 6, price: 80, rank: 1 },
-      { plot: 7, price: 150, rank: 2 }, { plot: 8, price: 150, rank: 2 },
-      { plot: 9, price: 250, rank: 3 }, { plot: 10, price: 250, rank: 3 },
-      { plot: 11, price: 400, rank: 4 }, { plot: 12, price: 400, rank: 4 },
+      { plot: 5, price: 100, rank: 1 }, { plot: 6, price: 100, rank: 1 },
+      { plot: 7, price: 250, rank: 2 }, { plot: 8, price: 250, rank: 2 },
+      { plot: 9, price: 500, rank: 3 }, { plot: 10, price: 500, rank: 3 },
+      { plot: 11, price: 900, rank: 4 }, { plot: 12, price: 900, rank: 4 },
     ],
+    /**
+     * Quầy Hạt Giống trả đủ giá tới khi tiền LÃI (giá bán − giá vốn hạt mỗi quả) trong ngày đạt mức này; sau đó mua
+     * đúng giá vốn (hòa vốn, không bao giờ lỗ). Chặn vòng lặp cày củ cải vô hạn. Đơn hàng không bị tính.
+     */
+    marketProfitPerDay: 250,
     /** Tự tưới: giảm phần trăm tổng thời gian lớn, một lần mỗi vụ. */
     selfWaterCutPct: 15,
     /** Bạn bè tưới giúp: mỗi lượt giảm %, tối đa số lượt mỗi vụ. */
@@ -71,10 +76,10 @@ export const ECONOMY = {
   orders: {
     active: 3,
     /** Thưởng = tổng giá bán nông sản × hệ số, làm tròn 5. */
-    rewardMultiplier: 1.5,
+    rewardMultiplier: 1.4,
     townPointsPerOrder: 1,
     freeRerollsPerDay: 3,
-    maxCompletedPerDay: 8,
+    maxCompletedPerDay: 4,
   },
 
   // ---- Sân chơi ----

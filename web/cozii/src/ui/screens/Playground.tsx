@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { ECONOMY } from '../../content/economy'
 import { useGame } from '../../app/game'
 import { back, go } from '../../app/router'
 import { GAME_IDS, type GameId } from '../../core/state'
@@ -32,7 +33,7 @@ export function Playground() {
       <div className="stack">
         <ScreenHead title="Sân chơi" onBack={() => back('town')} />
         <NpcHeader id="pip" />
-        <p className="small muted">Mỗi lượt hoàn thành hợp lệ cho xu theo điểm (tối đa 12 xu/lượt, 80 xu/ngày) và làm bạn nhỏ vui. Thua không mất gì. Mọi loài có cùng kích thước va chạm, không loài nào có lợi thế.</p>
+        <p className="small muted">Mỗi lượt hoàn thành hợp lệ cho xu theo điểm (tối đa {ECONOMY.games.maxCoinsPerRun} xu/lượt, {ECONOMY.games.dailyCoinCap} xu/ngày) và làm bạn nhỏ vui. Thua không mất gì. Mọi loài có cùng kích thước va chạm, không loài nào có lợi thế.</p>
         <div className="stack" style={{ gap: 10 }}>
           {GAME_IDS.map(g => (
             <div key={g} className="card row" style={{ background: GAME_COLOR[g], alignItems: 'flex-start' }}>

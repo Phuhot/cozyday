@@ -1,4 +1,4 @@
-// SINH TỰ ĐỘNG từ server/api.ts bằng `npm run build:api` — đừng sửa tay. sha:14024ca269941c8a
+// SINH TỰ ĐỘNG từ server/api.ts bằng `npm run build:api` — đừng sửa tay. sha:a0dcbf6560576cc2
 // server/auth.ts
 var HttpError = class extends Error {
   status;
@@ -66,15 +66,20 @@ var ECONOMY = {
     maxPlots: 12,
     /** Giá mở ô thứ 5…12 và hạng cần có. */
     plotPrices: [
-      { plot: 5, price: 80, rank: 1 },
-      { plot: 6, price: 80, rank: 1 },
-      { plot: 7, price: 150, rank: 2 },
-      { plot: 8, price: 150, rank: 2 },
-      { plot: 9, price: 250, rank: 3 },
-      { plot: 10, price: 250, rank: 3 },
-      { plot: 11, price: 400, rank: 4 },
-      { plot: 12, price: 400, rank: 4 }
+      { plot: 5, price: 100, rank: 1 },
+      { plot: 6, price: 100, rank: 1 },
+      { plot: 7, price: 250, rank: 2 },
+      { plot: 8, price: 250, rank: 2 },
+      { plot: 9, price: 500, rank: 3 },
+      { plot: 10, price: 500, rank: 3 },
+      { plot: 11, price: 900, rank: 4 },
+      { plot: 12, price: 900, rank: 4 }
     ],
+    /**
+     * Quầy Hạt Giống trả đủ giá tới khi tiền LÃI (giá bán − giá vốn hạt mỗi quả) trong ngày đạt mức này; sau đó mua
+     * đúng giá vốn (hòa vốn, không bao giờ lỗ). Chặn vòng lặp cày củ cải vô hạn. Đơn hàng không bị tính.
+     */
+    marketProfitPerDay: 250,
     /** Tự tưới: giảm phần trăm tổng thời gian lớn, một lần mỗi vụ. */
     selfWaterCutPct: 15,
     /** Bạn bè tưới giúp: mỗi lượt giảm %, tối đa số lượt mỗi vụ. */
@@ -119,10 +124,10 @@ var ECONOMY = {
   orders: {
     active: 3,
     /** Thưởng = tổng giá bán nông sản × hệ số, làm tròn 5. */
-    rewardMultiplier: 1.5,
+    rewardMultiplier: 1.4,
     townPointsPerOrder: 1,
     freeRerollsPerDay: 3,
-    maxCompletedPerDay: 8
+    maxCompletedPerDay: 4
   },
   // ---- Sân chơi ----
   games: {
@@ -466,12 +471,12 @@ function defaultOwned() {
 
 // src/content/farm.ts
 var CROPS = [
-  { id: "radish", name: "C\u1EE7 c\u1EA3i h\u1ED3ng", seedId: "seed.radish", produceId: "crop.radish", growSec: 90, seedPrice: 2, yield: 1, sellPrice: 4, rank: 1, color: 15899572, leaf: 8372090, blurb: "L\u1EDBn nhanh nh\u01B0 th\u1ED5i. H\u1EE3p \u0111\u1EC3 ch\u01A1i m\u1ED9t bu\u1ED5i." },
-  { id: "carrot", name: "C\xE0 r\u1ED1t", seedId: "seed.carrot", produceId: "crop.carrot", growSec: 300, seedPrice: 5, yield: 2, sellPrice: 5, rank: 1, color: 15902298, leaf: 7319146, blurb: "N\u0103m ph\xFAt l\xE0 c\xF3 hai c\u1EE7 gi\xF2n." },
-  { id: "strawberry", name: "D\xE2u t\xE2y", seedId: "seed.strawberry", produceId: "crop.strawberry", growSec: 900, seedPrice: 10, yield: 3, sellPrice: 7, rank: 1, color: 15226475, leaf: 6266204, blurb: "M\u01B0\u1EDDi l\u0103m ph\xFAt, ba qu\u1EA3 \u0111\u1ECF m\u1ECDng." },
-  { id: "pumpkin", name: "B\xED ng\xF4", seedId: "seed.pumpkin", produceId: "crop.pumpkin", growSec: 2400, seedPrice: 18, yield: 2, sellPrice: 20, rank: 2, color: 15769664, leaf: 7314002, blurb: "B\u1ED1n m\u01B0\u01A1i ph\xFAt. N\u1EA5u s\xFAp r\u1EA5t ngon." },
-  { id: "corn", name: "Ng\xF4 ng\u1ECDt", seedId: "seed.corn", produceId: "crop.corn", growSec: 7200, seedPrice: 25, yield: 4, sellPrice: 15, rank: 2, color: 16175966, leaf: 8038496, blurb: "Hai gi\u1EDD. Gieo r\u1ED3i \u0111i ch\u01A1i \u0111\xE2u \u0111\xF3." },
-  { id: "sunflower", name: "H\u01B0\u1EDBng d\u01B0\u01A1ng", seedId: "seed.sunflower", produceId: "crop.sunflower", growSec: 14400, seedPrice: 35, yield: 3, sellPrice: 30, rank: 3, color: 16238659, leaf: 7182928, blurb: "B\u1ED1n gi\u1EDD. S\xE1ng mai quay l\u1EA1i l\xE0 n\u1EDF r\u1ED9." }
+  { id: "radish", name: "C\u1EE7 c\u1EA3i h\u1ED3ng", seedId: "seed.radish", produceId: "crop.radish", growSec: 90, seedPrice: 2, yield: 1, sellPrice: 3, rank: 1, color: 15899572, leaf: 8372090, blurb: "L\u1EDBn nhanh nh\u01B0 th\u1ED5i. H\u1EE3p \u0111\u1EC3 ch\u01A1i m\u1ED9t bu\u1ED5i." },
+  { id: "carrot", name: "C\xE0 r\u1ED1t", seedId: "seed.carrot", produceId: "crop.carrot", growSec: 300, seedPrice: 4, yield: 2, sellPrice: 4, rank: 1, color: 15902298, leaf: 7319146, blurb: "N\u0103m ph\xFAt l\xE0 c\xF3 hai c\u1EE7 gi\xF2n." },
+  { id: "strawberry", name: "D\xE2u t\xE2y", seedId: "seed.strawberry", produceId: "crop.strawberry", growSec: 900, seedPrice: 6, yield: 3, sellPrice: 4, rank: 1, color: 15226475, leaf: 6266204, blurb: "M\u01B0\u1EDDi l\u0103m ph\xFAt, ba qu\u1EA3 \u0111\u1ECF m\u1ECDng." },
+  { id: "pumpkin", name: "B\xED ng\xF4", seedId: "seed.pumpkin", produceId: "crop.pumpkin", growSec: 2400, seedPrice: 10, yield: 2, sellPrice: 9, rank: 2, color: 15769664, leaf: 7314002, blurb: "B\u1ED1n m\u01B0\u01A1i ph\xFAt. N\u1EA5u s\xFAp r\u1EA5t ngon." },
+  { id: "corn", name: "Ng\xF4 ng\u1ECDt", seedId: "seed.corn", produceId: "crop.corn", growSec: 7200, seedPrice: 16, yield: 4, sellPrice: 7, rank: 2, color: 16175966, leaf: 8038496, blurb: "Hai gi\u1EDD. Gieo r\u1ED3i \u0111i ch\u01A1i \u0111\xE2u \u0111\xF3." },
+  { id: "sunflower", name: "H\u01B0\u1EDBng d\u01B0\u01A1ng", seedId: "seed.sunflower", produceId: "crop.sunflower", growSec: 14400, seedPrice: 21, yield: 3, sellPrice: 12, rank: 3, color: 16238659, leaf: 7182928, blurb: "B\u1ED1n gi\u1EDD. S\xE1ng mai quay l\u1EA1i l\xE0 n\u1EDF r\u1ED9." }
 ];
 var TUTORIAL_CROP = {
   id: "sprout",
@@ -1053,6 +1058,29 @@ function bump(s, key, n, env2) {
 function capKey(env2, kind) {
   return `${dayKey(env2.now)}|${kind}`;
 }
+function unitCost(c) {
+  return Math.ceil(c.seedPrice / c.yield);
+}
+function sellQuote(s, now, c, n) {
+  let left = marketProfitLeft(s, now);
+  const cost = unitCost(c);
+  const margin = Math.max(0, c.sellPrice - cost);
+  let coins = 0, profit = 0, atCost = 0;
+  for (let i = 0; i < n; i++) {
+    if (left > 0 || margin === 0) {
+      coins += c.sellPrice;
+      profit += margin;
+      left -= margin;
+    } else {
+      coins += Math.min(cost, c.sellPrice);
+      atCost += 1;
+    }
+  }
+  return { coins, profit, atCost };
+}
+function marketProfitLeft(s, now) {
+  return Math.max(0, ECONOMY.farm.marketProfitPerDay - (s.caps[`${dayKey(now)}|market:profit`] ?? 0));
+}
 function capUsed(s, env2, kind) {
   return s.caps[capKey(env2, kind)] ?? 0;
 }
@@ -1334,10 +1362,12 @@ function run(s, a, env2) {
       const n = Math.floor(a.count);
       if (!c) fail("item", "Ch\u1EC9 b\xE1n \u0111\u01B0\u1EE3c n\xF4ng s\u1EA3n.");
       if (!(n >= 1 && n <= 99)) fail("count", "S\u1ED1 l\u01B0\u1EE3ng kh\xF4ng h\u1EE3p l\u1EC7.");
+      const quote = sellQuote(s, now, c, n);
       addStock(s, a.id, -n);
-      s.wallet.coins += c.sellPrice * n;
+      s.wallet.coins += quote.coins;
+      capAdd(s, env2, "market:profit", quote.profit);
       bump(s, "sell", n, env2);
-      return { coins: c.sellPrice * n };
+      return { coins: quote.coins, atCost: quote.atCost };
     }
     case "cook": {
       const r = recipe(a.recipe);

@@ -112,6 +112,37 @@ export function bump(s: GameState, key: string, n: number, env: Env) {
 function capKey(env: Env, kind: string) {
   return `${dayKey(env.now)}|${kind}`
 }
+/** Giá vốn hạt giống của một quả (giá hạt ÷ sản lượng, làm tròn lên). */
+export function unitCost(c: { seedPrice: number; yield: number }): number {
+  return Math.ceil(c.seedPrice / c.yield)
+}
+
+/**
+ * Giá bán `n` quả hôm nay: đủ giá cho tới khi tiền lãi trong ngày chạm ECONOMY.farm.marketProfitPerDay,
+ * phần còn lại mua đúng giá vốn (hòa vốn).
+ */
+export function sellQuote(s: GameState, now: number, c: { sellPrice: number; seedPrice: number; yield: number }, n: number): { coins: number; profit: number; atCost: number } {
+  let left = marketProfitLeft(s, now)
+  const cost = unitCost(c)
+  const margin = Math.max(0, c.sellPrice - cost)
+  let coins = 0, profit = 0, atCost = 0
+  for (let i = 0; i < n; i++) {
+    if (left > 0 || margin === 0) {
+      coins += c.sellPrice
+      profit += margin
+      left -= margin
+    } else {
+      coins += Math.min(cost, c.sellPrice)
+      atCost += 1
+    }
+  }
+  return { coins, profit, atCost }
+}
+
+export function marketProfitLeft(s: GameState, now: number): number {
+  return Math.max(0, ECONOMY.farm.marketProfitPerDay - (s.caps[`${dayKey(now)}|market:profit`] ?? 0))
+}
+
 function capUsed(s: GameState, env: Env, kind: string) {
   return s.caps[capKey(env, kind)] ?? 0
 }
@@ -467,10 +498,12 @@ function run(s: GameState, a: Action, env: Env): ActionResult {
       const n = Math.floor(a.count)
       if (!c) fail('item', 'Chỉ bán được nông sản.')
       if (!(n >= 1 && n <= 99)) fail('count', 'Số lượng không hợp lệ.')
+      const quote = sellQuote(s, now, c!, n)
       addStock(s, a.id, -n)
-      s.wallet.coins += c!.sellPrice * n
+      s.wallet.coins += quote.coins
+      capAdd(s, env, 'market:profit', quote.profit)
       bump(s, 'sell', n, env)
-      return { coins: c!.sellPrice * n }
+      return { coins: quote.coins, atCost: quote.atCost }
     }
     case 'cook': {
       const r = recipeDef(a.recipe)

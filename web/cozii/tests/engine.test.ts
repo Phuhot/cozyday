@@ -4,6 +4,8 @@ import { LocalBackend } from '../src/backend/local'
 import { ECONOMY } from '../src/content/economy'
 import { CHAPTERS } from '../src/content/town'
 import { rankOf, readyAt } from '../src/core/state'
+import { CROPS } from '../src/content/farm'
+import { unitCost } from '../src/core/engine'
 
 describe('khởi tạo & onboarding', () => {
   it('trạng thái mới có 4 ô đất, 3 đơn, quà khởi đầu', async () => {
@@ -104,7 +106,25 @@ describe('vườn', () => {
     const c0 = (await be.load()).wallet.coins
     const r = await act({ type: 'buyPlot' })
     expect(r.state.farm.unlocked).toBe(5)
-    expect(r.state.wallet.coins).toBe(c0 - 80)
+    expect(r.state.wallet.coins).toBe(c0 - ECONOMY.farm.plotPrices[0].price)
+  })
+  it('quầy trả đủ giá tới mức lãi trong ngày, vượt mức mua đúng giá vốn (không lỗ); sang ngày mới đủ giá lại', async () => {
+    const { be, clock, storage } = await onboarded()
+    const s0 = await be.load()
+    const radish = CROPS.find(c => c.id === 'radish')!
+    // nạp sẵn nhiều củ cải vào kho (dữ liệu test)
+    s0.stock[radish.produceId] = 400
+    storage.set('cozii:local:v1', JSON.stringify(s0))
+    const be2 = new LocalBackend(storage, () => clock.t)
+    await be2.load()
+    const margin = radish.sellPrice - unitCost(radish)
+    const fullUnits = Math.ceil(ECONOMY.farm.marketProfitPerDay / margin)
+    let got = 0
+    for (let i = 0; i < 4; i++) got += ((await be2.act({ type: 'sell', id: radish.produceId, count: 99 }, 'sell-' + i)).result as { coins: number }).coins
+    expect(got).toBe(fullUnits * radish.sellPrice + (396 - fullUnits) * unitCost(radish))
+    clock.t += 24 * 3600e3
+    const next = (await be2.act({ type: 'sell', id: radish.produceId, count: 1 }, 'sell-next')).result as { coins: number }
+    expect(next.coins).toBe(radish.sellPrice)
   })
   it('cây hướng dẫn chỉ gieo một lần và lớn trong 20 giây', async () => {
     const { act, clock } = await onboarded()

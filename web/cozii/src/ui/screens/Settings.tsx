@@ -91,11 +91,25 @@ export function Settings({ onReplayStory }: { onReplayStory: () => void }) {
           </div>
         </div>
       )}
+      {!local && (
+        <div className="card stack" style={{ gap: 8 }}>
+          <b>Dữ liệu online</b>
+          <p className="small muted">Tiến độ được lưu trên máy chủ sau mỗi thao tác. Bạn có thể tải một bản sao để giữ riêng; bản sao này chỉ để xem, không nhập ngược vào tài khoản và không thay đổi số xu hay kho đồ online.</p>
+          <button className="btn small" onClick={() => {
+            const blob = new Blob([JSON.stringify({ kind: 'cozii-online-copy', exportedAt: new Date().toISOString(), state }, null, 2)], { type: 'application/json' })
+            const a = document.createElement('a')
+            a.href = URL.createObjectURL(blob)
+            a.download = `cozii-ban-sao-${new Date().toISOString().slice(0, 10)}.json`
+            a.click()
+          }}>Tải bản sao dữ liệu</button>
+        </div>
+      )}
       <div className="card stack small" style={{ gap: 6 }}>
         <b>Quy tắc phần thưởng</b>
         <ul style={{ margin: 0, paddingLeft: 18 }}>
           <li>Cây lớn theo thời gian thật; tự tưới nhanh hơn {ECONOMY.farm.selfWaterCutPct}% (một lần/vụ), bạn bè tưới giúp mỗi lượt {ECONOMY.farm.helpWaterCutPct}% (tối đa {ECONOMY.farm.maxHelpsPerCrop}). Không có cây chết.</li>
           <li>Cây: {CROPS.map(c => `${c.name} ${formatDuration(c.growSec * 1000)}`).join(', ')}.</li>
+          <li>Quầy Hạt Giống trả đủ giá tới khi tiền lãi bán nông sản trong ngày đạt {ECONOMY.farm.marketProfitPerDay} xu; vượt mức thì mua đúng giá vốn hạt (không lỗ). Đơn hàng không bị tính, tối đa {ECONOMY.orders.maxCompletedPerDay} đơn/ngày.</li>
           <li>Minigame: tối đa {ECONOMY.games.maxCoinsPerRun} xu/lượt, {ECONOMY.games.dailyCoinCap} xu/ngày. Thoát giữa chừng không có xu.</li>
           <li>Chăm pet đúng lúc cần: có xu (tối đa {ECONOMY.care.dailyCoinCap}/ngày) và thân thiết (tối đa {ECONOMY.care.dailyAffectionCap}/ngày). Pet không ốm, không bỏ đi.</li>
           <li>Ngày đổi lúc 0 giờ theo giờ Việt Nam.</li>

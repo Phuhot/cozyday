@@ -9,8 +9,7 @@
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "test": "vitest run",
-    "gen:sql": "node --experimental-strip-types scripts/gen-content-sql.ts",
-    "sim:economy": "node --experimental-strip-types scripts/economy-sim.ts",
+    "sim:economy": "esbuild scripts/economy-sim.ts --bundle --platform=node --format=esm --log-level=warning --outfile=node_modules/.cache/economy-sim.mjs && node node_modules/.cache/economy-sim.mjs",
     "build:api": "node scripts/build-api.mjs",
     "test:server": "vitest run --config vitest.server.config.ts",
     "dev:online": "DB=$(bash scripts/dev/dev-db.sh) && COZII_DEV_API=1 COZII_DEV_AUTH=1 DATABASE_URL=$DB VITE_COZII_DEV_AUTH=1 vite"

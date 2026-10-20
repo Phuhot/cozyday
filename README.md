@@ -9,6 +9,12 @@ không quảng cáo, không mua hàng trong app.
 > Lấy cảm hứng về *cách giải quyết nhu cầu* từ các app lập lịch và app thú cưng tự chăm sóc, nhưng tên, bố cục, mèo,
 > đồ nội thất, icon và câu chữ đều là tài sản gốc của dự án (vẽ bằng code / script trong repo).
 
+## Bản web: Cozii!
+
+Thư mục [`web/cozii`](web/cozii/README.md) chứa **Cozii! — Thị trấn Bạn Nhỏ**, một game web (PWA) riêng dùng lại hình vẽ
+pet, trang phục và nội thất của app này: làm vườn, 6 minigame, capsule, trang trí và thăm nhà bạn bè. Triển khai lên
+Vercel + Supabase, chơi trên điện thoại/máy tính không cần App Store. App iPhone bên dưới vẫn độc lập.
+
 ## App làm gì
 
 | Tab | Nội dung |

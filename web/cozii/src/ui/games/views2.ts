@@ -219,8 +219,12 @@ export class RunnerView implements GameView {
     const px = w / 2 + ((e.laneX - 1) / 3) * roadBottom * 0.92
     const py = h - size * 0.98 - e.jumpHeight * size * 0.35
     g.ellipse(px - size * 0.3, h - size * 0.12, size * 0.6, size * 0.1, Color.black.opacity(0.12))
-    const blink = e.invulnerable && Math.floor(t * 12) % 2 === 0
-    if (!blink) c.drawImage(sprite(this.o.appearance, e.airborne, size, e.invulnerable), px - size / 2, py, size, size)
+    // vừa va chạm: mờ nhẹ theo nhịp (không biến mất hẳn, không nháy khi bật giảm chuyển động)
+    const faded = e.invulnerable && (this.o.reduceMotion || Math.floor(t * 8) % 2 === 0)
+    c.save()
+    if (faded) c.globalAlpha = 0.45
+    c.drawImage(sprite(this.o.appearance, e.airborne, size, e.invulnerable), px - size / 2, py, size, size)
+    c.restore()
     for (const p of this.pops) {
       const x = w / 2 + ((p.lane - 1) / 3) * roadBottom * 0.92
       g.text('+1', w * 0.06, rgb(0xd9667a).opacity(1 - p.t), pt(x, py - p.t * 30), 'bold')
