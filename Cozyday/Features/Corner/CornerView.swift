@@ -138,7 +138,7 @@ struct CornerView: View {
                 case .feed, .careCapped, .trailerFeed: foodTab = .tray
                 case .clean, .trailerClean:
                     startCleaning()
-                case .playground, .pickPet, .tutorial, .jump, .basket, .memory, .pause, .result, .resultCapped: showPlayground = true
+                case .playground, .pickPet, .tutorial, .jump, .basket, .memory, .blocks, .merge, .pause, .result, .resultCapped: showPlayground = true
                 default: break
                 }
                 switch screen {

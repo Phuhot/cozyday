@@ -16,7 +16,7 @@ struct PlaygroundEntryCard: View {
                     Text("Sân chơi")
                         .font(Typography.headline)
                         .foregroundStyle(Palette.ink)
-                    Text("3 trò chơi ngắn cùng \(store.profile.displayPetName) · \(today)/\(MinigameConfig.dailyCoinCap) xu hôm nay")
+                    Text("\(MinigameKind.allCases.count) trò chơi ngắn cùng \(store.profile.displayPetName) · \(today)/\(MinigameConfig.dailyCoinCap) xu hôm nay")
                         .font(Typography.caption)
                         .foregroundStyle(Palette.inkMuted)
                         .fixedSize(horizontal: false, vertical: true)
@@ -37,7 +37,7 @@ struct PlaygroundEntryCard: View {
     }
 }
 
-/// Sân chơi: chọn bạn nhỏ, xem kỷ lục và hạn mức xu hôm nay, vào chơi một trong ba game.
+/// Sân chơi: chọn bạn nhỏ, xem kỷ lục và hạn mức xu hôm nay, vào chơi một trong các game.
 struct PlaygroundView: View {
     @Environment(AppStore.self) private var store
     @Environment(UIState.self) private var ui
@@ -185,9 +185,17 @@ struct PlaygroundView: View {
                 } label: {
                     Label("Chơi", systemImage: "play.fill")
                 }
-                .buttonStyle(PrimaryButtonStyle(color: kind == .giftBasket ? Palette.peach : (kind == .memoryMatch ? Palette.sage : Palette.lavender)))
+                .buttonStyle(PrimaryButtonStyle(color: buttonColor(kind)))
                 .accessibilityLabel("Chơi \(kind.name)")
             }
+        }
+    }
+
+    private func buttonColor(_ kind: MinigameKind) -> Color {
+        switch kind {
+        case .cloudJump, .blockPuzzle: return Palette.lavender
+        case .giftBasket, .sweetMerge: return Palette.peach
+        case .memoryMatch: return Palette.sage
         }
     }
 
@@ -196,6 +204,8 @@ struct PlaygroundView: View {
         case .cloudJump: return "\(r.primary) m · \(r.score) điểm"
         case .giftBasket: return "\(r.score) điểm"
         case .memoryMatch: return "\(r.score) điểm"
+        case .blockPuzzle: return "\(r.score) điểm"
+        case .sweetMerge: return "\(r.score) điểm · món \(r.primary)"
         }
     }
 
@@ -209,7 +219,7 @@ struct PlaygroundView: View {
                      : "Rung đang tắt trong Cài đặt của CozyDay nên game cũng không rung.")
                     .font(Typography.caption).foregroundStyle(Palette.inkMuted)
                     .fixedSize(horizontal: false, vertical: true)
-                Text("Nhảy Mây và Giỏ Quà cần kéo ngang bằng tay. Với VoiceOver: vuốt lên/xuống trên vùng chơi để di chuyển (chưa được thử trên máy thật). Lật Thẻ dùng được hoàn toàn với VoiceOver.")
+                Text("Nhảy Mây và Giỏ Quà cần kéo ngang bằng tay. Với VoiceOver: vuốt lên/xuống trên vùng chơi để di chuyển (chưa được thử trên máy thật). Lật Thẻ và Gộp Bánh (có nút bốn hướng) dùng được với VoiceOver. Xếp Khối: ngoài kéo thả, có thể chạm chọn khối rồi chạm vào bàn.")
                     .font(Typography.caption).foregroundStyle(Palette.inkMuted)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -293,6 +303,11 @@ struct PlaygroundView: View {
             let host = makeHost(.memoryMatch)
             host.previewAutoplay = true
             host.previewMemoryPairs = 3
+            active = host
+        case .blocks, .merge:
+            UserDefaults.standard.set(MinigameKind.allCases.map(\.rawValue).joined(separator: ","), forKey: "playground.tutorialsSeen")
+            let host = makeHost(screen == .blocks ? .blockPuzzle : .sweetMerge)
+            host.previewAutoplay = true
             active = host
         case .result, .resultCapped:
             UserDefaults.standard.set("cloudJump,giftBasket,memoryMatch", forKey: "playground.tutorialsSeen")

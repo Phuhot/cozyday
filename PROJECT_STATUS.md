@@ -124,7 +124,7 @@ Cập nhật: 2026-10-19 (phiên 6) · Nhánh: `claude/ios-project-section-12-4b
 
 1. Bạn: trả lời 3 câu hỏi (iPhone + iOS; Windows 10/11; GitHub/Sideloadly + private/public).
 2. Bạn: tải artifact IPA mới nhất → cài bằng Sideloadly → chạy checklist `docs/TEST_CHECKLIST_VI.md` → gửi kết quả/ảnh lỗi.
-3. Bạn: thử các mục "Chăm thú cưng" và "Sân chơi" trong checklist (nhất là kéo một tay, tạm dừng khi vuốt về màn hình chính, hạn mức 20 xu).
+3. Bạn: thử các mục "Chăm thú cưng" và "Sân chơi" trong checklist (nhất là kéo một tay, tạm dừng khi vuốt về màn hình chính, hạn mức 40 xu).
 4. Claude: sửa lỗi theo phản hồi thiết bị; chỉnh độ khó/độ nhạy kéo của minigame theo cảm nhận của bạn.
 5. Bạn: thử Dọn nhà mới (chổi/khăn), Nhảy Mây có chướng ngại, Ảnh đại diện → báo độ khó và cảm giác chà có vừa không.
 

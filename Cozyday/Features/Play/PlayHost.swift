@@ -252,12 +252,16 @@ final class PlayHostModel: Identifiable {
     private(set) var jump: JumpController?
     private(set) var basket: BasketController?
     private(set) var memory: MemoryController?
+    private(set) var blocks: BlocksController?
+    private(set) var merge: MergeController?
     private(set) var sprites: [PetSpriteKind: Image] = [:]
     private(set) var outcome: MinigameOutcome?
     private(set) var saved: MinigameSave?
     private(set) var saveError: String?
     private(set) var isSaving = false
     private(set) var startedAt: Date?
+    /// Người chơi tự kết thúc lượt ở màn tạm dừng (Xếp Khối, Gộp Bánh).
+    private(set) var endedByPlayer = false
 
     private let store: AppStore
     private let loop = GameLoop()
@@ -267,6 +271,8 @@ final class PlayHostModel: Identifiable {
     @ObservationIgnored var previewAutoplay = false
     @ObservationIgnored var previewMemoryPairs = Int.max
     @ObservationIgnored private var autoplayAccumulator: TimeInterval = 0
+    /// Hết nước đi: chờ chút cho thấy hiệu ứng rồi mới hiện kết quả.
+    @ObservationIgnored private var finishTask: Task<Void, Never>?
 
     /// = sessionID của lượt.
     nonisolated let id: UUID
@@ -286,7 +292,7 @@ final class PlayHostModel: Identifiable {
         loop.onFrame = { [weak self] t, dt in self?.frame(t, dt) }
     }
 
-    var isConfigured: Bool { jump != nil || basket != nil || memory != nil }
+    var isConfigured: Bool { jump != nil || basket != nil || memory != nil || blocks != nil || merge != nil }
 
     /// Tạo bàn chơi theo kích thước vùng chơi và dựng sẵn ảnh bạn nhỏ (một lần).
     func configure(size: CGSize, scale: CGFloat) {
@@ -308,6 +314,14 @@ final class PlayHostModel: Identifiable {
             c.autoplay = previewAutoplay
             c.autoplayPairs = previewMemoryPairs
             memory = c
+        case .blockPuzzle:
+            let c = BlocksController(seed: seed)
+            c.autoplay = previewAutoplay
+            blocks = c
+        case .sweetMerge:
+            let c = MergeController(seed: seed)
+            c.autoplay = previewAutoplay
+            merge = c
         }
     }
 
@@ -348,10 +362,24 @@ final class PlayHostModel: Identifiable {
         teardown()
     }
 
+    /// Kết thúc lượt (chỉ Xếp Khối, Gộp Bánh): lượt hợp lệ, tính xu theo điểm đã có. Gọi được cả khi đang tạm dừng.
+    func endRun() {
+        guard kind.canEndRun else { return }
+        switch session.phase {
+        case .playing, .paused, .countdown:
+            endedByPlayer = true
+            finish(endedByPlayer: true)
+        default:
+            break
+        }
+    }
+
     /// Dọn mọi thứ đang chạy (gọi khi rời màn chơi).
     func teardown() {
         loop.stop()
         memory?.teardown()
+        finishTask?.cancel()
+        finishTask = nil
         sound.stop()
     }
 
@@ -359,7 +387,16 @@ final class PlayHostModel: Identifiable {
         switch kind {
         case .cloudJump: return jump?.engine.time ?? 0
         case .giftBasket: return basket?.engine.time ?? 0
-        case .memoryMatch: return runClock.elapsed(at: GameLoop.now)
+        case .memoryMatch, .blockPuzzle, .sweetMerge: return runClock.elapsed(at: GameLoop.now)
+        }
+    }
+
+    /// Game theo lượt đã hết nước đi.
+    private var puzzleIsOver: Bool {
+        switch kind {
+        case .blockPuzzle: return blocks?.isOver == true
+        case .sweetMerge: return merge?.isOver == true
+        default: return false
         }
     }
 
@@ -375,8 +412,10 @@ final class PlayHostModel: Identifiable {
             runClock.run(at: t)
             sound.play(.go)
             haptics.tap()
-            // Lật thẻ không cần vẽ theo khung hình: tắt vòng lặp cho đỡ tốn pin (trừ khi tự chơi xem trước).
-            if kind == .memoryMatch && !previewAutoplay { loop.stop() }
+            // Game theo lượt không cần vẽ theo khung hình: tắt vòng lặp cho đỡ tốn pin (trừ khi tự chơi xem trước).
+            if kind.isTurnBased && !previewAutoplay { loop.stop() }
+            // Hết nước đi ngay trước khi tạm dừng: tiếp tục thì chốt kết quả luôn.
+            if puzzleIsOver { finish() }
             return
         }
         guard session.isRunning else { return }
@@ -394,12 +433,72 @@ final class PlayHostModel: Identifiable {
                 memory?.autoplayStep(running: true, feedback: handle)
                 if memory?.isOver == true { finish() }
             }
+        case .blockPuzzle:
+            autoplayAccumulator += dt
+            if autoplayAccumulator > 0.7 {
+                autoplayAccumulator = 0
+                withAnimation(.easeOut(duration: 0.12)) { if let blocks { blocks.autoplayStep(running: true, feedback: handle) } }
+                if puzzleIsOver { finishSoon() }
+            }
+        case .sweetMerge:
+            autoplayAccumulator += dt
+            if autoplayAccumulator > 0.35 {
+                autoplayAccumulator = 0
+                withAnimation(.easeOut(duration: 0.12)) { if let merge { merge.autoplayStep(running: true, feedback: handle) } }
+                if puzzleIsOver { finishSoon() }
+            }
         }
     }
 
     func flip(_ index: Int) {
         memory?.flip(index, running: session.isRunning, feedback: handle)
         if memory?.isOver == true { finish() }
+    }
+
+    // MARK: Xếp Khối
+
+    func selectBlock(_ slot: Int?) {
+        blocks?.select(slot, running: session.isRunning)
+    }
+
+    @discardableResult
+    func placeBlock(slot: Int, row: Int, col: Int) -> Bool {
+        let ok = blocks?.place(slot: slot, row: row, col: col, running: session.isRunning, feedback: handle) ?? false
+        if ok && puzzleIsOver { finishSoon() }
+        return ok
+    }
+
+    @discardableResult
+    func placeSelectedBlock(at cell: BlockCell) -> Bool {
+        let ok = blocks?.placeSelected(at: cell, running: session.isRunning, feedback: handle) ?? false
+        if ok && puzzleIsOver { finishSoon() }
+        return ok
+    }
+
+    func rejectBlockDrop() {
+        guard session.isRunning else { return }
+        blocks?.rejectDrop(feedback: handle)
+    }
+
+    // MARK: Gộp Bánh
+
+    @discardableResult
+    func swipe(_ d: MergeDirection) -> Bool {
+        let ok = merge?.swipe(d, running: session.isRunning, feedback: handle) ?? false
+        if ok && puzzleIsOver { finishSoon() }
+        return ok
+    }
+
+    /// Hết nước đi: để bạn nhỏ reo và hiệu ứng chạy xong (~0,8 giây) rồi mới hiện kết quả.
+    private func finishSoon() {
+        guard finishTask == nil else { return }
+        finishTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 800_000_000)
+            guard let self, !Task.isCancelled else { return }
+            self.finishTask = nil
+            // Đang tạm dừng thì để lúc tiếp tục chốt (xem `frame`).
+            if self.session.isRunning { self.finish() }
+        }
     }
 
     private func handle(_ event: GameFeedbackEvent) {
@@ -415,11 +514,13 @@ final class PlayHostModel: Identifiable {
 
     // MARK: Kết thúc & lưu
 
-    private func finish() {
-        guard session.isRunning else { return }
+    private func finish(endedByPlayer byPlayer: Bool = false) {
+        guard session.isRunning || (byPlayer && kind.canEndRun && !session.phase.isOver && session.phase != .ready) else { return }
         let end = GameLoop.now
-        session.finish()
+        if byPlayer { session.endRun() } else { session.finish() }
         runClock.stop(at: end)
+        finishTask?.cancel()
+        finishTask = nil
         loop.stop()
         let finishedAt = Date()
         let o: MinigameOutcome
@@ -443,6 +544,19 @@ final class PlayHostModel: Identifiable {
                                 score: b.map { MemoryBoard.score(level: level, moves: $0.moves, seconds: seconds) } ?? 0,
                                 primary: b?.moves ?? 0, secondary: b?.pairsFound ?? 0, level: level, activeSeconds: seconds,
                                 completed: b?.isComplete ?? false, species: appearance.species.rawValue,
+                                startedAt: startedAt ?? finishedAt, finishedAt: finishedAt)
+        case .blockPuzzle:
+            // Hết chỗ hoặc tự kết thúc lượt đều là kết thúc đúng luật.
+            let e = blocks?.engine
+            o = MinigameOutcome(sessionID: session.id, kind: kind, score: e?.score ?? 0, primary: e?.linesCleared ?? 0,
+                                secondary: e?.piecesPlaced ?? 0, level: nil, activeSeconds: runClock.elapsed(at: end),
+                                completed: e != nil, species: appearance.species.rawValue,
+                                startedAt: startedAt ?? finishedAt, finishedAt: finishedAt)
+        case .sweetMerge:
+            let e = merge?.engine
+            o = MinigameOutcome(sessionID: session.id, kind: kind, score: e?.score ?? 0, primary: e?.highestValue ?? 2,
+                                secondary: e?.moves ?? 0, level: nil, activeSeconds: runClock.elapsed(at: end),
+                                completed: e != nil, species: appearance.species.rawValue,
                                 startedAt: startedAt ?? finishedAt, finishedAt: finishedAt)
         }
         outcome = o

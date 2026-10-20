@@ -28,8 +28,8 @@ struct GameHostView: View {
                     if !host.isConfigured { prepare(size: size) }
                 }
             }
-            // Game hành động vẽ tràn màn hình; Lật thẻ nằm trong vùng an toàn.
-            .ignoresSafeArea(.container, edges: host.kind == .memoryMatch ? [] : .all)
+            // Game hành động vẽ tràn màn hình; game theo lượt nằm trong vùng an toàn.
+            .ignoresSafeArea(.container, edges: host.kind.isTurnBased ? [] : .all)
 
             VStack(spacing: 0) {
                 hud
@@ -51,9 +51,13 @@ struct GameHostView: View {
             }
             Button("Chơi tiếp", role: .cancel) {}
         } message: {
-            Text("Lượt đang chơi sẽ không được lưu và không có xu. Xu bạn đã có không bị ảnh hưởng.")
+            Text(host.kind.canEndRun
+                 ? "Lượt đang chơi sẽ không được lưu và không có xu. Muốn giữ điểm và nhận xu, chọn Kết thúc lượt."
+                 : "Lượt đang chơi sẽ không được lưu và không có xu. Xu bạn đã có không bị ảnh hưởng.")
         }
     }
+
+    private func endRunAction() { host.endRun() }
 
     private func prepare(size: CGSize) {
         host.configure(size: size, scale: displayScale)
@@ -76,6 +80,10 @@ struct GameHostView: View {
             if let basket = host.basket { BasketPlayArea(controller: basket, sprites: host.sprites, running: host.session.isRunning, reduceMotion: reduceMotion) }
         case .memoryMatch:
             if let memory = host.memory { MemoryPlayArea(controller: memory, host: host) }
+        case .blockPuzzle:
+            if let blocks = host.blocks { BlocksPlayArea(controller: blocks, host: host) }
+        case .sweetMerge:
+            if let merge = host.merge { MergePlayArea(controller: merge, host: host) }
         }
     }
 
@@ -140,6 +148,12 @@ struct GameHostView: View {
             return list
         case .memoryMatch:
             return [("hand.tap.fill", "\(host.memory?.board.moves ?? 0) lượt"), ("timer", MemoryTimeText.text(host))]
+        case .blockPuzzle:
+            let e = host.blocks?.engine
+            return [("star.fill", "\(e?.score ?? 0)"), ("line.3.horizontal", "\(e?.linesCleared ?? 0) đường")]
+        case .sweetMerge:
+            let e = host.merge?.engine
+            return [("star.fill", "\(e?.score ?? 0)"), ("birthday.cake.fill", "\(e?.highestValue ?? 2)")]
         }
     }
 
@@ -170,7 +184,8 @@ struct GameHostView: View {
                     .allowsHitTesting(false)
             }
         case .paused:
-            PauseCard(onResume: { host.resume() }, onExit: { confirmExit = true })
+            PauseCard(onResume: { host.resume() }, onExit: { confirmExit = true },
+                      onEndRun: host.kind.canEndRun ? endRunAction : nil)
         case .finished:
             GameResultCard(host: host, onReplay: onReplay, onExit: onExit)
         case .playing, .abandoned:
@@ -378,7 +393,11 @@ struct TutorialCard: View {
                             }
                         }
                     }
-                    if kind != .memoryMatch {
+                    if kind.canEndRun {
+                        Text("Không tính giờ, cứ thong thả. Muốn nghỉ thì bấm Tạm dừng rồi chọn Kết thúc lượt: xu vẫn tính theo điểm đã có.")
+                            .font(Typography.caption).foregroundStyle(Palette.inkMuted)
+                            .multilineTextAlignment(.center)
+                    } else if kind != .memoryMatch {
                         Text("Có thể tạm dừng bất cứ lúc nào. Vào nền hay khóa máy cũng tự tạm dừng.")
                             .font(Typography.caption).foregroundStyle(Palette.inkMuted)
                             .multilineTextAlignment(.center)
@@ -402,6 +421,8 @@ struct TutorialCard: View {
 struct PauseCard: View {
     let onResume: () -> Void
     let onExit: () -> Void
+    /// Có giá trị khi game cho tự kết thúc lượt mà vẫn tính xu (Xếp Khối, Gộp Bánh).
+    var onEndRun: (() -> Void)? = nil
 
     var body: some View {
         ZStack {
@@ -412,12 +433,19 @@ struct PauseCard: View {
                     .foregroundStyle(Palette.lavender)
                     .accessibilityHidden(true)
                 Text("Tạm dừng").font(Typography.title).foregroundStyle(Palette.ink)
-                Text("Thời gian đang đứng yên. Bấm Tiếp tục để đếm ngược 3 giây rồi chơi tiếp.")
+                Text(onEndRun == nil
+                     ? "Thời gian đang đứng yên. Bấm Tiếp tục để đếm ngược 3 giây rồi chơi tiếp."
+                     : "Bàn chơi được giữ nguyên. Kết thúc lượt thì nhận xu theo điểm hiện có.")
                     .font(Typography.callout).foregroundStyle(Palette.inkMuted)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
                 Button(action: onResume) { Label("Tiếp tục", systemImage: "play.fill") }
                     .buttonStyle(PrimaryButtonStyle())
+                if let onEndRun {
+                    Button(action: onEndRun) { Label("Kết thúc lượt", systemImage: "flag.checkered") }
+                        .buttonStyle(SoftButtonStyle(tint: Palette.sage))
+                        .accessibilityHint("Lưu điểm và nhận xu cho lượt này")
+                }
                 Button(action: onExit) { Text("Thoát lượt này") }
                     .buttonStyle(SoftButtonStyle(tint: Palette.inkMuted))
             }
@@ -485,6 +513,12 @@ struct GameResultCard: View {
         case .cloudJump: return "\(host.petName) đã leo tới \(host.outcome?.primary ?? 0) m!"
         case .giftBasket: return "Hết giờ! Giỏ đầy quà rồi"
         case .memoryMatch: return "Ghép xong cả bàn!"
+        case .blockPuzzle:
+            if host.blocks?.isOver == true { return "Hết chỗ đặt khối rồi!" }
+            return "\(host.petName) đã xóa được \(host.outcome?.primary ?? 0) đường!"
+        case .sweetMerge:
+            let level = SweetLadder.level(ofValue: host.outcome?.primary ?? 2)
+            return "\(host.petName) làm ra \(SweetLadder.name(max(1, level)))!"
         }
     }
 
@@ -499,6 +533,13 @@ struct GameResultCard: View {
         case .memoryMatch:
             let s = Int(o?.activeSeconds ?? 0)
             rows = [("Lượt lật", "\(o?.primary ?? 0)"), ("Thời gian", String(format: "%d:%02d", s / 60, s % 60)), ("Điểm", "\(o?.score ?? 0)")]
+        case .blockPuzzle:
+            rows = [("Điểm", "\(o?.score ?? 0)"), ("Đường đã xóa", "\(o?.primary ?? 0)"),
+                    ("Combo lớn nhất", "\(host.blocks?.engine.bestCombo ?? 0) đường"), ("Khối đã đặt", "\(o?.secondary ?? 0)")]
+        case .sweetMerge:
+            let top = o?.primary ?? 2
+            rows = [("Điểm", "\(o?.score ?? 0)"), ("Món lớn nhất", "\(SweetLadder.name(max(1, SweetLadder.level(ofValue: top)))) \(top)"),
+                    ("Lượt vuốt", "\(o?.secondary ?? 0)")]
         }
         let best = store.bestResult(host.kind)
         return VStack(spacing: Spacing.xs) {
@@ -607,6 +648,10 @@ struct GameThumbnail: View {
                     }
                 }
                 draw(ctx, CGRect(x: 78 * k, y: size.height - 24 * k, width: 22 * k, height: 22 * k), kind: .cheer)
+            case .blockPuzzle:
+                PuzzleArt.blocksThumbnail(ctx, size: size) { rect in draw(ctx, rect, kind: .cheer) }
+            case .sweetMerge:
+                PuzzleArt.mergeThumbnail(ctx, size: size) { rect in draw(ctx, rect, kind: .happy) }
             }
         }
         .accessibilityHidden(true)

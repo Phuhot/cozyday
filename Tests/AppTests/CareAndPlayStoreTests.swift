@@ -187,10 +187,10 @@ final class CareAndPlayStoreTests: XCTestCase {
     func testDailyCapPartialThenZeroButScoreStillSavedAndMidnightResets() throws {
         let (store, _) = try makeStore()
         var total = 0
-        for _ in 0..<3 { total += try store.recordMinigame(outcome()).record.coins } // 18
-        XCTAssertEqual(total, 18)
+        for _ in 0..<6 { total += try store.recordMinigame(outcome()).record.coins } // 36
+        XCTAssertEqual(total, 36)
         let partial = try store.recordMinigame(outcome())
-        XCTAssertEqual(partial.record.coins, MinigameConfig.dailyCoinCap - 18)
+        XCTAssertEqual(partial.record.coins, MinigameConfig.dailyCoinCap - 36)
         XCTAssertEqual(partial.record.note, .partialCap)
         let capped = try store.recordMinigame(outcome(score: 300))
         XCTAssertEqual(capped.record.coins, 0)

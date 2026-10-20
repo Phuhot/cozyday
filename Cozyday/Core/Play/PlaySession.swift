@@ -83,6 +83,15 @@ struct PlaySession: Equatable {
         phase = .finished
     }
 
+    /// Người chơi tự kết thúc lượt (chỉ game cho phép, xem `MinigameKind.canEndRun`): lượt đã bắt đầu thì thành
+    /// kết thúc đúng luật, kể cả khi đang tạm dừng. Chưa bắt đầu hoặc đã xong thì không làm gì.
+    mutating func endRun() {
+        switch phase {
+        case .playing, .paused, .countdown: phase = .finished
+        default: break
+        }
+    }
+
     mutating func abandon() {
         guard !phase.isOver else { return }
         phase = .abandoned
