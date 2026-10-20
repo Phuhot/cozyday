@@ -67,23 +67,23 @@ final class AppStoreTests: XCTestCase {
 
     func testPurchaseIsAtomicAndNotDoubleCharged() throws {
         let (store, container) = try makeStore()
-        // Kiếm 25 xu
-        for i in 0..<5 {
+        // Kiếm 24 xu (8 xu mỗi việc)
+        for i in 0..<3 {
             let id = try XCTUnwrap(store.createTask(draft("Việc \(i)")))
             try store.setStatus(id: id, to: .done)
         }
-        XCTAssertEqual(store.wallet.coins, 25)
+        XCTAssertEqual(store.wallet.coins, 24)
         XCTAssertThrowsError(try store.buy(itemID: "lamp.desk")) // 45 xu: không đủ
-        XCTAssertEqual(store.wallet.coins, 25)
+        XCTAssertEqual(store.wallet.coins, 24)
 
         try store.buy(itemID: "lamp.candle") // 20 xu
         XCTAssertThrowsError(try store.buy(itemID: "lamp.candle")) // bấm lần 2
-        XCTAssertEqual(store.wallet.coins, 5)
+        XCTAssertEqual(store.wallet.coins, 4)
         XCTAssertEqual(store.ownedIDs, ["lamp.candle"])
         XCTAssertEqual(store.equippedItem(in: .lamp)?.id, "lamp.candle")
 
         let (relaunched, _) = try makeStore(container)
-        XCTAssertEqual(relaunched.wallet.coins, 5)
+        XCTAssertEqual(relaunched.wallet.coins, 4)
         XCTAssertEqual(relaunched.ownedIDs, ["lamp.candle"])
     }
 

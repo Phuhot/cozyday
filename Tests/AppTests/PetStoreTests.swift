@@ -32,19 +32,21 @@ final class PetStoreTests: XCTestCase {
 
     func testWearLookBuysMissingAllOrNothingAndReplacesOutfit() throws {
         let (store, container) = try makeStore()
-        try completeTasks(store, count: 10) // cấp 2, 50 xu
+        try completeTasks(store, count: 10) // cấp 2, 80 xu
         let look = PetLook(id: "t", name: "Thử", species: .cat, fur: .ginger, items: ["hat.sprout", "neck.bowtie"])
         // 30 (ginger) + 0 (sprout) + 20 (bowtie) = 50 xu, vừa đủ.
-        try store.buy(itemID: "glasses.round") // 30 xu → còn 20, không đủ mua cả bộ
+        try store.buy(itemID: "glasses.round") // 30 xu
         try store.equip(itemID: "glasses.round")
+        try store.buy(itemID: "lamp.candle") // 20 xu → còn 30, không đủ mua cả bộ
         XCTAssertThrowsError(try store.wearLook(look))
         XCTAssertFalse(store.ownedIDs.contains("fur.ginger"), "thiếu xu thì không mua món nào")
-        XCTAssertEqual(store.wallet.coins, 20)
+        XCTAssertEqual(store.wallet.coins, 30)
 
-        try completeTasks(store, count: 6) // +30 xu → 50
+        clock.advance(seconds: 86_400) // hôm nay đã hết hạn mức 10 việc có thưởng
+        try completeTasks(store, count: 3) // +24 xu → 54
         let spent = try store.wearLook(look)
         XCTAssertEqual(spent, 50)
-        XCTAssertEqual(store.wallet.coins, 0)
+        XCTAssertEqual(store.wallet.coins, 4)
         XCTAssertEqual(store.petAppearance.fur, .ginger)
         XCTAssertEqual(store.petAppearance.hat, "hat.sprout")
         XCTAssertNil(store.petAppearance.glasses, "món không thuộc bộ được tháo ra")
@@ -54,7 +56,7 @@ final class PetStoreTests: XCTestCase {
         XCTAssertThrowsError(try store.wearLook(PetLooks.look("look.penguinspace")!))
         let (relaunched, _) = try makeStore(container)
         XCTAssertEqual(relaunched.petAppearance.neck, "neck.bowtie")
-        XCTAssertEqual(relaunched.wallet.coins, 0)
+        XCTAssertEqual(relaunched.wallet.coins, 4)
     }
 
     func testRoomItemsNeedRoomLevelAndThemeDefaults() throws {
@@ -71,10 +73,10 @@ final class PetStoreTests: XCTestCase {
         XCTAssertEqual(store.petAppearance.species, .cat)
         XCTAssertEqual(store.petItemInUse(.fur), "fur.cream")
 
-        try completeTasks(store, count: 10) // 100 XP → cấp 2, 50 xu
+        try completeTasks(store, count: 10) // 100 XP → cấp 2, 80 xu
         XCTAssertEqual(store.wallet.level, 2)
         XCTAssertThrowsError(try store.buy(itemID: "species.fox")) // cấp 6
-        XCTAssertEqual(store.wallet.coins, 50)
+        XCTAssertEqual(store.wallet.coins, 80)
 
         try store.buy(itemID: "fur.ginger")
         try store.equip(itemID: "fur.ginger")
@@ -92,7 +94,7 @@ final class PetStoreTests: XCTestCase {
         let (relaunched, _) = try makeStore(container)
         XCTAssertEqual(relaunched.petAppearance.fur, .ginger)
         XCTAssertEqual(relaunched.petAppearance.hat, "hat.sprout")
-        XCTAssertEqual(relaunched.wallet.coins, 50 - 30)
+        XCTAssertEqual(relaunched.wallet.coins, 80 - 30)
 
         // Sao lưu có trang phục thú cưng vẫn hợp lệ và khôi phục được
         let data = try BackupCodec.encode(relaunched.makeBackup())
