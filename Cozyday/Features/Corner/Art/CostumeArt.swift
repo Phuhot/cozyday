@@ -6,10 +6,10 @@ enum CostumeArt {
 
     // MARK: Tiện ích
 
-    private static func pt(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: x, y: y) }
+    static func pt(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: x, y: y) }
 
     /// Bản lật ngang (x → 100 − x) để vẽ đồ đối xứng một lần cho cả hai bên.
-    private static func mirrored(_ ctx: GraphicsContext, _ flip: Bool) -> GraphicsContext {
+    static func mirrored(_ ctx: GraphicsContext, _ flip: Bool) -> GraphicsContext {
         var c = ctx
         if flip {
             c.translateBy(x: 100, y: 0)
@@ -19,7 +19,7 @@ enum CostumeArt {
     }
 
     /// Đa giác bo tròn góc (tô rồi viền cùng màu, đầu nét tròn).
-    private static func soft(_ ctx: GraphicsContext, _ pts: [CGPoint], _ color: Color, _ round: CGFloat = 2) {
+    static func soft(_ ctx: GraphicsContext, _ pts: [CGPoint], _ color: Color, _ round: CGFloat = 2) {
         ctx.polygon(pts, color)
         ctx.strokePath(color, width: round) { p in
             p.addLines(pts)
@@ -27,7 +27,7 @@ enum CostumeArt {
         }
     }
 
-    private static func starPoints(_ cx: CGFloat, _ cy: CGFloat, _ r: CGFloat, _ inner: CGFloat) -> [CGPoint] {
+    static func starPoints(_ cx: CGFloat, _ cy: CGFloat, _ r: CGFloat, _ inner: CGFloat) -> [CGPoint] {
         var pts: [CGPoint] = []
         for i in 0..<10 {
             let ang = -Double.pi / 2 + Double(i) * Double.pi / 5
@@ -37,12 +37,21 @@ enum CostumeArt {
         return pts
     }
 
-    private static func star(_ ctx: GraphicsContext, _ cx: CGFloat, _ cy: CGFloat, _ r: CGFloat, _ color: Color) {
+    static func star(_ ctx: GraphicsContext, _ cx: CGFloat, _ cy: CGFloat, _ r: CGFloat, _ color: Color) {
         soft(ctx, starPoints(cx, cy, r, r * 0.48), color, r * 0.3)
     }
 
-    private static func sparkle(_ ctx: GraphicsContext, _ x: CGFloat, _ y: CGFloat, _ size: CGFloat, _ color: Color) {
+    static func sparkle(_ ctx: GraphicsContext, _ x: CGFloat, _ y: CGFloat, _ size: CGFloat, _ color: Color) {
         ctx.draw(Text("✦").font(.system(size: size)).foregroundColor(color), at: CGPoint(x: x, y: y))
+    }
+
+    /// Biến thể màu của đồ mặc ("<gốc>~<màu>"): trả về ID gốc và bản vẽ đã xoay sắc độ, nil nếu không phải biến thể.
+    /// Mọi lớp đồ mặc gọi hàm này trước khi tra hình, nên biến thể dùng chung hình của món gốc.
+    static func tinted(_ id: String, _ ctx: GraphicsContext) -> (base: String, ctx: GraphicsContext)? {
+        guard let item = Catalog.item(id), let base = item.variantOf else { return nil }
+        var c = ctx
+        c.addFilter(.hueRotation(.degrees(item.hue)))
+        return (base, c)
     }
 
     // MARK: Mũ
@@ -73,7 +82,7 @@ enum CostumeArt {
         case "hat.pirate": pirateHat(ctx)
         case "hat.galaxy": galaxyCrown(ctx)
         case "hat.dragon": dragonHood(ctx)
-        default: break
+        default: gachaHat(id, ctx, a)
         }
     }
 
@@ -430,8 +439,7 @@ enum CostumeArt {
         case "glasses.snorkel": snorkel(ctx)
         case "glasses.goldwire": goldWire(ctx)
         case "glasses.eyepatch": eyePatch(ctx)
-        default:
-            break
+        default: gachaGlasses(id, ctx, a)
         }
     }
 
@@ -517,8 +525,7 @@ enum CostumeArt {
         case "neck.camera": camera(ctx)
         case "neck.moon": moonPendant(ctx)
         case "neck.dragonpearl": dragonPearl(ctx)
-        default:
-            break
+        default: gachaNeck(id, ctx, a)
         }
     }
 
@@ -702,14 +709,14 @@ enum CostumeArt {
         case "outfit.dino": dinoSuit(ctx, clipped, a)
         case "outfit.knight": knightArmor(ctx, clipped, a)
         case "outfit.sakura": sakuraKimono(ctx, clipped, a)
-        default:
-            break
+        default: gachaOutfit(id, ctx, clipped: clipped, a)
         }
     }
 
     // MARK: Phụ kiện sau lưng / cầm tay
 
     static func back(_ id: String, _ ctx: GraphicsContext, _ a: PetAppearance, front: Bool) {
+        if let v = tinted(id, ctx) { back(v.base, v.ctx, a, front: front); return }
         let w: CGFloat = a.species == .hamster ? 3 : 0
         switch id {
         case "back.lollipop":
@@ -850,13 +857,12 @@ enum CostumeArt {
         case "back.parrot": parrot(ctx, w, front: front)
         case "back.starcape": starCape(ctx, w, front: front)
         case "back.dragonwings": if !front { dragonWings(ctx, w) }
-        default:
-            break
+        default: gachaBack(id, ctx, a, front: front)
         }
     }
 
     /// "Ngón tay" nhỏ cùng màu lông che lên cán để trông như đang cầm.
-    private static func pawGrip(_ ctx: GraphicsContext, _ a: PetAppearance, _ x: CGFloat, _ y: CGFloat) {
+    static func pawGrip(_ ctx: GraphicsContext, _ a: PetAppearance, _ x: CGFloat, _ y: CGFloat) {
         ctx.ellipse(x - 1, y - 0.5, 7, 5, FurPalette.of(a.fur).base)
     }
 
@@ -958,7 +964,7 @@ extension CostumeArt {
     // MARK: Hình dùng chung
 
     /// Hoa năm cánh tròn (anh đào, dâm bụt, cúc).
-    fileprivate static func fivePetal(_ ctx: GraphicsContext, _ cx: CGFloat, _ cy: CGFloat, _ r: CGFloat,
+    static func fivePetal(_ ctx: GraphicsContext, _ cx: CGFloat, _ cy: CGFloat, _ r: CGFloat,
                                       _ petal: Color, _ center: Color, turn: Double = 0) {
         for k in 0..<5 {
             let ang = (-90 + Double(k) * 72 + turn) * Double.pi / 180
@@ -968,7 +974,7 @@ extension CostumeArt {
     }
 
     /// Điểm trên một cung parabol quanh cổ (dùng cho chuỗi hạt, vòng hoa).
-    fileprivate static func necklacePoint(_ x: CGFloat, depth: CGFloat = 6.5, top: CGFloat = 61.8) -> CGPoint {
+    static func necklacePoint(_ x: CGFloat, depth: CGFloat = 6.5, top: CGFloat = 61.8) -> CGPoint {
         CGPoint(x: x, y: top + depth * (1 - pow((x - 50) / 23, 2)))
     }
 
@@ -982,7 +988,7 @@ extension CostumeArt {
     }
 
     /// Cánh hoa giọt nước có khía ở chóp, gốc tại `root`, hướng sang trái rồi xoay `deg` độ.
-    fileprivate static func petal(_ ctx: GraphicsContext, root: CGPoint, deg: Double, length l: CGFloat, width w: CGFloat,
+    static func petal(_ ctx: GraphicsContext, root: CGPoint, deg: Double, length l: CGFloat, width w: CGFloat,
                                   inner: Color, outer: Color) {
         ctx.rotated(deg, around: root) { c in
             let rx = root.x, ry = root.y
@@ -1315,7 +1321,7 @@ extension CostumeArt {
 
     // MARK: Kính
 
-    fileprivate static func temples(_ ctx: GraphicsContext, _ color: Color, y: CGFloat = 47.5, inset: CGFloat = 28.5, width: CGFloat = 1.3) {
+    static func temples(_ ctx: GraphicsContext, _ color: Color, y: CGFloat = 47.5, inset: CGFloat = 28.5, width: CGFloat = 1.3) {
         ctx.strokePath(color, width: width) { p in
             p.move(to: pt(inset, y)); p.addLine(to: pt(21, y - 1.5))
             p.move(to: pt(100 - inset, y)); p.addLine(to: pt(79, y - 1.5))
