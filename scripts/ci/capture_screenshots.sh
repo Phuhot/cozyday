@@ -101,7 +101,10 @@ if [[ "${COZY_VISUAL_SUITE:-full}" == "film" ]]; then
   burst film-epic-frames gachaScene 1.2 8 1.0
   log "Đã quay xong phim"
   ls -la "$VIDEO" "$OUT"
-  exit "$failures"
+  echo "Phạm vi ảnh: film (chỉ phim mở viên nang), commit ${GITHUB_SHA:-local}" > "$OUT/info.txt"
+  ditto -c -k --sequesterRsrc --keepParent "$APP" "$BUILD_DIR/output/Cozyday-simulator-app.zip"
+  [[ $failures -eq 0 ]] || fail "$failures màn hình bị crash khi quay phim"
+  exit 0
 fi
 
 log "Phiên 9: giao dịch, cấp, bộ sưu tập và phim capsule"
