@@ -25,9 +25,25 @@ Giữ bundle ID `com.phuhot.cozyday`, đường kho `Cozyday.store`. Lược đ�
 
 ## Kiểm tra và bằng chứng
 
-Kết quả CI cuối cùng và link artifact được cập nhật sau khi các job hoàn tất. Không dùng build thành công để suy ra hình ảnh, âm thanh hoặc hành vi iPhone đã đúng.
+Bản code cuối `60f6091` được xác minh ở [run #39](https://github.com/Phuhot/cozyday/actions/runs/39639161111): **toàn run thành công**, gồm **220 test iOS Simulator, 0 lỗi**, build Release arm64, kiểm tra/đóng gói IPA, quay video, chụp và lưu ảnh lên nhánh. **168 test Core** cũng đã qua trên Linux; đây là phần lõi của bộ test, không cộng thành 388 test riêng biệt. Các commit sau lượt này chỉ cập nhật tài liệu và bằng chứng hình ảnh.
 
-Các test trọng yếu bao gồm: migration kho V3 có dữ liệu thật sang V4, bù mã một lần, cấp cũ không tụt, claim nhiệm vụ/rương/mốc không lặp, pity 39→40/reset/gói mười, pool không trùng shop, rollback giao dịch gacha, khôi phục kết quả với UserDefaults mới và qua backup, onboarding gọi lại, kỷ vật giữ nguyên sau đổi tên, nhận lễ/huy hiệu lặp, save lỗi và bộ dữ liệu thử nghiệm.
+- [Tải IPA #39, checksum và build-info](https://github.com/Phuhot/cozyday/actions/runs/39639161111/artifacts/12363747910). Artifact giữ 14 ngày theo workflow.
+- [Bộ ảnh V9](screenshots-v9/) · [Hôm nay trên 12 Pro Max](screenshots-v9/v9-iPhone-12-Pro-Max-today.jpg) · [Góc nhỏ tối](screenshots-v9/dark-07-corner.jpg) · [Tập trung](screenshots-v9/06-focus.jpg) · [So sánh ba tier](screenshots-v9/v9-tiers.jpg).
+- [Video capsule và màn nhận món](media/v9-gacha-cutscene-run39.mp4), bản nén 720 px từ video thật. [Artifact video gốc](https://github.com/Phuhot/cozyday/actions/runs/39639161111/artifacts/12364448539).
+- [Log test #39](https://github.com/Phuhot/cozyday/actions/runs/39639161111/artifacts/12364869365), giữ 7 ngày.
+- [Pull request #2](https://github.com/Phuhot/cozyday/pull/2), base là nhánh iOS Claude, chưa merge.
+
+Đã tải IPA #39 về cloud và đối chiếu SHA-256 khớp: `5860a4dfeadb54350df8544027771bb1d37972919ccb951c43f559aee74a7cc9`. Bundle ID `com.phuhot.cozyday`, phiên bản `0.1.0 (39)`, tối thiểu iOS 17.0; chưa ký. Lần tải đầu bị chặn mạng, lần tải sau khi run hoàn tất đã thành công.
+
+Lượt trước, [run #38](https://github.com/Phuhot/cozyday/actions/runs/39595150344) trên `27e719b` có **218 test iOS Simulator, 0 lỗi**, cùng ảnh/video thật đã tải và xem. Toàn run bị đánh dấu cancelled ở mốc 45 phút; không coi đây là lượt CI xanh. Checksum IPA #38 đã đối chiếu trùng build-info.
+
+Đã xem ảnh thật của Today trên iPhone 12 Pro Max/SE (cỡ mặc định và lớn), Corner sáng/tối, Focus và so sánh ba tier. 12 Pro Max mặc định thấy việc chưa xếp giờ và các hàng timeline ngay màn đầu; SE thấy việc chưa xếp giờ. Cỡ chữ trợ năng phải cuộn thêm, chữ xuống dòng; tiêu đề thanh điều hướng Hôm nay trên SE có dấu ba chấm, bảng nhiệm vụ ở mức chữ lớn nhất có hàng rất cao. Góc nhỏ mặc định thấy các nút chăm sóc và gacha gần phòng; Focus thấy timer/nút điều khiển trước thống kê. Đây là kiểm tra ảnh tĩnh, chưa thay cho thử cuộn/VoiceOver bằng tay trên máy thật.
+
+Đã trích và xem các mốc thời gian từ video capsule #39: máy, viên nang bên chân pet, mở viên và chuyển sang màn nhận **Mũ tách trà (Hiếm)**. Cảnh dùng pet đang mặc nhiều phụ kiện; màn nhận món vẫn đúng loài/màu nhưng chỉ còn chiếc mũ mới, có Mặc ngay/Để sau. Preview gọi giao dịch thật trong kho mẫu trước khi chạy cảnh. File gốc dài 12,7 giây, gồm khởi động và hoạt ảnh; bản nén giữ toàn bộ nội dung, chỉ đổi độ phân giải/bitrate/fps. File do `simctl recordVideo` tạo **chỉ có video, không có audio track**; âm thanh mới kiểm tra bằng code, còn cần nghe trên iPhone. Video #38 trước đó kết thúc ở bảng so sánh tier, đã được thay bằng bằng chứng giao dịch này.
+
+Lượt cuối dùng `visual_suite=focused` để chụp lại các màn V9/sáng/tối/chữ lớn/hai kích thước iPhone, vẫn chạy toàn bộ test. Bộ ảnh đầy đủ run #38 đã lưu trong artifact; lần chụp tập trung được xuất riêng ở `docs/screenshots-v9`. Các minigame không đổi không quay lại năm video lớn trong lượt này.
+
+Các test trọng yếu bao gồm: migration kho V3 có dữ liệu thật sang V4, bù mã một lần, cấp cũ không tụt, claim nhiệm vụ/rương/mốc không lặp, pity 39→40/reset/gói mười, pool không trùng shop, rollback giao dịch gacha và mua/mặc, khôi phục kết quả với UserDefaults mới và qua backup, onboarding gọi lại, kỷ vật giữ nguyên sau đổi tên, ngày gắn bó giữ nguyên khi đổi múi giờ và qua backup, nhận lễ/huy hiệu lặp, save lỗi và bộ dữ liệu thử nghiệm.
 
 Đường chụp CI dùng dữ liệu mẫu trong bộ nhớ, không mở save cá nhân. Chụp sáng/tối/chữ lớn, iPhone 12 Pro Max và SE (nếu runtime có hỗ trợ), Today có việc/không việc, nhiệm vụ, hub kỷ vật và so sánh tier. Video `v9-gacha-cutscene.mp4` quay màn Canvas đang chạy trên simulator.
 
