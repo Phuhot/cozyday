@@ -47,6 +47,8 @@ struct GachaView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     @State private var spinningSince: Date?
+    @AppStorage("gacha.shortAnimation") private var shortAnimation = false
+    @State private var playScene = true
     @State private var results: GachaResults?
     @State private var showRules = false
     @State private var shelf: ItemRarity = .secret
@@ -79,7 +81,19 @@ struct GachaView: View {
                         .frame(height: 260)
                         .accessibilityHidden(true)
 
+                    if !store.unseenGachaPulls.isEmpty {
+                        Button("Xem kết quả đã lưu") {
+                            playScene = false
+                            results = GachaResults(pulls: store.unseenGachaPulls)
+                        }.buttonStyle(PrimaryButtonStyle())
+                    }
                     buttons
+                    HStack {
+                        TicketBadge(tickets: store.wallet.tickets)
+                        Button("Dùng 1 vé") { spin(1, payment: .tickets) }
+                            .disabled(store.wallet.tickets < 1 || !store.unseenGachaPulls.isEmpty)
+                    }
+                    Toggle("Hoạt ảnh ngắn", isOn: $shortAnimation)
                     pityCard
                     shelfCard
 
@@ -106,18 +120,23 @@ struct GachaView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 // Đang quay: chưa cho đóng, để không mất màn kết quả (xu đã trừ, đồ đã vào tủ).
-                ToolbarItem(placement: .confirmationAction) { Button("Xong") { dismiss() }.disabled(spinningSince != nil) }
+                ToolbarItem(placement: .confirmationAction) { SheetCloseButton { dismiss() } }
             }
-            .interactiveDismissDisabled(spinningSince != nil)
+
             .overlay(alignment: .top) { ErrorOverlay() }
             .task {
+                if !store.unseenGachaPulls.isEmpty {
+                    playScene = false
+                    results = GachaResults(pulls: store.unseenGachaPulls)
+                    return
+                }
                 // Ảnh xem trước (Debug): quay 10 lượt để chụp màn kết quả.
                 guard PreviewMode.current == .gachaResult else { return }
                 try? await Task.sleep(nanoseconds: 800_000_000)
                 spin(GachaConfig.tenCount)
             }
             .sheet(item: $results) { r in
-                GachaResultView(pulls: r.pulls)
+                GachaResultView(pulls: r.pulls, playScene: playScene)
                     .presentationDetents([.large])
             }
         }
@@ -156,7 +175,7 @@ struct GachaView: View {
                 .frame(maxWidth: .infinity)
             }
             .buttonStyle(PrimaryButtonStyle(color: Palette.peach))
-            .disabled(coins < GachaConfig.singlePrice || spinningSince != nil)
+            .disabled(coins < GachaConfig.singlePrice || spinningSince != nil || !store.unseenGachaPulls.isEmpty)
 
             Button {
                 spin(GachaConfig.tenCount)
@@ -168,7 +187,7 @@ struct GachaView: View {
                 .frame(maxWidth: .infinity)
             }
             .buttonStyle(PrimaryButtonStyle())
-            .disabled(coins < GachaConfig.tenPrice || spinningSince != nil)
+            .disabled(coins < GachaConfig.tenPrice || spinningSince != nil || !store.unseenGachaPulls.isEmpty)
         }
     }
 
@@ -209,7 +228,7 @@ struct GachaView: View {
                     let mine = Catalog.isOwned(item.id, owned: owned)
                     let hidden = item.isHiddenUntilOwned && !mine
                     VStack(spacing: 2) {
-                        PetArt(mood: .idle, appearance: store.petAppearance.trying(item))
+                        GachaRewardArt(item: item, appearance: store.petAppearance)
                             .silhouette(hidden)
                             .opacity(mine || hidden ? 1 : 0.6)
                             .frame(width: 60, height: 60)
@@ -235,20 +254,13 @@ struct GachaView: View {
 
     // MARK: Quay
 
-    private func spin(_ count: Int) {
+    private func spin(_ count: Int, payment: GachaPayment = .coins) {
         var pulls: [GachaPull] = []
-        guard ui.run({ pulls = try store.pullGacha(count: count) }) else { return }
-        guard !reduceMotion else {
-            results = GachaResults(pulls: pulls)
-            return
-        }
-        spinningSince = Date()
-        Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 1_350_000_000)
-            spinningSince = nil
-            results = GachaResults(pulls: pulls)
-        }
+        guard ui.run({ pulls = try store.pullGacha(count: count, payment: payment) }) else { return }
+        playScene = true
+        results = GachaResults(pulls: pulls)
     }
+
 }
 
 private struct DotLabelStyle: LabelStyle {
@@ -268,8 +280,21 @@ struct GachaResultView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var revealed = 0
+    @State private var showingScene: Bool
+    @State private var detail: CatalogItem?
+    @AppStorage("gacha.shortAnimation") private var shortAnimation = false
+
+    init(pulls: [GachaPull], playScene: Bool = true) {
+        self.pulls = pulls
+        _showingScene = State(initialValue: playScene)
+    }
 
     var body: some View {
+        Group {
+        if showingScene {
+            GachaCutsceneView(appearance: store.petAppearance, tier: pulls.map(\.tier).max() ?? .common,
+                             short: shortAnimation) { showingScene = false }
+        } else {
         NavigationStack {
             ScrollView {
                 VStack(spacing: Spacing.l) {
@@ -282,7 +307,9 @@ struct GachaResultView: View {
                             .foregroundStyle(best.color)
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: 96), spacing: Spacing.s)], spacing: Spacing.s) {
                             ForEach(Array(pulls.enumerated()), id: \.offset) { i, p in
-                                smallCard(p, shown: i < revealed)
+                                Button { detail = Catalog.item(p.itemID) } label: {
+                                    smallCard(p, shown: i < revealed)
+                                }.buttonStyle(.plain).disabled(i >= revealed)
                             }
                         }
                     }
@@ -299,7 +326,18 @@ struct GachaResultView: View {
             .navigationTitle("Kết quả")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) { Button("Xong") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) { Button("Để sau", action: acknowledge) }
+            }
+            .sheet(item: $detail) { item in
+                if let pull = pulls.first(where: { $0.itemID == item.id }) {
+                    NavigationStack {
+                        ScrollView { bigCard(pull).padding(Spacing.l) }
+                            .cozySheetBackground().navigationTitle("Món vừa nhận")
+                            .navigationBarTitleDisplayMode(.inline)
+                            .sheetCloseToolbar { detail = nil }
+                            .overlay(alignment: .top) { ErrorOverlay() }
+                    }
+                }
             }
             .task {
                 guard !reduceMotion else { revealed = pulls.count; return }
@@ -309,6 +347,14 @@ struct GachaResultView: View {
                 }
             }
         }
+        }
+        }
+        .interactiveDismissDisabled(showingScene)
+        .overlay(alignment: .top) { ErrorOverlay() }
+    }
+
+    private func acknowledge() {
+        if ui.run({ try store.markGachaSeen() }) { dismiss() }
     }
 
     private func bigCard(_ p: GachaPull) -> some View {
@@ -325,7 +371,7 @@ struct GachaResultView: View {
                     .fill(RadialGradient(colors: [p.tier.color.opacity(0.35), .clear], center: .center, startRadius: 10, endRadius: 140))
                     .frame(width: 260, height: 260)
                 if let item {
-                    PetArt(mood: .happy, appearance: store.petAppearance.trying(item))
+                    GachaRewardArt(item: item, appearance: store.petAppearance)
                         .frame(width: 200, height: 200)
                 }
             }
@@ -340,16 +386,16 @@ struct GachaResultView: View {
                 .foregroundStyle(Palette.inkMuted)
                 .multilineTextAlignment(.center)
             if !p.isDuplicate, let item {
-                Button("Mặc ngay") {
+                Button(item.slot.roomKind == nil ? "Mặc ngay" : "Đặt trong phòng") {
                     if ui.run({ try store.equip(itemID: item.id) }) {
                         ui.showReward("\(store.profile.displayPetName) đang mặc \(item.name)")
-                        dismiss()
+                        acknowledge()
                     }
                 }
                 .buttonStyle(PrimaryButtonStyle(color: Palette.sage))
             }
         }
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .contain)
     }
 
     private func smallCard(_ p: GachaPull, shown: Bool) -> some View {
@@ -357,7 +403,7 @@ struct GachaResultView: View {
         return VStack(spacing: 2) {
             ZStack {
                 if shown, let item {
-                    PetArt(mood: .happy, appearance: store.petAppearance.trying(item))
+                    GachaRewardArt(item: item, appearance: store.petAppearance)
                         .transition(.scale.combined(with: .opacity))
                 } else {
                     Canvas { ctx, size in
@@ -382,5 +428,20 @@ struct GachaResultView: View {
         .background(p.tier.color.opacity(shown ? 0.16 : 0.08), in: RoundedRectangle(cornerRadius: Radius.m, style: .continuous))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(shown ? "\(p.tier.label): \(item?.name ?? ""), \(p.isDuplicate ? "trùng, \(p.refund) xu" : "mới")" : "Viên nang chưa mở")
+    }
+}
+
+/// Each reward is shown alone; room items never disappear into a pet-only renderer.
+struct GachaRewardArt: View {
+    let item: CatalogItem
+    let appearance: PetAppearance
+    var body: some View {
+        if item.slot.isPet {
+            PetArt(mood: .happy, appearance: appearance.showcasing(item))
+        } else {
+            ItemArt(itemID: item.id)
+                .padding(Spacing.s)
+                .background(Palette.roomWall, in: RoundedRectangle(cornerRadius: Radius.m))
+        }
     }
 }

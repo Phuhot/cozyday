@@ -192,7 +192,7 @@ final class ProgressStoreTests: XCTestCase {
         let (store, _) = try makeStore() // thứ Ba 3/11/2026
         for offset in [0, 1, 3, 4] { // thứ Ba, Tư, Sáu, Bảy (không liên tiếp)
             if offset > 0 {
-                clock.set(calendar.date(from: DateComponents(year: 2026, month: 11, day: 3 + offset, hour: 9))!)
+                clock.now = calendar.date(from: DateComponents(year: 2026, month: 11, day: 3 + offset, hour: 9))!
             }
             try satisfy(store, store.dailyQuests(on: store.today))
             try store.claimDailyQuests(day: store.today)
@@ -217,7 +217,7 @@ final class ProgressStoreTests: XCTestCase {
         let (reopened, _) = try makeStore(container)
         XCTAssertEqual(reopened.unseenGachaPulls.map(\.itemID), pulls.map(\.itemID))
         XCTAssertEqual(reopened.ledger.filter { $0.kind == .gacha }.count, 1)
-        reopened.markGachaSeen()
+        try reopened.markGachaSeen()
         XCTAssertTrue(reopened.unseenGachaPulls.isEmpty)
         // Món mới vào kho thật (không phải kho ảo của chế độ thử nghiệm).
         if !pulls[0].isDuplicate { XCTAssertTrue(reopened.realOwnedIDs.contains(pulls[0].itemID)) }
@@ -230,11 +230,15 @@ final class ProgressStoreTests: XCTestCase {
         try store.redeemGiftCode("t3ster")
         try store.enableTesterMode()
         try store.grantTesterCurrency(coins: 0, tickets: 3)
+        try store.equip(itemID: "species.capybara")
+        XCTAssertFalse(store.realOwnedIDs.contains("species.capybara"))
         let doc = try BackupCodec.decodeAndValidate(try BackupCodec.encode(store.makeBackup()))
         XCTAssertEqual(doc.schemaVersion, BackupDocument.currentSchemaVersion)
         let (other, _) = try makeStore()
         try other.restore(doc)
         XCTAssertTrue(other.isTesterMode)
+        XCTAssertEqual(other.petAppearance.species, .capybara)
+        XCTAssertFalse(other.realOwnedIDs.contains("species.capybara"))
         XCTAssertEqual(other.wallet.tickets, 3)
         XCTAssertThrowsError(try other.redeemGiftCode("t3ster"), "cờ đã đổi mã đi theo bản sao lưu")
         XCTAssertEqual(other.ledger.filter { $0.key == LedgerKeys.migrationEcon2 }.count, 1)
@@ -252,5 +256,125 @@ final class ProgressStoreTests: XCTestCase {
         XCTAssertEqual(other.wallet.coins, 10_000)
         try other.restore(checked) // khôi phục lại lần nữa: vẫn chỉ bù một lần trên bộ dữ liệu đó
         XCTAssertEqual(other.wallet.coins, 10_000)
+    }
+}
+
+extension ProgressStoreTests {
+    func testGachaPaymentRecoveryAndAcknowledgementAreAtomic() throws {
+        let (store, container) = try makeStore()
+        try store.redeemGiftCode("t3ster")
+        let before = store.wallet
+        store.failNextSaveForTesting = true
+        XCTAssertThrowsError(try store.pullGacha(count:10))
+        XCTAssertEqual(store.wallet,before)
+        XCTAssertTrue(store.unseenGachaPulls.isEmpty)
+        XCTAssertTrue(store.owned.isEmpty)
+        let pulls = try store.pullGacha(count:10)
+        let paid = store.wallet
+        XCTAssertThrowsError(try store.pullGacha(count:1),"unread batch blocks a double tap")
+        XCTAssertEqual(store.wallet,paid)
+        let freshDefaults = UserDefaults(suiteName:"Recovery-\(UUID())")!
+        let reopened = try AppStore(container:container,clock:clock,calendar:calendar,defaults:freshDefaults)
+        XCTAssertEqual(reopened.unseenGachaPulls.map(\.entry.id),pulls.map(\.entry.id),"no UserDefaults dependency")
+        reopened.failNextSaveForTesting = true
+        XCTAssertThrowsError(try reopened.markGachaSeen())
+        XCTAssertEqual(reopened.unseenGachaPulls.count,10)
+        let backup = try BackupCodec.decodeAndValidate(BackupCodec.encode(reopened.makeBackup()))
+        let (restored, _) = try makeStore()
+        try restored.restore(backup)
+        XCTAssertEqual(restored.unseenGachaPulls.map(\.entry.id),pulls.map(\.entry.id))
+        try restored.markGachaSeen()
+        XCTAssertTrue(restored.unseenGachaPulls.isEmpty)
+        XCTAssertEqual(restored.wallet,paid)
+    }
+
+    func testStarterPetGrantedOnceAndOnboardingCannotChangeExistingPlayer() throws {
+        let (store, _) = try makeStore()
+        try store.completeOnboarding(userName:"An",petName:"Bông",goals:[],habits:[],species:.puppy)
+        XCTAssertEqual(store.petAppearance.species,.puppy)
+        XCTAssertTrue(store.realOwnedIDs.contains("species.puppy"))
+        try store.completeOnboarding(userName:"Other",petName:"Other",goals:[],habits:[],species:.bunny)
+        XCTAssertEqual(store.profile.petName,"Bông")
+        XCTAssertFalse(store.realOwnedIDs.contains("species.bunny"))
+    }
+
+    func testKeepsakeFreezesStoryAndPlacementSurvivesBackup() throws {
+        let (store, _) = try makeStore()
+        try satisfy(store,[DailyQuest(kind:.tasks,target:4)])
+        let day = store.today
+        _ = try store.claimAdventure(day:day)
+        let memory = try XCTUnwrap(store.keepsakes.first)
+        let story = store.savedAdventureStory(on:day)
+        XCTAssertNil(try store.claimAdventure(day:day))
+        XCTAssertEqual(store.keepsakes.count,1)
+        try store.updateProfile { $0.petName = "Tên khác" }
+        XCTAssertEqual(store.savedAdventureStory(on:day),story)
+        try store.placeKeepsake(memory.id,in:.study)
+        let backup = try BackupCodec.decodeAndValidate(BackupCodec.encode(store.makeBackup()))
+        let (restored, _) = try makeStore()
+        try restored.restore(backup)
+        XCTAssertEqual(restored.keepsakes.first?.placedRoom,RoomKind.study.rawValue)
+        XCTAssertEqual(restored.keepsakes.first?.petName,memory.petName)
+        XCTAssertEqual(restored.savedAdventureStory(on:day),story)
+    }
+
+    func testPurchaseAndEquipRollbackTogether() throws {
+        let (store, container) = try makeStore()
+        try store.redeemGiftCode("t3ster")
+        try store.buy(itemID:"hat.beanie",equipAfterBuying:true)
+        let before = store.wallet
+        store.failNextSaveForTesting = true
+        XCTAssertThrowsError(try store.buy(itemID:"hat.flower",equipAfterBuying:true))
+        XCTAssertEqual(store.wallet,before)
+        XCTAssertFalse(store.realOwnedIDs.contains("hat.flower"))
+        XCTAssertEqual(store.equippedMap[.hat],"hat.beanie")
+        let (reopened, _) = try makeStore(container)
+        XCTAssertEqual(reopened.wallet,before)
+        XCTAssertFalse(reopened.realOwnedIDs.contains("hat.flower"))
+        XCTAssertEqual(reopened.equippedMap[.hat],"hat.beanie")
+        try reopened.buy(itemID:"hat.flower",equipAfterBuying:true)
+        XCTAssertEqual(reopened.equippedMap[.hat],"hat.flower")
+        XCTAssertTrue(reopened.realOwnedIDs.contains("hat.flower"))
+    }
+
+    func testMeaningfulDaysRemainStableAcrossTimezoneAndBackup() throws {
+        clock.now = calendar.date(from:DateComponents(year:2026,month:11,day:3,hour:1))!
+        let (store, container) = try makeStore()
+        try satisfy(store, [DailyQuest(kind:.tasks,target:1)])
+        let days = store.meaningfulDays
+        XCTAssertEqual(days, [store.today])
+        let west = Calendar.gregorian(timeZone:TimeZone(identifier:"America/Los_Angeles")!)
+        let reopened = try AppStore(container:container,clock:clock,calendar:west,defaults:defaults)
+        XCTAssertNotEqual(reopened.today, store.today)
+        XCTAssertEqual(reopened.meaningfulDays, days)
+        let backup = try BackupCodec.decodeAndValidate(BackupCodec.encode(reopened.makeBackup()))
+        let (restored, _) = try makeStore()
+        try restored.restore(backup)
+        XCTAssertEqual(restored.meaningfulDays, days)
+    }
+
+    func testEventRewardAndBadgeCannotBeClaimedTwiceOrInTestMode() throws {
+        clock.now = calendar.date(from:DateComponents(year:2026,month:10,day:20,hour:9))!
+        let (store, _) = try makeStore()
+        let event = try XCTUnwrap(VietnameseEvents.active(at:clock.now).first)
+        try satisfy(store,event.quests)
+        store.failNextSaveForTesting=true
+        XCTAssertThrowsError(try store.claimEvent(event))
+        XCTAssertTrue(store.keepsakes.isEmpty)
+        try store.claimEvent(event)
+        let balance = store.wallet.coins
+        XCTAssertThrowsError(try store.claimEvent(event))
+        XCTAssertEqual(store.wallet.coins,balance)
+        XCTAssertEqual(store.keepsakes.count,1)
+        try satisfy(store,[DailyQuest(kind:.care,target:10)])
+        let badge = try XCTUnwrap(CozyBadge.all.first { $0.id == "care10" })
+        try store.claimBadge(badge)
+        XCTAssertThrowsError(try store.claimBadge(badge))
+        let tasks = store.occurrences
+        try store.enableTesterMode()
+        try store.disableTesterMode()
+        XCTAssertTrue(store.hasTestData)
+        XCTAssertEqual(store.occurrences,tasks)
+        XCTAssertThrowsError(try store.claimBadge(badge))
     }
 }

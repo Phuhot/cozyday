@@ -26,6 +26,9 @@ let out: [String: Any] = ["items": items, "pool": pool, "looks": looks, "foods":
                "focus120": [RewardConfig.focusReward(plannedMinutes: 120).xp, RewardConfig.focusReward(plannedMinutes: 120).coins],
                "minigameCap": MinigameConfig.dailyCoinCap, "minigamePerRun": MinigameConfig.maxCoinsPerRun,
                "careCoinCap": CareConfig.dailyCoinCap, "careXPCap": CareConfig.dailyXPCap]]
-let data = try! JSONSerialization.data(withJSONObject: out, options: [.prettyPrinted, .sortedKeys])
-FileManager.default.createFile(atPath: CommandLine.arguments[1], contents: data)
+var exported = out
+exported["badges"] = CozyBadge.all.map { ["id": $0.id, "metric": String(describing: $0.metric), "target": $0.target, "coins": $0.coins] as [String: Any] }
+exported["events"] = VietnameseEvents.all.map { ["id": $0.id, "start": $0.start.string, "end": $0.end.string, "coins": $0.coins] as [String: Any] }
+let data = try! JSONSerialization.data(withJSONObject: exported, options: [.prettyPrinted, .sortedKeys])
+try data.write(to: URL(fileURLWithPath: CommandLine.arguments[1]), options: .atomic)
 print("items:", Catalog.items.count)

@@ -55,6 +55,14 @@ extension AppStore {
         try commit {
             self.context.insert(MinigameResultModel(record: record))
             self.minigameResults.append(record)
+            if record.note != .implausible && record.note != .notCompleted {
+                self.recordMeaningfulDay(day)
+                let marker = "system:game-complete:\(outcome.sessionID.uuidString)"
+                if !self.ledgerKeys.contains(marker) {
+                    self.insertLedger(LedgerEntry(id: UUID(), key: marker, kind: .system, xp: 0, coins: 0,
+                        createdAt: finished, refID: day.string, memo: outcome.kind.name))
+                }
+            }
             if reward.coins > 0, !self.ledgerKeys.contains(key) {
                 self.insertLedger(LedgerEntry(id: UUID(), key: key, kind: .minigame, xp: 0, coins: reward.coins,
                                               createdAt: finished, refID: outcome.sessionID.uuidString.lowercased(),

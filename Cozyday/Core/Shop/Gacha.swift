@@ -63,12 +63,14 @@ struct GachaPull: Equatable {
 }
 
 enum GachaError: Error, Equatable, LocalizedError {
+    case invalidCount
     case insufficientCoins(needed: Int, available: Int)
     case insufficientTickets(needed: Int, available: Int)
     case emptyPool
 
     var errorDescription: String? {
         switch self {
+        case .invalidCount: return "Chỉ có thể quay 1 hoặc 10 lượt."
         case .insufficientCoins(let needed, let available): return "Cần \(needed) xu, bạn đang có \(available) xu."
         case .insufficientTickets(let needed, let available): return "Cần \(needed) vé, bạn đang có \(available) vé."
         case .emptyPool: return "Máy gacha đang trống."
@@ -138,6 +140,7 @@ enum GachaPolicy {
     /// cập nhật sau mỗi lượt. Trả về từng lượt với dòng sổ cái đã tính sẵn (giá/vé trừ đi, cộng hoàn xu nếu trùng).
     static func pull<R: RandomNumberGenerator>(count: Int, ledger: [LedgerEntry], owned: Set<String>, now: Date,
                                                payment: GachaPayment = .coins, rng: inout R) throws -> [GachaPull] {
+        guard count == 1 || count == GachaConfig.tenCount else { throw GachaError.invalidCount }
         let price = payment == .tickets ? 0 : (count >= GachaConfig.tenCount ? GachaConfig.tenPrice : GachaConfig.singlePrice * count)
         let wallet = Wallet(entries: ledger)
         switch payment {
@@ -154,6 +157,8 @@ enum GachaPolicy {
         var results: [GachaPull] = []
         // Chia giá cho từng lượt (lượt cuối nhận phần dư) để mỗi dòng sổ cái tự đủ nghĩa.
         let each = price / count
+        // Preserve draw order across fast batches and device clock rollback.
+        let batchTime = max(now, ledger.filter { $0.kind == .gacha }.map(\.createdAt).max()?.addingTimeInterval(0.001) ?? now)
         for i in 0..<count {
             let guaranteeRare = count >= GachaConfig.tenCount && i == count - 1 && !results.contains { $0.tier >= .rare }
             let rolled = rollTier(sinceEpic: sinceEpic, sinceSecret: sinceSecret, minimum: guaranteeRare ? .rare : .common, rng: &rng)
@@ -167,7 +172,7 @@ enum GachaPolicy {
             let cost = i == count - 1 ? price - each * (count - 1) : each
             let id = UUID()
             let entry = LedgerEntry(id: id, key: LedgerKeys.gacha(id), kind: .gacha, xp: 0, coins: refund - cost,
-                                    createdAt: now.addingTimeInterval(Double(i) * 0.001), refID: item.id,
+                                    createdAt: batchTime.addingTimeInterval(Double(i) * 0.001), refID: item.id,
                                     memo: "\(tier.label): \(item.name)\(duplicate ? " (trùng, +\(refund) xu)" : "")",
                                     tickets: payment == .tickets ? -1 : 0)
             results.append(GachaPull(itemID: item.id, tier: tier, isDuplicate: duplicate, refund: refund, entry: entry))

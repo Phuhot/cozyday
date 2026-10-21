@@ -158,6 +158,13 @@ struct PetAppearance: Equatable {
 }
 
 extension PetAppearance {
+    /// A reward preview is a value copy; never changes the equipped inventory.
+    var withoutCostume: PetAppearance {
+        PetAppearance(species: species, fur: fur, stage: stage)
+    }
+
+    func showcasing(_ item: CatalogItem) -> PetAppearance { withoutCostume.trying(item) }
+
     /// Mọi món đồ tạo nên ngoại hình này (kể cả hình dạng & màu lông mặc định).
     var itemIDs: [String] {
         ItemSlot.pet.compactMap { itemID(in: $0) }

@@ -13,7 +13,15 @@ struct RootView: View {
 
     var body: some View {
         Group {
-            if store.profile.onboardingCompleted {
+            if PreviewMode.current == .gachaFilm {
+                GachaFilmPreview()
+            } else if PreviewMode.current == .gachaTiers {
+                GachaArtReviewView()
+            } else if PreviewMode.current == .quests {
+                DailyQuestBoard()
+            } else if PreviewMode.current == .life {
+                CozyLifeView()
+            } else if store.profile.onboardingCompleted {
                 MainTabView()
             } else {
                 OnboardingView()

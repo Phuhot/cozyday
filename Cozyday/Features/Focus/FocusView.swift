@@ -32,7 +32,6 @@ struct FocusView: View {
                     if let notice = focus.awayNotice {
                         noticeBanner(notice)
                     }
-                    dayCard
                     if let session = store.activeFocus {
                         running(session)
                     } else if let finished = focus.lastFinished {
@@ -40,6 +39,7 @@ struct FocusView: View {
                     } else {
                         setup
                     }
+                    dayCard
                     ambientCard
                     policyNote
                 }

@@ -22,7 +22,7 @@ extension Palette {
     static let peachInk = Color.dynamic(light: 0xA8533A, dark: 0xF6C6B0)
 }
 
-enum Layout {
+enum CozyLayout {
     /// Lề hai bên của mọi màn.
     static let screenPadding: CGFloat = Spacing.l
     /// Khoảng trống cuối nội dung để không bị thanh tab / đồng hồ nhỏ che.

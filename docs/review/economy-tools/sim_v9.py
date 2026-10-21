@@ -100,12 +100,15 @@ PERSONAS = {
 }
 
 
-def simulate_days(p, rng, new_rules):
+def simulate_days(p, rng, new_rules, catalog):
     """Trả về danh sách (xu, xp, vé) theo từng ngày, đã gồm nhiệm vụ/rương/quà mốc nếu new_rules."""
     out = []
     xp_total = 0
     week_days = 0
     paid_levels = set()
+    paid_badges, paid_events = set(), set()
+    totals = dict(care=0, focus=0, games=0, adventures=0, days=0)
+    event_progress = {}
     for d in range(HORIZON):
         day = START + datetime.timedelta(days=d)
         coins = xp = tickets = 0
@@ -124,12 +127,27 @@ def simulate_days(p, rng, new_rules):
             breath = rng.random() < p["breathing"]
             if breath: xp += BREATH[0]; coins += BREATH[1]; entries += 1
             if entries >= 4: xp += ADVENTURE[0]; coins += ADVENTURE[1]
+            totals["adventures"] += int(entries >= 4)
             care = rng.randint(*p["care_actions"])
             coins += min(6, rng.randint(*p["care_coins"])); xp += min(12, rng.randint(*p["care_xp"]))
             runs = rng.randint(*p["minigame_runs"])
             mg = sum(max(1, min(MINIGAME_RUN_CAP, round(rng.gauss(p["minigame_mu"], 1.6)))) for _ in range(runs))
             coins += min(MINIGAME_DAY_CAP, mg)
             if new_rules:
+                totals["days"] += 1
+                totals["care"] += care
+                totals["focus"] += focus_min
+                totals["games"] += runs
+                for badge in catalog.get("badges", []):
+                    # Collection needs a purchasing schedule, excluded from this income-only model.
+                    if badge["metric"] != "collection" and totals[badge["metric"]] >= badge["target"] and badge["id"] not in paid_badges:
+                        coins += badge["coins"]; paid_badges.add(badge["id"])
+                for event in catalog.get("events", []):
+                    if event["start"] <= day.isoformat() <= event["end"] and event["id"] not in paid_events:
+                        progress = event_progress.setdefault(event["id"], [0, 0, 0])
+                        progress[0] += care; progress[1] += focus_min; progress[2] += int(journal)
+                        if progress[0] >= 2 and progress[1] >= 10 and progress[2] >= 1:
+                            coins += event["coins"]; paid_events.add(event["id"])
                 have = {"tasks": n_tasks, "focus": focus_min, "care": care, "minigame": runs,
                         "journal": int(journal), "breathing": int(breath)}
                 if all(have[k] >= t for k, t in quests_for(day)):
@@ -188,10 +206,11 @@ class Gacha:
             tier = "epic"
         return max(tier, minimum, key=TIERS.index)
 
-    def complete(self, rng, ten_pack, tickets_free=0):
+    def complete(self, rng, ten_pack, tickets_free=0, starting_owned=()):
         """Quay tới khi có đủ cả pool. Trả về (số lượt, xu đỉnh cần có = tổng chi ròng lớn nhất)."""
-        owned = set(); since_e = since_s = 0; net = 0; peak = 0; pulls = 0; free = tickets_free
-        while len(owned) < self.size:
+        target = {item for group in self.pool.values() for item in group}
+        owned = set(starting_owned); since_e = since_s = 0; net = 0; peak = 0; pulls = 0; free = tickets_free
+        while not target.issubset(owned):
             n = 10 if ten_pack else 1
             if not ten_pack and free > 0:
                 free -= 1; price = 0
@@ -272,11 +291,13 @@ def main():
     for key, p in PERSONAS.items():
         rows = {}
         for label, new_rules in (("old", False), ("new", True)):
-            series = [simulate_days(p, random.Random(1000 + i), new_rules) for i in range(RUNS)]
+            series = [simulate_days(p, random.Random(1000 + i), new_rules, new if new_rules else old) for i in range(RUNS)]
             lvl = level_new if new_rules else level_old
             shop_total, shop_lv, _ = shop_new if new_rules else shop_old
             g = g_new if new_rules else g_old
-            gpeaks = [x[1] for x in gacha_cost[(label, False)]]
+            cat = new if new_rules else old
+            shop_ids = [item["id"] for item in cat["items"] if not item["gachaOnly"]]
+            gpeaks = [g.complete(random.Random(9000+i), False, starting_owned=shop_ids)[1] for i in range(RUNS)]
             r = {}
             r["coins30"] = statistics.mean(sum(c for c, _, _ in s[:30]) / 30 for s in series)
             r["coins90"] = statistics.mean(sum(c for c, _, _ in s[:90]) / 90 for s in series)
@@ -289,7 +310,7 @@ def main():
             done = []
             for i, s in enumerate(series):
                 need = shop_total + gpeaks[i % len(gpeaks)]
-                done.append(first_day(s, lambda a: a[0] + 60 * a[2] >= need and lvl(a[1]) >= shop_lv))
+                done.append(first_day(s, lambda a: a[0] >= shop_total + max(0, need - shop_total - 60 * a[2]) and lvl(a[1]) >= shop_lv))
             r["all"] = pct(done, .5)
             r["all90"] = pct(done, .9)
             rows[label] = r
@@ -303,7 +324,7 @@ def main():
         print(f"| Ngày đạt cấp 20 | {fmt(o['lv20'])} | {fmt(n['lv20'])} |")
         print(f"| Ngày đạt cấp 30 | {fmt(o['lv30'])} | {fmt(n['lv30'])} |")
         print(f"| Ngày mua hết cửa hàng | {fmt(o['shop'])} | {fmt(n['shop'])} |")
-        print(f"| Ngày phá đảo (cửa hàng + đủ máy gacha), trung vị / P90 | {fmt(o['all'])} / {fmt(o['all90'])} | {fmt(n['all'])} / {fmt(n['all90'])} |")
+        print(f"| Ngày tích đủ ngân sách cửa hàng + gacha (ước tính), trung vị / P90 | {fmt(o['all'])} / {fmt(o['all90'])} | {fmt(n['all'])} / {fmt(n['all90'])} |")
         print()
 
 

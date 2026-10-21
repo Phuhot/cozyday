@@ -7,6 +7,7 @@ struct CozydayApp: App {
     @State private var boot: AppBoot
 
     init() {
+        CozyAppearance.configure()
         _boot = State(initialValue: AppBoot.start())
     }
 

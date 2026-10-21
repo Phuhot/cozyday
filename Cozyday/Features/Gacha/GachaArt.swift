@@ -77,7 +77,7 @@ enum GachaMachineArt {
         }
     }
 
-    private static func star(_ ctx: GraphicsContext, center: CGPoint, r: CGFloat, color: Color) {
+    static func star(_ ctx: GraphicsContext, center: CGPoint, r: CGFloat, color: Color) {
         var p = Path()
         for i in 0..<10 {
             let rad = i % 2 == 0 ? r : r * 0.45

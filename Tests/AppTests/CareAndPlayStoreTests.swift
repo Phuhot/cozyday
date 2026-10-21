@@ -82,7 +82,7 @@ final class CareAndPlayStoreTests: XCTestCase {
         let (store, _) = try makeStore()
         XCTAssertThrowsError(try store.buyFood("food.carrot", transactionID: UUID()), "0 xu: không mua được")
         XCTAssertEqual(store.foodCount("food.carrot"), 0)
-        XCTAssertEqual(store.ledger.count, 0)
+        XCTAssertEqual(store.ledger.filter { !$0.kind.isHidden }.count, 0)
         try grantCoins(store, 20)
         let tx = UUID()
         XCTAssertTrue(try store.buyFood("food.carrot", transactionID: tx))

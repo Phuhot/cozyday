@@ -52,7 +52,7 @@ final class AppStoreTests: XCTestCase {
         try relaunched.setStatus(id: id, to: .open)
         XCTAssertNil(try relaunched.setStatus(id: id, to: .done))
         XCTAssertEqual(relaunched.wallet.coins, RewardConfig.taskCoins)
-        XCTAssertEqual(relaunched.ledger.count, 1)
+        XCTAssertEqual(relaunched.ledger.filter { $0.kind == .taskCompleted }.count, 1)
     }
 
     func testDeletingTaskKeepsLedgerAndCannotFarm() throws {
@@ -61,7 +61,7 @@ final class AppStoreTests: XCTestCase {
         try store.setStatus(id: id, to: .done)
         try store.deleteTask(id: id, scope: .thisOnly)
         XCTAssertNil(store.occurrence(id))
-        XCTAssertEqual(store.ledger.count, 1)
+        XCTAssertEqual(store.ledger.filter { $0.kind == .taskCompleted }.count, 1)
         XCTAssertEqual(store.wallet.coins, RewardConfig.taskCoins)
     }
 

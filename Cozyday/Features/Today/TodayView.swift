@@ -43,6 +43,7 @@ struct TodayView: View {
     @State private var sheet: TodaySheet?
     @State private var layoutMode: TodayLayoutMode?
     @State private var showDatePicker = false
+    @State private var showQuests = false
     /// Trailer (bản Debug): cuộn tới timeline.
     @State private var trailerScroll = false
 
@@ -73,6 +74,13 @@ struct TodayView: View {
                             selectedDay = picked == dayClock.today ? nil : picked
                         } onPickDate: {
                             showDatePicker = true
+                        }
+
+                        if isToday {
+                            FlowLayout(spacing: Spacing.s) {
+                                CozyChip(title: "Tập trung", symbol: "timer") { router.selectedTab = .focus }
+                                CozyChip(title: "Ba điều nhỏ", symbol: "checklist", tint: Palette.sage) { showQuests = true }
+                            }
                         }
 
                         if isToday, openInboxCount > 0 {
@@ -178,6 +186,7 @@ struct TodayView: View {
                 }
             }
             .cozyBackground()
+            .sheet(isPresented: $showQuests) { DailyQuestBoard() }
             .overlay(alignment: .bottomTrailing) { addButton }
             .navigationTitle(isToday ? "Hôm nay" : "Lịch ngày")
             .navigationBarTitleDisplayMode(.inline)
@@ -337,61 +346,18 @@ struct TodayHeader: View {
     var body: some View {
         let counted = tasks.filter { $0.status != .skipped }
         let done = counted.filter { $0.status == .done }.count
-        VStack(alignment: .leading, spacing: Spacing.m) {
+        HStack(spacing: Spacing.s) {
             VStack(alignment: .leading, spacing: Spacing.xxs) {
-                Text(DateText.long(day, calendar: store.calendar))
-                    .font(Typography.title)
-                    .foregroundStyle(Palette.ink)
-                Text(greeting)
-                    .font(Typography.callout)
-                    .foregroundStyle(Palette.inkMuted)
+                Text(DateText.long(day, calendar: store.calendar)).font(Typography.headline).foregroundStyle(Palette.ink)
+                Text(counted.isEmpty ? "Chọn một việc nhỏ để bắt đầu" : "\(done)/\(counted.count) việc đã xong")
+                    .font(Typography.caption).foregroundStyle(Palette.inkMuted)
             }
-            // Thú cưng nói chuyện với bạn (chạm bong bóng để nghe câu khác, chạm thú cưng để sang Góc nhỏ).
-            HStack(alignment: .bottom, spacing: Spacing.xs) {
-                Button {
-                    router.selectedTab = .corner
-                } label: {
-                    PetView(appearance: store.petAppearance, mood: ui.petMood(store: store),
-                            name: store.profile.displayPetName, bounceTrigger: ui.celebrateCounter)
-                        .frame(width: 76, height: 76)
-                }
-                .buttonStyle(.plain)
-                .accessibilityHint("Mở Góc nhỏ")
-                VStack(alignment: .leading, spacing: Spacing.s) {
-                    Button {
-                        withAnimation(Motion.bouncy) { tip += 1 }
-                    } label: {
-                        Text(isToday ? PetDialogue.line(for: store.petDialogueContext(today: dayClock.today), tap: tip, species: store.petAppearance.species)
-                                     : "Mình xem giúp bạn ngày này nhé!")
-                            .font(Typography.callout.weight(.semibold))
-                            .foregroundStyle(Palette.bubbleInk)
-                            .multilineTextAlignment(.leading)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .id(tip)
-                            .transition(.scale(scale: 0.9).combined(with: .opacity))
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityHint("Nghe câu khác")
-                    if !counted.isEmpty {
-                        HStack(spacing: Spacing.s) {
-                            ProgressView(value: Double(done), total: Double(max(1, counted.count)))
-                                .tint(Palette.sage)
-                            Text("\(done)/\(counted.count) việc")
-                                .font(Typography.caption.weight(.bold))
-                                .foregroundStyle(Palette.bubbleInk.opacity(0.8))
-                        }
-                        .accessibilityElement(children: .combine)
-                    }
-                }
-                .padding(.horizontal, Spacing.m)
-                .padding(.vertical, Spacing.m)
-                .background(Palette.bubble, in: UnevenRoundedRectangle(topLeadingRadius: 20, bottomLeadingRadius: 4,
-                                                                      bottomTrailingRadius: 20, topTrailingRadius: 20, style: .continuous))
-                .padding(.bottom, Spacing.m)
-            }
-        }
-        .padding(.top, Spacing.s)
+            Spacer(minLength: Spacing.xs)
+            Button { router.selectedTab = .corner } label: {
+                PetArt(mood: ui.petMood(store: store), appearance: store.petAppearance).frame(width: 48, height: 48)
+            }.buttonStyle(.plain).accessibilityLabel("Mở Góc nhỏ")
+        }.padding(.top, Spacing.xs)
+
     }
 }
 

@@ -28,7 +28,7 @@ struct AdventureCard: View {
                     .accessibilityLabel("Năng lượng đi chơi")
                     .accessibilityValue("\(energy) phần trăm")
                 if claimed {
-                    Text(Adventure.story(for: today, petName: name, species: store.petAppearance.species).title + ": đã kể xong hôm nay.")
+                    Text(store.savedAdventureStory(on: today).title + ": đã kể xong hôm nay.")
                         .font(Typography.callout)
                         .foregroundStyle(Palette.inkMuted)
                     Button("Đọc lại câu chuyện") { showStory = true }
@@ -71,7 +71,7 @@ struct AdventureStorySheet: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        let story = Adventure.story(for: day, petName: store.profile.displayPetName, species: store.petAppearance.species)
+        let story = store.savedAdventureStory(on: day)
         NavigationStack {
             ScrollView {
                 VStack(spacing: Spacing.l) {

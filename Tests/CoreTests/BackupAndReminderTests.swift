@@ -48,6 +48,22 @@ final class BackupTests: XCTestCase {
         XCTAssertEqual(decoded.counts.ownedItems, 1)
     }
 
+    func testKeepsakeBackupRejectsOrphanAndInvalidPlacement() throws {
+        var doc = Self.sampleDocument()
+        let entry = LedgerEntry(id: UUID(), key: "adventure:2026-10-18", kind: .adventure, xp: 5, coins: 10,
+                                createdAt: doc.exportedAt, refID: nil, memo: "Chuyến đi")
+        doc.ledger.append(entry)
+        doc.keepsakes = [KeepsakeRecord(id: UUID(), sourceKey: entry.key, artID: "postcard", title: "Lá thư",
+                                       story: "Kỷ niệm với Mochi", day: day("2026-10-18"), petName: "Mochi",
+                                       species: "cat", createdAt: doc.exportedAt, placedRoom: "study")]
+        XCTAssertEqual(try BackupCodec.decodeAndValidate(BackupCodec.encode(doc)), doc)
+        doc.keepsakes![0].placedRoom = "missing-room"
+        XCTAssertThrowsError(try BackupValidator.validate(doc))
+        doc.keepsakes![0].placedRoom = nil
+        doc.ledger.removeAll { $0.id == entry.id }
+        XCTAssertThrowsError(try BackupValidator.validate(doc))
+    }
+
     /// File sao lưu bản 1 (trước khi có chăm thú cưng / Sân chơi) vẫn đọc được, phần mới để trống.
     func testReadsVersion1BackupWithoutCareOrPlayData() throws {
         var doc = Self.sampleDocument()

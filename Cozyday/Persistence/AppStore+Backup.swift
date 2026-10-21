@@ -71,6 +71,7 @@ extension AppStore {
         try reloadAll()
         // Bản sao lưu từ bản cũ: chạy dấu dữ liệu một lần (bản mới đã có dấu → bỏ qua).
         try? runDataMigrations()
+        try? migrateEngagementDays()
         // Ảnh đại diện nằm ngoài SwiftData: chỉ ghi sau khi phần dữ liệu chính đã khôi phục xong.
         try? saveAvatar(document.avatar ?? .standard)
         // Phiên tập trung quá hạn trong bản sao lưu: chốt một lần (khóa sổ cái chống thưởng trùng).
@@ -103,13 +104,15 @@ extension AppStore {
         try ensureProfile()
         try ensurePetCare()
         try reloadAll()
+        try runDataMigrations()
+        try migrateEngagementDays()
     }
 
     /// Tùy chọn hiển thị lưu ngoài SwiftData, xóa cùng khi xóa dữ liệu.
     static let localPreferenceKeys = [avatarKey, "corner.room", "playground.species", "playground.tutorialsSeen",
                                       "playground.memoryLevel", "playground.sound", "playground.haptics", "today.layout",
                                       "focus.settings", "focus.awayCounts", "focus.leftAt", "focus.lockedAt",
-                                      AppStore.unseenGachaKey]
+                                      AppStore.unseenGachaKey, "gacha.shortAnimation"]
 
     private func deleteAll<T: PersistentModel>(_ type: T.Type) throws {
         for model in try context.fetch(FetchDescriptor<T>()) {

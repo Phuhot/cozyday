@@ -24,6 +24,16 @@ run_logged() {
   local status=0
   "$@" >"$logfile" 2>&1 || status=$?
   if [[ $status -ne 0 ]]; then
+    # Surface compiler diagnostics in the Checks API as well as archived logs.
+    python3 - "$logfile" <<'PY_ERRORS'
+import sys
+from pathlib import Path
+lines = Path(sys.argv[1]).read_text(errors="replace").splitlines()
+errors = list(dict.fromkeys(line for line in lines if "error:" in line or "fatal error" in line))
+for line in errors[:40]:
+    escaped = line.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+    print("::error::" + escaped)
+PY_ERRORS
     echo "---- 40 dòng lỗi đầu tiên ----"
     grep -nE "error:|fatal error|\*\* (BUILD|ARCHIVE|TEST) FAILED" "$logfile" | head -n 40 || true
     echo "---- 120 dòng cuối log ----"

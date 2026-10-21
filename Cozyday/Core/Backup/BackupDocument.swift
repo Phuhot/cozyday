@@ -278,6 +278,20 @@ enum BackupValidator {
                 guard e.coins >= 0, e.xp >= 0, e.tickets == 0 else { throw BackupError.invalidValue("dòng thưởng âm") }
             }
         }
+        try unique((d.keepsakes ?? []).compactMap(\.placedRoom), "vị trí kỷ vật")
+        let memorySources = Set(d.ledger.filter { $0.kind == .adventure || $0.kind == .event }.map(\.key))
+        for memory in d.keepsakes ?? [] {
+            guard memorySources.contains(memory.sourceKey), PetSpecies(rawValue: memory.species) != nil else {
+                throw BackupError.brokenReference("nguồn hoặc loài của kỷ vật")
+            }
+            if let room = memory.placedRoom, RoomKind(rawValue: room) == nil {
+                throw BackupError.invalidValue("phòng trưng bày kỷ vật")
+            }
+            guard !memory.title.isEmpty, !memory.artID.isEmpty, memory.title.count <= 500,
+                  memory.petName.count <= 500, memory.story.count <= 10_000 else {
+                throw BackupError.invalidValue("nội dung kỷ vật")
+            }
+        }
         let owned = Set(d.ownedItems.map(\.itemID))
         for item in d.ownedItems where Catalog.item(item.itemID) == nil {
             throw BackupError.brokenReference("món đồ không có trong danh mục: \(item.itemID)")
@@ -286,7 +300,7 @@ enum BackupValidator {
             guard let item = Catalog.item(eq.itemID), item.slot == eq.slot else {
                 throw BackupError.brokenReference("món đồ trang bị sai vị trí: \(eq.itemID)")
             }
-            guard owned.contains(eq.itemID) else {
+            guard wallet.testerMode || owned.contains(eq.itemID) else {
                 throw BackupError.brokenReference("trang bị món chưa sở hữu: \(eq.itemID)")
             }
         }
