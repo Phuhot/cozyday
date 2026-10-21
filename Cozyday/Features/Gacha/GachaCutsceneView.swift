@@ -100,7 +100,7 @@ enum CapsuleScenePainter {
             pose.breath = CGFloat(sin(t*2))*0.6
             pose.lookDown = t > 3.8 && t < 7.2 ? 1 : 0
             pose.headTilt = t > 4 && t < 5 ? -10 * sin((t-4) * .pi) : 0
-            let paw = max(0,sin((t-4.6)*.pi*2))
+            let paw = max(0,sin((t-4.6) * .pi * 2))
             pose.pawLift = t > 4.6 && t < 5.8 ? CGFloat(paw) : 0
             pose.pawReach = pose.pawLift
             pose.hop = t > 7.4 ? CGFloat(abs(sin((t-7.4)*4))*7*max(0,1-(t-7.4)/2)) : 0

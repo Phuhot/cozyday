@@ -203,7 +203,7 @@ struct CornerView: View {
                         Text("\(room.name) mở ở cấp \(room.requiredLevel)")
                             .font(Typography.headline)
                             .foregroundStyle(Palette.ink)
-                        Text("Còn \(max(0, (room.requiredLevel - 1) * wallet.xpForNextLevel - store.wallet.xp)) XP nữa. Hoàn thành việc, tập trung hoặc viết nhật ký để lên cấp.")
+                        Text("Còn \(max(0, LevelCurve.threshold(room.requiredLevel) - store.wallet.xp)) XP nữa. Hoàn thành việc, tập trung hoặc viết nhật ký để lên cấp.")
                             .font(Typography.caption)
                             .foregroundStyle(Palette.inkMuted)
                             .multilineTextAlignment(.center)
