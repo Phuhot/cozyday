@@ -108,7 +108,7 @@ struct SettingsView: View {
                 }
                 Button("Hủy", role: .cancel) {}
             } message: {
-                Text("Chế độ này dành cho chủ dự án kiểm tra nội dung trên máy: mở mọi loài, màu, trang phục, nội thất, phòng và hiện cấp \(LevelCurve.maxLevel). Dữ liệu sẽ được gắn cờ “Dữ liệu thử nghiệm”. Tắt chế độ không trả lại nguyên trạng mọi thứ, nên sao lưu trước.")
+                Text("Chế độ này dành cho chủ dự án kiểm tra nội dung trên máy: mở mọi loài, màu, trang phục, nội thất, phòng và hiện cấp \(LevelCurve.maxLevel). Nhãn “Dữ liệu thử nghiệm” còn cả sau khi tắt; bộ dữ liệu này không nhận huy hiệu và thưởng lễ thật. Tắt chế độ không trả lại nguyên trạng mọi thứ. Hãy sao lưu trước để có thể khôi phục.")
             }
             .alert("Xóa toàn bộ dữ liệu?", isPresented: $confirmErase) {
                 Button("Tạo bản sao lưu trước") { exportBackup() }

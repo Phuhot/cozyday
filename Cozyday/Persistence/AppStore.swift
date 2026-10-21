@@ -93,6 +93,7 @@ final class AppStore {
         try repairDuplicateOccurrences()
         // Dấu dữ liệu một lần của phiên 9 (cấp tối thiểu, bù t3ster). Lỗi lưu không chặn mở app: lần mở sau thử lại.
         try? runDataMigrations()
+        try? migrateEngagementDays()
     }
 
     var now: Date { clock.now }

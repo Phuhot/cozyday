@@ -6,14 +6,24 @@ extension AppStore {
 
     /// Count actual recorded activity, not launches, purchases, currency grants or reward claims.
     var meaningfulDays: Set<DayKey> {
+        Set(ledger.filter { $0.key.hasPrefix("system:active-day:") }
+            .compactMap { $0.refID.flatMap(DayKey.init(string:)) })
+    }
+
+    /// Freeze legacy local dates once. Subsequent timezone changes must not count an activity twice.
+    func migrateEngagementDays() throws {
+        let migration = "system:engagement-days-v1"
+        guard !ledgerKeys.contains(migration) else { return }
         var days = Set(ledger.filter { [.taskCompleted, .focusCompleted, .journalWritten, .breathing].contains($0.kind) }
             .map { DayKey($0.createdAt, calendar: calendar) })
-        days.formUnion(careActions.map(\.day))
+        days.formUnion(careActions.filter { $0.kind != .freeMeal }.map(\.day))
         days.formUnion(minigameResults.filter { $0.note != .implausible && $0.note != .notCompleted }.map(\.day))
-        // Daily claims retain a stable local day even when older care/game histories are pruned.
-        days.formUnion(ledger.filter { $0.kind == .quest && $0.key.hasPrefix("quest:") }.compactMap { $0.refID.flatMap(DayKey.init(string:)) })
-        days.formUnion(ledger.filter { $0.key.hasPrefix("system:active-day:") }.compactMap { $0.refID.flatMap(DayKey.init(string:)) })
-        return days
+        days.formUnion(ledger.filter { $0.kind == .quest }.compactMap { $0.refID.flatMap(DayKey.init(string:)) })
+        try commit {
+            for day in days { self.recordMeaningfulDay(day) }
+            self.insertLedger(LedgerEntry(id:UUID(),key:migration,kind:.system,xp:0,coins:0,
+                                         createdAt:self.now,refID:nil,memo:"Giữ ngày gắn bó theo lịch đã ghi"))
+        }
     }
 
     func badgeProgress(_ badge: CozyBadge) -> Int {

@@ -96,6 +96,7 @@ shot v9-quests quests
 shot v9-life life
 shot v9-tiers gachaTiers
 record v9-gacha-cutscene gachaFilm 13
+burst v9-gacha-motion gachaFilm 1 5 1.5
 
 log "Giao diện sáng"
 shot 01-onboarding onboarding

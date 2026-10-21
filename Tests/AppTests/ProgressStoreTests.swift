@@ -318,6 +318,22 @@ extension ProgressStoreTests {
         XCTAssertEqual(restored.savedAdventureStory(on:day),story)
     }
 
+    func testMeaningfulDaysRemainStableAcrossTimezoneAndBackup() throws {
+        clock.now = calendar.date(from:DateComponents(year:2026,month:11,day:3,hour:1))!
+        let (store, container) = try makeStore()
+        try satisfy(store, [DailyQuest(kind:.tasks,target:1)])
+        let days = store.meaningfulDays
+        XCTAssertEqual(days, [store.today])
+        let west = Calendar.gregorian(timeZone:TimeZone(identifier:"America/Los_Angeles")!)
+        let reopened = try AppStore(container:container,clock:clock,calendar:west,defaults:defaults)
+        XCTAssertNotEqual(reopened.today, store.today)
+        XCTAssertEqual(reopened.meaningfulDays, days)
+        let backup = try BackupCodec.decodeAndValidate(BackupCodec.encode(reopened.makeBackup()))
+        let (restored, _) = try makeStore()
+        try restored.restore(backup)
+        XCTAssertEqual(restored.meaningfulDays, days)
+    }
+
     func testEventRewardAndBadgeCannotBeClaimedTwiceOrInTestMode() throws {
         clock.now = calendar.date(from:DateComponents(year:2026,month:10,day:20,hour:9))!
         let (store, _) = try makeStore()
