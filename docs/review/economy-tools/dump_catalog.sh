@@ -1,12 +1,18 @@
-#!/bin/bash
-# Xuất danh mục, pool gacha và các hằng số thưởng từ code Swift (Cozyday/Core) ra catalog JSON.
-# Cần chroot Swift của môi trường dev (/opt/swiftimg/root). Dùng: dump_catalog.sh <repo> <file-ra.json>
-set -e
-SRC=${1:-$(cd "$(dirname "$0")/../../.." && pwd)}
-OUT=${2:-catalog_v9.json}
-W=/opt/swiftimg/root/work/econdump
-rm -rf $W/Sources/EconDump && mkdir -p $W/Sources/EconDump
-cp -r $SRC/Cozyday/Core/* $W/Sources/EconDump/
-cp "$(dirname "$0")/EconDump.swift" $W/Sources/EconDump/main.swift
-chroot /opt/swiftimg/root /bin/bash -c "cd /work/econdump && swift build -c release 2>&1 | grep -E 'error|warning: unre' ; .build/release/EconDump /work/econdump/catalog.json"
-cp $W/catalog.json "$OUT"
+#!/usr/bin/env bash
+# Export the current Swift Core catalog; native swiftc or pinned official Swift Docker image.
+# Usage: dump_catalog.sh [repository] [output.json]
+set -euo pipefail
+repo="${1:-$(cd "$(dirname "$0")/../../.." && pwd)}"
+out="${2:-$repo/docs/review/economy-tools/catalog_v9.json}"
+work="$(mktemp -d)"
+trap 'rm -rf "$work"' EXIT
+cp -R "$repo/Cozyday/Core" "$work/Core"
+cp "$(dirname "$0")/EconDump.swift" "$work/main.swift"
+if command -v swiftc >/dev/null 2>&1; then
+  (cd "$work" && find Core -name '*.swift' -print0 | xargs -0 swiftc -O main.swift -o dump && ./dump catalog.json)
+else
+  docker run --rm --user "$(id -u):$(id -g)" --mount "type=bind,src=$work,dst=/work" -w /work \
+    swift@sha256:d6f8f6112e9a63da0a4a151d6b93acd16699d35c0b82531ac1a245f5af210197 \
+    bash -c 'find Core -name "*.swift" -print0 | xargs -0 swiftc -O main.swift -o dump && ./dump catalog.json'
+fi
+cp "$work/catalog.json" "$out"

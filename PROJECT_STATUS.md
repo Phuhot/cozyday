@@ -1,5 +1,8 @@
 # PROJECT_STATUS — CozyDay
 
+Cập nhật V9 (21/10/2026): nhánh `codex/cozyday-v9-completion`; xem [bàn giao và kiểm tra V9](docs/V9_DELIVERY_VI.md) và [kinh tế đã chạy lại](docs/ECONOMY_V9_VI.md). Phần dưới giữ lịch sử các phiên trước, không phải trạng thái xác minh của V9.
+
+
 Cập nhật: 2026-10-19 (phiên 6) · Nhánh: `claude/ios-project-section-12-4bpxn7` · Repo: `Phuhot/cozyday` (private)
 
 ## Mốc hiện tại
