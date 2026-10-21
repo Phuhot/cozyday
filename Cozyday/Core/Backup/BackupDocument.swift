@@ -286,7 +286,7 @@ enum BackupValidator {
             guard let item = Catalog.item(eq.itemID), item.slot == eq.slot else {
                 throw BackupError.brokenReference("món đồ trang bị sai vị trí: \(eq.itemID)")
             }
-            guard owned.contains(eq.itemID) else {
+            guard wallet.testerMode || owned.contains(eq.itemID) else {
                 throw BackupError.brokenReference("trang bị món chưa sở hữu: \(eq.itemID)")
             }
         }

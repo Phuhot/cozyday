@@ -109,7 +109,7 @@ extension AppStore {
     static let localPreferenceKeys = [avatarKey, "corner.room", "playground.species", "playground.tutorialsSeen",
                                       "playground.memoryLevel", "playground.sound", "playground.haptics", "today.layout",
                                       "focus.settings", "focus.awayCounts", "focus.leftAt", "focus.lockedAt",
-                                      AppStore.unseenGachaKey]
+                                      AppStore.unseenGachaKey, "gacha.shortAnimation"]
 
     private func deleteAll<T: PersistentModel>(_ type: T.Type) throws {
         for model in try context.fetch(FetchDescriptor<T>()) {
