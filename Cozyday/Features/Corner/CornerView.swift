@@ -102,7 +102,7 @@ struct CornerView: View {
                             onCuddle: { finishCare(.cuddle, id: UUID()) }).padding(Spacing.l)
                         Text("Trong phòng: chạm để vuốt ve, vuốt qua lại để nựng, giữ rồi kéo để nhấc bạn nhỏ.")
                             .font(Typography.caption).padding(Spacing.l)
-                    }.cozyBackground().navigationTitle("Chăm bạn nhỏ")
+                    }.cozyBackground().navigationTitle("Chăm bạn nhỏ").navigationBarTitleDisplayMode(.inline)
                         .sheetCloseToolbar { showCare = false }
                         .overlay(alignment: .top) { ErrorOverlay() }
                 }

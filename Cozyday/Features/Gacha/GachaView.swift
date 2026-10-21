@@ -330,7 +330,13 @@ struct GachaResultView: View {
             }
             .sheet(item: $detail) { item in
                 if let pull = pulls.first(where: { $0.itemID == item.id }) {
-                    ScrollView { bigCard(pull).padding(Spacing.l) }.cozySheetBackground()
+                    NavigationStack {
+                        ScrollView { bigCard(pull).padding(Spacing.l) }
+                            .cozySheetBackground().navigationTitle("Món vừa nhận")
+                            .navigationBarTitleDisplayMode(.inline)
+                            .sheetCloseToolbar { detail = nil }
+                            .overlay(alignment: .top) { ErrorOverlay() }
+                    }
                 }
             }
             .task {
@@ -344,6 +350,7 @@ struct GachaResultView: View {
         }
         }
         .interactiveDismissDisabled(showingScene)
+        .overlay(alignment: .top) { ErrorOverlay() }
     }
 
     private func acknowledge() {

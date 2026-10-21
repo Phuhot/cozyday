@@ -66,7 +66,12 @@ struct TesterPreviewSections: View {
             }
         }
         .sheet(item: $event) { value in
-            ScrollView { EventCard(event: value, preview: true).padding(Spacing.l) }.cozySheetBackground()
+            NavigationStack {
+                ScrollView { EventCard(event: value, preview: true).padding(Spacing.l) }
+                    .cozySheetBackground().navigationTitle("Xem thử lễ Việt")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .sheetCloseToolbar { event = nil }
+            }
         }
     }
 }
