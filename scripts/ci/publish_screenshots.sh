@@ -4,6 +4,8 @@
 set -euo pipefail
 SRC="build/screenshots"
 DEST="docs/screenshots"
+# Focused captures have their own directory; do not remove the full gallery's other screens.
+if grep -q '^Phạm vi ảnh: focused$' "$SRC/info.txt"; then DEST="docs/screenshots-v9"; fi
 BRANCH="${BRANCH:?thiếu BRANCH}"
 
 ls "$SRC"/*.jpg >/dev/null 2>&1 || { echo "::error::Không có ảnh trong $SRC"; exit 1; }

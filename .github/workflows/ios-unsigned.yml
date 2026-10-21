@@ -18,6 +18,11 @@ on:
         description: "Chụp ảnh giao diện trên iOS Simulator và lưu vào docs/screenshots"
         type: boolean
         default: false
+      visual_suite:
+        description: "Phạm vi chụp ảnh: full hoặc các màn thay đổi trong V9"
+        type: choice
+        options: [full, focused]
+        default: full
   push:
     branches:
       - "claude/**"
@@ -123,6 +128,8 @@ jobs:
         run: scripts/ci/run_simulator_tests.sh
 
       - name: Chụp ảnh giao diện (dữ liệu mẫu, bản Debug)
+        env:
+          COZY_VISUAL_SUITE: ${{ inputs.visual_suite || 'full' }}
         run: scripts/ci/capture_screenshots.sh
 
       - name: Upload ảnh giao diện

@@ -95,9 +95,32 @@ log "Phiên 9: giao dịch, cấp, bộ sưu tập và phim capsule"
 shot v9-quests quests
 shot v9-life life
 shot v9-tiers gachaTiers
-record v9-gacha-cutscene gachaFilm 13
+record v9-gacha-cutscene gachaFilm 20
 burst v9-gacha-motion gachaFilm 1 5 1.5
 
+# Full regression footage remains the default. Focused reruns retain all unit tests,
+# and only recapture changed V9 flows after the complete visual run has been reviewed.
+if [[ "${COZY_VISUAL_SUITE:-full}" == "focused" ]]; then
+  shot 01-onboarding onboarding
+  shot 02-today today
+  shot 06-focus focus
+  shot 07-corner corner
+  shot 47-gacha-result gachaResult 13
+  shot 46-gacha gacha 5
+  shot 14-memories memories
+  xcrun simctl ui "$SIM_ID" appearance dark
+  shot dark-02-today today
+  shot dark-06-focus focus
+  shot dark-07-corner corner
+  shot dark-v9-quests quests
+  shot dark-v9-life life
+  xcrun simctl ui "$SIM_ID" appearance light
+  xcrun simctl ui "$SIM_ID" content_size accessibility-extra-extra-extra-large
+  shot large-06-focus focus
+  shot large-07-corner corner
+  shot large-v9-quests quests
+  xcrun simctl ui "$SIM_ID" content_size large
+else
 log "Giao diện sáng"
 shot 01-onboarding onboarding
 shot 02-today today
@@ -196,6 +219,8 @@ shot large-07-corner corner
 shot large-06-focus focus
 xcrun simctl ui "$SIM_ID" content_size large
 
+fi
+
 # Targeted layouts requested for the 428pt iPhone 12 Pro Max and smaller 375pt SE.
 ORIGINAL_SIM_ID="$SIM_ID"
 RUNTIME_ID="$(xcrun simctl list devices available --json | /usr/bin/python3 -c 'import json,sys; data=json.load(sys.stdin)["devices"]; print(next(r for r, ds in data.items() if any(d["udid"] == sys.argv[1] for d in ds)))' "$SIM_ID")"
@@ -225,6 +250,7 @@ xcrun simctl status_bar "$SIM_ID" clear || true
   echo "Giờ trong ảnh: $(TZ=$TZ_NAME date '+%Y-%m-%d %H:%M') ($TZ_NAME)"
   echo "Commit: ${GITHUB_SHA:-local}"
   echo "Bản build: Debug cho simulator, dữ liệu mẫu trong bộ nhớ."
+  echo "Phạm vi ảnh: ${COZY_VISUAL_SUITE:-full}"
 } > "$OUT/info.txt"
 cat "$OUT/info.txt"
 

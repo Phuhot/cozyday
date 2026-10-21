@@ -3,10 +3,19 @@ import SwiftUI
 /// CI-only routing is controlled by PreviewMode (always nil in Release).
 struct GachaFilmPreview: View {
     @Environment(AppStore.self) private var store
-    @State private var finished = false
+    @State private var pulls: [GachaPull]?
+    @State private var failure: String?
     var body: some View {
-        if finished { GachaArtReviewView() }
-        else { GachaCutsceneView(appearance:store.petAppearance,tier:.epic,short:false) { finished=true } }
+        Group {
+            if let pulls { GachaResultView(pulls: pulls) }
+            else if let failure { Text(failure) }
+            else { ProgressView("Chuẩn bị lượt quay") }
+        }
+        .task {
+            guard pulls == nil else { return }
+            do { pulls = try store.pullGacha(count: 1) }
+            catch { failure = error.localizedDescription }
+        }
     }
 }
 
