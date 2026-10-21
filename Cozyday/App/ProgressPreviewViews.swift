@@ -19,6 +19,21 @@ struct GachaFilmPreview: View {
     }
 }
 
+/// Chiếu riêng phim mở viên nang để quay video xem trước (CI). Không ghi gì vào kho.
+struct GachaScenePreview: View {
+    @Environment(AppStore.self) private var store
+    @State private var done = false
+    var body: some View {
+        let defaults = UserDefaults.standard
+        let tier = ItemRarity(rawValue: defaults.string(forKey: "CozyFilmTier") ?? "") ?? .epic
+        if done {
+            Text("Hết phim").font(Typography.title).frame(maxWidth: .infinity, maxHeight: .infinity).cozyBackground()
+        } else {
+            GachaCutsceneView(appearance: store.petAppearance, tier: tier, short: defaults.bool(forKey: "CozyFilmShort")) { done = true }
+        }
+    }
+}
+
 struct GachaArtReviewView: View {
     var body: some View {
         ScrollView {

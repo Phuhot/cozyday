@@ -31,11 +31,11 @@ status_bar "$(TZ=$TZ_NAME date +%H:%M)" || status_bar "9:41" || echo "::warning:
 
 failures=0
 launch() {
-  local screen="$1"
+  local screen="$1"; shift
   local output
   # SIMCTL_CHILD_TZ: app chạy theo giờ Việt Nam thay vì giờ UTC của runner.
   output="$(SIMCTL_CHILD_TZ="$TZ_NAME" xcrun simctl launch --terminate-running-process "$SIM_ID" "$EXPECTED_BUNDLE_ID" \
-    -CozyPreview "$screen" -AppleLanguages "(vi)" -AppleLocale vi_VN)"
+    -CozyPreview "$screen" -AppleLanguages "(vi)" -AppleLocale vi_VN "$@")"
   echo "${output##*: }"
 }
 check_alive() {
@@ -76,20 +76,33 @@ burst() {
   check_alive "$pid" "$screen"
   echo "  $file-1..$count.jpg ($screen)"
 }
-# record <tên> <màn> <số giây>: quay video gameplay (bản Debug tự chơi) — chỉ để xem, đưa vào artifact.
+# record <tên> <màn> <số giây> [tham số app thêm]: quay video gameplay (bản Debug tự chơi) — chỉ để xem, đưa vào artifact.
 record() {
-  local file="$1" screen="$2" secs="$3"
+  local file="$1" screen="$2" secs="$3"; shift 3
   local rec pid
   xcrun simctl io "$SIM_ID" recordVideo --codec=h264 --force "$VIDEO/$file.mp4" >/dev/null 2>&1 &
   rec=$!
   sleep 1
-  pid="$(launch "$screen")"
+  pid="$(launch "$screen" "$@")"
   sleep "$secs"
   check_alive "$pid" "$screen"
   kill -INT "$rec" 2>/dev/null || true
   wait "$rec" 2>/dev/null || true
   ls -la "$VIDEO/$file.mp4" 2>/dev/null || echo "::warning::Không quay được video $file"
 }
+
+if [[ "${COZY_VISUAL_SUITE:-full}" == "film" ]]; then
+  # Chỉ quay phim mở viên nang (bản dựng lại). Ảnh tĩnh vài khoảnh khắc để xem nhanh trong artifact.
+  log "Phim mở viên nang: Quý (đầy đủ), Bí mật (đầy đủ), Hiếm (bản ngắn), luồng quay thật"
+  record film-epic gachaScene 12 -CozyFilmTier epic
+  record film-secret gachaScene 12 -CozyFilmTier secret
+  record film-rare-short gachaScene 5 -CozyFilmTier rare -CozyFilmShort 1
+  record film-real-pull gachaFilm 16
+  burst film-epic-frames gachaScene 1.2 8 1.0
+  log "Đã quay xong phim"
+  ls -la "$VIDEO" "$OUT"
+  exit "$failures"
+fi
 
 log "Phiên 9: giao dịch, cấp, bộ sưu tập và phim capsule"
 shot v9-quests quests

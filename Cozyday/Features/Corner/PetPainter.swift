@@ -849,6 +849,13 @@ struct PetPainter {
         let step = pose.walk.map { sin($0) * 2.2 } ?? 0
         let dangle: CGFloat = pose.lifted ? 4 : 0
         let feet: [(x: CGFloat, y: CGFloat, side: CGFloat)] = [(41 - pose.pawReach, 80 - step + dangle - pose.pawLift, -1), (59, 80 + step + dangle, 1)]
+        if pose.pawReach > 2 || pose.pawLift > 2 {
+            // Cánh tay vươn ra khi khều/vỗ (chỉ trong phim mở viên nang): nối thân với bàn chân.
+            ctx.strokePath(fur.base, width: 9) { p in
+                p.move(to: CGPoint(x: 42, y: 70))
+                p.addLine(to: CGPoint(x: 41 - pose.pawReach, y: 83 - step + dangle - pose.pawLift))
+            }
+        }
         switch appearance.species {
         case .duck, .penguin:
             // Chân màng màu cam.

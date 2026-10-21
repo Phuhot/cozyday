@@ -15,6 +15,8 @@ struct RootView: View {
         Group {
             if PreviewMode.current == .gachaFilm {
                 GachaFilmPreview()
+            } else if PreviewMode.current == .gachaScene {
+                GachaScenePreview()
             } else if PreviewMode.current == .gachaTiers {
                 GachaArtReviewView()
             } else if PreviewMode.current == .quests {

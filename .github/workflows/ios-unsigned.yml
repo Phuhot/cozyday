@@ -21,7 +21,7 @@ on:
       visual_suite:
         description: "Phạm vi chụp ảnh: full hoặc các màn thay đổi trong V9"
         type: choice
-        options: [full, focused]
+        options: [full, focused, film]
         default: full
   push:
     branches:
@@ -129,7 +129,7 @@ jobs:
 
       - name: Chụp ảnh giao diện (dữ liệu mẫu, bản Debug)
         env:
-          COZY_VISUAL_SUITE: ${{ inputs.visual_suite || 'full' }}
+          COZY_VISUAL_SUITE: ${{ inputs.visual_suite || (contains(github.event.head_commit.message, '[film]') && 'film' || 'full') }}
         run: scripts/ci/capture_screenshots.sh
 
       - name: Upload ảnh giao diện

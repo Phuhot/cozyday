@@ -59,6 +59,8 @@ enum PreviewScreen: String, CaseIterable {
     case gacha
     case gachaResult
     case gachaFilm, gachaTiers, quests, life, todayEmpty
+    /// Chỉ chiếu phim mở viên nang (không quay thật). Độ hiếm: `-CozyFilmTier epic`, bản ngắn: `-CozyFilmShort 1`.
+    case gachaScene
     case shopFloor
     case wardrobeSecret
     // Hẹn giờ Pomodoro (tab Tập trung)
