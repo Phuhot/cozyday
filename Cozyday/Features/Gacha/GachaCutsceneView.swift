@@ -101,9 +101,9 @@ enum CapsuleScenePainter {
             pose.lookDown = t > 3.8 && t < 7.2 ? 1 : 0
             pose.headTilt = t > 4 && t < 5 ? -10 * sin((t-4) * .pi) : 0
             let paw = max(0,sin((t-4.6) * .pi * 2))
-            pose.pawLift = t > 4.6 && t < 5.8 ? CGFloat(paw) : 0
-            pose.pawReach = pose.pawLift
-            pose.hop = t > 7.4 ? CGFloat(abs(sin((t-7.4)*4))*7*max(0,1-(t-7.4)/2)) : 0
+            pose.pawLift = t > 4.6 && t < 5.8 ? CGFloat(paw) * 4 : 0
+            pose.pawReach = pose.pawLift * 5
+            pose.hop = t > 7.4 ? CGFloat(abs(sin((t-7.4)*4)) * (tier == .secret ? 11 : tier == .epic ? 9 : 6) * max(0,1-(t-7.4)/2)) : 0
         }
         var pc = c; pc.translateBy(x:200,y:180)
         PetPainter(mood:t>7.2 ? .happy : .idle,appearance:pet,pose:pose).draw(in:pc)
@@ -116,7 +116,12 @@ enum CapsuleScenePainter {
             let y = CGFloat(258-bounce)
             c.ellipse(x-12,267,24,4,.black.opacity(0.16))
             if t < 7.2 {
-                GachaMachineArt.capsule(c,center:CGPoint(x:x+CGFloat(nudge),y:y),radius:11,
+                var shell = c
+                let impact = still ? 0 : max(0, 1 - abs(t - 2.4) / 0.13)
+                shell.translateBy(x: x, y: y + 11)
+                shell.scaleBy(x: 1 + impact * 0.16, y: 1 - impact * 0.14)
+                shell.translateBy(x: -x, y: -y - 11)
+                GachaMachineArt.capsule(shell,center:CGPoint(x:x+CGFloat(nudge),y:y),radius:11,
                                        color:rgb(0xECA4B9),tilt:still ? 0 : progress*300+nudge*4)
                 if t>6 {
                     c.strokePath(tier.color,width:2) { p in p.move(to:CGPoint(x:x-6,y:y-5)); p.addLine(to:CGPoint(x:x+1,y:y)); p.addLine(to:CGPoint(x:x-2,y:y+6)) }

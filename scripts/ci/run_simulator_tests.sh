@@ -61,6 +61,15 @@ xcodebuild test-without-building \
   2>&1 | tee "$LOG_DIR/xcodebuild-test.log" \
        | (grep --line-buffered -E "Test (Case|Suite).*(passed|failed|started at)|error:|Executed [0-9]+|\*\* TEST|Testing started|Restarting after" || true) \
   || status=$?
+python3 - "$LOG_DIR/xcodebuild-test.log" <<'PY_REPORT'
+import sys
+from pathlib import Path
+lines = Path(sys.argv[1]).read_text(errors="replace").splitlines()
+for line in dict.fromkeys(line for line in lines if "error:" in line or "Executed " in line or "** TEST" in line):
+    level = "error" if "error:" in line else "notice"
+    escaped = line.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+    print(f"::{level}::{escaped}")
+PY_REPORT
 if [[ $status -ne 0 ]]; then
   echo "---- 80 dòng cuối log test ----"
   tail -n 80 "$LOG_DIR/xcodebuild-test.log"

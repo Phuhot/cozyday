@@ -192,7 +192,7 @@ final class ProgressStoreTests: XCTestCase {
         let (store, _) = try makeStore() // thứ Ba 3/11/2026
         for offset in [0, 1, 3, 4] { // thứ Ba, Tư, Sáu, Bảy (không liên tiếp)
             if offset > 0 {
-                clock.set(calendar.date(from: DateComponents(year: 2026, month: 11, day: 3 + offset, hour: 9))!)
+                clock.now = calendar.date(from: DateComponents(year: 2026, month: 11, day: 3 + offset, hour: 9))!
             }
             try satisfy(store, store.dailyQuests(on: store.today))
             try store.claimDailyQuests(day: store.today)
@@ -319,7 +319,7 @@ extension ProgressStoreTests {
     }
 
     func testEventRewardAndBadgeCannotBeClaimedTwiceOrInTestMode() throws {
-        clock.set(calendar.date(from:DateComponents(year:2026,month:10,day:20,hour:9))!)
+        clock.now = calendar.date(from:DateComponents(year:2026,month:10,day:20,hour:9))!
         let (store, _) = try makeStore()
         let event = try XCTUnwrap(VietnameseEvents.active(at:clock.now).first)
         try satisfy(store,event.quests)
