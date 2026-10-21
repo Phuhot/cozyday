@@ -14,7 +14,7 @@ extension AppStore {
     func migrateEngagementDays() throws {
         let migration = "system:engagement-days-v1"
         guard !ledgerKeys.contains(migration) else { return }
-        var days = Set(ledger.filter { [.taskCompleted, .focusCompleted, .journalWritten, .breathing].contains($0.kind) }
+        var days = Set(ledger.filter { [.taskCompleted, .focusCompleted, .journalWritten, .breathing, .care, .minigame].contains($0.kind) }
             .map { DayKey($0.createdAt, calendar: calendar) })
         days.formUnion(careActions.filter { $0.kind != .freeMeal }.map(\.day))
         days.formUnion(minigameResults.filter { $0.note != .implausible && $0.note != .notCompleted }.map(\.day))
