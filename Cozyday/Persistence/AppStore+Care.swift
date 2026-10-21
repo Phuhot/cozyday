@@ -47,6 +47,14 @@ extension AppStore {
             }
             self.context.insert(CareActionModel(record: outcome.record))
             self.careActions.append(outcome.record)
+            if kind != .freeMeal {
+                self.recordMeaningfulDay(outcome.record.day)
+                let marker = "system:care-action:\(actionID.uuidString)"
+                if !self.ledgerKeys.contains(marker) {
+                    self.insertLedger(LedgerEntry(id: UUID(), key: marker, kind: .system, xp: 0, coins: 0,
+                        createdAt: self.now, refID: outcome.record.day.string, memo: "Chăm bạn nhỏ"))
+                }
+            }
             if let entry = outcome.ledger { self.insertLedger(entry) }
             // Chỉ giữ lịch sử chăm sóc gần đây (thưởng đã nằm trong sổ cái).
             for old in try self.context.fetch(FetchDescriptor<CareActionModel>()) {

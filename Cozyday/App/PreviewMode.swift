@@ -58,6 +58,7 @@ enum PreviewScreen: String, CaseIterable {
     case tour
     case gacha
     case gachaResult
+    case gachaFilm, gachaTiers, quests, life, todayEmpty
     case shopFloor
     case wardrobeSecret
     // Hẹn giờ Pomodoro (tab Tập trung)
@@ -108,7 +109,9 @@ extension PreviewMode {
         defaults.removePersistentDomain(forName: "CozyPreview.store")
         let store = try AppStore(container: PersistenceController.makeContainer(inMemory: true), clock: clock, defaults: defaults)
         let ui = UIState()
-        if screen != .onboarding && screen != .tour {
+        if screen == .todayEmpty {
+            try store.completeOnboarding(userName: "An", petName: "Bông", goals: [], habits: [])
+        } else if screen != .onboarding && screen != .tour {
             try seed(store, clock: clock, activeFocus: [.focus, .focusFull, .focusMini].contains(screen),
                      adventureReady: screen == .adventure,
                      morningFocus: [.focus, .focusIdle, .focusSettings, .focusFull].contains(screen))

@@ -22,7 +22,7 @@ extension AppStore {
 
     /// Mua (hoặc nhận đồ miễn phí). Trừ xu + thêm vào kho trong cùng một lần save.
     /// Món vừa mua được trang bị luôn nếu vị trí đó đang trống.
-    func buy(itemID: String) throws {
+    func buy(itemID: String, equipAfterBuying: Bool = false) throws {
         let decision = PurchasePolicy.decide(itemID: itemID, owned: ownedIDs, ledger: ledger, now: now)
         guard case .approved(let entry) = decision else {
             throw StoreError.invalid(decision.message ?? "Không mua được.")
@@ -33,7 +33,7 @@ extension AppStore {
             self.insertLedger(entry)
             self.context.insert(OwnedItemModel(record: ownedRecord))
             self.owned.append(ownedRecord)
-            if self.equippedItem(in: item.slot) == nil {
+            if equipAfterBuying || self.equippedItem(in: item.slot) == nil {
                 try self.setEquipped(slot: item.slot, itemID: itemID)
             }
         }
@@ -165,7 +165,9 @@ extension AppStore {
 extension AppStore {
     // MARK: Onboarding
 
-    func completeOnboarding(userName: String, petName: String, goals: [UsageGoal], habits: [HabitSuggestion]) throws {
+    func completeOnboarding(userName: String, petName: String, goals: [UsageGoal], habits: [HabitSuggestion], species: PetSpecies = .cat) throws {
+        guard !profile.onboardingCompleted else { return }
+        guard PetSpecies.starters.contains(species) else { throw StoreError.invalid("Hãy chọn một bạn nhỏ cơ bản.") }
         var updated = profile
         updated.userName = String(userName.trimmingCharacters(in: .whitespacesAndNewlines).prefix(40))
         let pet = petName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -187,6 +189,14 @@ extension AppStore {
             guard let model = try self.fetchProfileModel() else { throw StoreError.notFound }
             model.apply(updated)
             self.profile = updated
+            if species != .cat {
+                let itemID = "species." + species.rawValue
+                if !self.realOwnedIDs.contains(itemID) {
+                    let owned = OwnedItemRecord(itemID: itemID, acquiredAt: self.now, transactionID: nil)
+                    self.context.insert(OwnedItemModel(record: owned)); self.owned.append(owned)
+                }
+                try self.setEquipped(slot: .species, itemID: itemID)
+            }
             for t in newTemplates {
                 self.context.insert(TaskTemplateModel(record: t))
                 self.templates.append(t)

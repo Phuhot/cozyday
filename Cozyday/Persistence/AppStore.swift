@@ -267,6 +267,9 @@ final class AppStore {
     func insertLedger(_ entry: LedgerEntry) {
         context.insert(LedgerEntryModel(record: entry))
         ledger.append(entry)
+        if [.taskCompleted, .focusCompleted, .journalWritten, .breathing].contains(entry.kind) {
+            recordMeaningfulDay(DayKey(entry.createdAt, calendar: calendar))
+        }
     }
 }
 

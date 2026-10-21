@@ -214,8 +214,7 @@ struct WardrobeView: View {
                 } else if coins >= item.price {
                     Button(item.isFree ? "Nhận miễn phí \(item.name)" : "Mua \(item.name) · \(item.price) xu") {
                         perform {
-                            try store.buy(itemID: item.id)
-                            try store.equip(itemID: item.id)
+                            try store.buy(itemID: item.id, equipAfterBuying: true)
                             ui.showReward(item.isFree ? "Đã nhận \(item.name)" : "Đã mua \(item.name)")
                         }
                     }

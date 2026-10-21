@@ -18,6 +18,8 @@ struct CornerView: View {
     @State private var nameDraft = ""
     @State private var showPlayground = false
     @State private var showGacha = false
+    @State private var showCare = false
+    @State private var showLife = false
     @State private var foodTab: FoodSheet.Tab?
     @State private var cleaning: CleanSession?
     @State private var cuddle = CuddleProgress()
@@ -43,20 +45,22 @@ struct CornerView: View {
 
                     roomArea
 
-                    Text("Chạm để vuốt ve, vuốt qua lại để nựng, giữ rồi kéo để đưa \(store.profile.displayPetName) sang chỗ khác.")
-                        .font(Typography.caption)
-                        .foregroundStyle(Palette.inkMuted)
-
-                    NeedsCard(cuddleFraction: cuddle.fraction,
-                              onFeed: { foodTab = .tray },
-                              onClean: startCleaning,
-                              onCuddle: { finishCare(.cuddle, id: UUID()) })
-                        .id("needs")
-
+                    FlowLayout(spacing: Spacing.s) {
+                        CozyChip(title: "Chăm sóc", symbol: "heart", tint: Palette.sage) { showCare = true }
+                        CozyChip(title: "Cho ăn", symbol: "carrot", tint: Palette.peach) { foodTab = .tray }
+                        CozyChip(title: "Dọn nhà", symbol: "sparkles", tint: Palette.honey) { startCleaning() }
+                    }.id("needs")
                     activityGrid
+                    DisclosureGroup("Chuyến đi và tuần của bạn nhỏ") {
+                        VStack(spacing: Spacing.m) {
+                            AdventureCard(showStory: $showAdventure, showMemories: $showMemories)
+                            PetWeekCard()
+                        }.padding(.top, Spacing.s)
+                    }
+                    Button { showLife = true } label: {
+                        Label("Kỷ vật, huy hiệu và sự kiện", systemImage: "gift")
+                    }.buttonStyle(SoftButtonStyle())
 
-                    AdventureCard(showStory: $showAdventure, showMemories: $showMemories)
-                    PetWeekCard()
                 }
                 .padding(Spacing.l)
             }
@@ -85,6 +89,20 @@ struct CornerView: View {
                 CleanRoomView(room: session.room, equipped: store.equippedMap, appearance: store.petAppearance,
                               petName: store.profile.displayPetName, haptics: store.profile.hapticsEnabled,
                               actionID: session.id, work: session.work) { id in finishCare(.clean, id: id) }
+            }
+            .sheet(isPresented: $showLife) { CozyLifeView() }
+            .sheet(isPresented: $showCare) {
+                NavigationStack {
+                    ScrollView {
+                        NeedsCard(cuddleFraction: cuddle.fraction,
+                            onFeed: { showCare = false; foodTab = .tray },
+                            onClean: { showCare = false; startCleaning() },
+                            onCuddle: { finishCare(.cuddle, id: UUID()) }).padding(Spacing.l)
+                        Text("Trong phòng: chạm để vuốt ve, vuốt qua lại để nựng, giữ rồi kéo để nhấc bạn nhỏ.")
+                            .font(Typography.caption).padding(Spacing.l)
+                    }.cozyBackground().navigationTitle("Chăm bạn nhỏ")
+                        .sheetCloseToolbar { showCare = false }
+                }
             }
             .sheet(isPresented: $showGacha) {
                 GachaView()
@@ -163,6 +181,14 @@ struct CornerView: View {
                 onTapSlot: { slot in shopTarget = ShopTarget(room: room, slot: slot) },
                 onStroke: stroked
             )
+            .overlay(alignment: .bottomTrailing) {
+                if let memory = store.keepsakes.first(where: { $0.placedRoom == room.rawValue }) {
+                    Button { showLife = true } label: {
+                        KeepsakeArt(artID: memory.artID).frame(width: 64, height: 64)
+                    }.buttonStyle(.plain).padding(Spacing.s)
+                        .accessibilityLabel("Kỷ vật: \(memory.title). Mở hộp kỷ vật")
+                }
+            }
             .overlay { DustLayer(cleanliness: store.currentNeeds.cleanliness) }
             .clipShape(RoundedRectangle(cornerRadius: Radius.xl, style: .continuous))
         } else {
@@ -177,7 +203,7 @@ struct CornerView: View {
                         Text("\(room.name) mở ở cấp \(room.requiredLevel)")
                             .font(Typography.headline)
                             .foregroundStyle(Palette.ink)
-                        Text("Còn \(max(0, (room.requiredLevel - 1) * RewardConfig.xpPerLevel - store.wallet.xp)) XP nữa. Hoàn thành việc, tập trung hoặc viết nhật ký để lên cấp.")
+                        Text("Còn \(max(0, (room.requiredLevel - 1) * wallet.xpForNextLevel - store.wallet.xp)) XP nữa. Hoàn thành việc, tập trung hoặc viết nhật ký để lên cấp.")
                             .font(Typography.caption)
                             .foregroundStyle(Palette.inkMuted)
                             .multilineTextAlignment(.center)
@@ -256,6 +282,7 @@ struct CornerView: View {
                 Spacer(minLength: Spacing.xs)
                 CoinBadge(coins: wallet.coins)
             }
+            if store.hasTestData { TesterModeChip() }
             HStack(spacing: Spacing.s) {
                 Text("Cấp \(wallet.level)")
                     .font(Typography.callout.weight(.bold))
@@ -263,8 +290,8 @@ struct CornerView: View {
                 ProgressView(value: wallet.levelProgress)
                     .tint(Palette.lavender)
                     .accessibilityLabel("Tiến độ lên cấp")
-                    .accessibilityValue("\(wallet.xpIntoLevel) trên \(RewardConfig.xpPerLevel) XP")
-                Text("\(wallet.xpIntoLevel)/\(RewardConfig.xpPerLevel) XP")
+                    .accessibilityValue("\(wallet.xpIntoLevel) trên \(wallet.xpForNextLevel) XP")
+                Text(wallet.isMaxLevel ? "Đã đạt mốc tối đa" : "\(wallet.xpIntoLevel)/\(wallet.xpForNextLevel) XP")
                     .font(Typography.caption.monospacedDigit())
                     .foregroundStyle(Palette.inkMuted)
                     .lineLimit(1)
@@ -473,7 +500,7 @@ struct ShopView: View {
                     }
 
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: slot.isScene ? 160 : 104), spacing: Spacing.m)], spacing: Spacing.m) {
-                        ForEach(Catalog.items(in: slot)) { item in
+                        ForEach(Catalog.items(in: slot).filter { !$0.gachaOnly || Catalog.isOwned($0.id, owned: store.ownedIDs) }) { item in
                             itemCard(item)
                         }
                     }
@@ -603,6 +630,8 @@ struct ItemPreviewSheet: View {
                         dismiss()
                     }
                     .buttonStyle(PrimaryButtonStyle(color: Palette.sage))
+                } else if item.gachaOnly {
+                    Label("Chỉ nhận từ máy gacha", systemImage: "gift")
                 } else if roomLocked || level < item.requiredLevel {
                     Label("Mở khóa ở cấp \(max(item.requiredLevel, item.slot.roomKind?.requiredLevel ?? 1)) (đang cấp \(level))", systemImage: "lock.fill")
                         .font(Typography.callout)
@@ -613,8 +642,7 @@ struct ItemPreviewSheet: View {
                         guard !working else { return }
                         working = true
                         let ok = ui.run {
-                            try store.buy(itemID: item.id)
-                            try store.equip(itemID: item.id)
+                            try store.buy(itemID: item.id, equipAfterBuying: true)
                         }
                         working = false
                         if ok {

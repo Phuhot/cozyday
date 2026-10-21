@@ -24,7 +24,7 @@ extension AppStore {
         try commit {
             let keys = self.ledgerKeys
             let xp = self.wallet.xp
-            let legacy = min(LevelCurve.maxLevel, LevelCurve.legacyLevel(forXP: xp))
+            let legacy = LevelCurve.legacyLevel(forXP: xp)
             if legacy > LevelCurve.level(forXP: xp), !keys.contains(LedgerKeys.levelFloor) {
                 self.insertLedger(LedgerEntry(id: UUID(), key: LedgerKeys.levelFloor, kind: .system, xp: 0, coins: 0,
                                               createdAt: self.now, refID: nil, memo: String(legacy)))
@@ -71,6 +71,10 @@ extension AppStore {
     func enableTesterMode() throws {
         guard !isTesterMode else { return }
         try commit {
+            if !self.ledgerKeys.contains("system:tester-history") {
+                self.insertLedger(LedgerEntry(id: UUID(), key: "system:tester-history", kind: .system, xp: 0, coins: 0,
+                                             createdAt: self.now, refID: nil, memo: "Bộ dữ liệu từng bật thử nghiệm"))
+            }
             self.insertLedger(LedgerEntry(id: UUID(), key: LedgerKeys.testerMode, kind: .tester, xp: 0, coins: 0,
                                           createdAt: self.now, refID: nil, memo: "Bật Dữ liệu thử nghiệm"))
         }

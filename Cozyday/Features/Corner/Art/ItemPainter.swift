@@ -12,7 +12,7 @@ enum ItemPainter {
             draw(base, in: tinted)
             return
         }
-        if FloorArt.draw(id, in: ctx) || StudyArt.draw(id, in: ctx) || BedroomArt.draw(id, in: ctx) || KitchenArt.draw(id, in: ctx)
+        if GachaFurnitureArt.draw(id, in: ctx) || FloorArt.draw(id, in: ctx) || StudyArt.draw(id, in: ctx) || BedroomArt.draw(id, in: ctx) || KitchenArt.draw(id, in: ctx)
             || BathArt.draw(id, in: ctx) || GardenArt.draw(id, in: ctx) {
             return
         }

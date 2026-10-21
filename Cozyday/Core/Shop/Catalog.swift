@@ -262,7 +262,7 @@ enum Catalog {
     /// Toàn bộ danh mục. Các mảng `…More` nằm ở các file Catalog+… (đồ thêm theo phòng, trang phục, loài);
     /// `gachaItems` (Catalog+Gacha) là phần còn lại của đồ riêng máy gacha.
     static let items: [CatalogItem] = roomItems + petItems
-        + studyMore + bedroomMore + kitchenMore + bathMore + gardenMore + floorItems + costumeMore + speciesMore + gachaItems
+        + studyMore + bedroomMore + kitchenMore + bathMore + gardenMore + floorItems + costumeMore + speciesMore + gachaItems + milestoneItems
 
     /// Tra cứu nhanh theo ID và theo vị trí (danh mục gọi rất nhiều lần mỗi khung hình khi vẽ).
     private static let byID: [String: CatalogItem] = Dictionary(items.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })

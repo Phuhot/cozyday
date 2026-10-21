@@ -43,7 +43,7 @@ final class ProgressionTests: XCTestCase {
         let more = entry(.taskCompleted, xp: LevelCurve.threshold(22) - 1900)
         XCTAssertEqual(Wallet(entries: [xp, floor, more]).level, 22)
         // Cấp cũ quá 30 bị chặn ở 30.
-        XCTAssertEqual(Wallet(entries: [entry(.system, key: LedgerKeys.levelFloor, memo: "41")]).level, 30)
+        XCTAssertEqual(Wallet(entries: [entry(.system, key: LedgerKeys.levelFloor, memo: "41")]).level, 41)
     }
 
     func testTesterModeShowsMaxLevelButRealLevelStays() {

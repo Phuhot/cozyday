@@ -180,7 +180,8 @@ struct Wallet: Equatable {
     }
 
     /// Cấp thật (không tính chế độ thử nghiệm): theo đường XP, không thấp hơn cấp đã giữ từ bản cũ.
-    var realLevel: Int { min(LevelCurve.maxLevel, max(LevelCurve.level(forXP: xp), levelFloor)) }
+    // Old releases had no cap. Honor a saved legacy level above 30; new progression stops at 30.
+    var realLevel: Int { max(LevelCurve.level(forXP: xp), levelFloor) }
     /// Cấp dùng để mở khóa và hiển thị.
     var level: Int { testerMode ? LevelCurve.maxLevel : realLevel }
     var isMaxLevel: Bool { level >= LevelCurve.maxLevel }

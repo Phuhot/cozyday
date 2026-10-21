@@ -1,4 +1,5 @@
 import Foundation
+import SwiftData
 
 extension AppStore {
     // MARK: Ngoại hình
@@ -35,7 +36,15 @@ extension AppStore {
         guard let entry = Adventure.reward(day: day, existingKeys: ledgerKeys, petName: profile.displayPetName, now: now) else {
             return nil
         }
-        try commit { self.insertLedger(entry) }
+        let story = Adventure.story(for: day, petName: profile.displayPetName, species: petAppearance.species)
+        let memory = KeepsakeRecord(id: UUID(), sourceKey: entry.key, artID: "postcard", title: story.title,
+            story: story.text + "\nKỷ niệm: " + story.keepsake, day: day, petName: profile.displayPetName,
+            species: petAppearance.species.rawValue, createdAt: now, placedRoom: nil)
+        try commit {
+            self.insertLedger(entry)
+            self.context.insert(KeepsakeModel(record: memory))
+            self.keepsakes.append(memory)
+        }
         return entry
     }
 
@@ -44,7 +53,7 @@ extension AppStore {
         ledger.filter { $0.kind == .adventure }
             .compactMap { e in e.refID.flatMap(DayKey.init(string:)) }
             .sorted(by: >)
-            .map { AdventureMemory(day: $0, story: Adventure.story(for: $0, petName: profile.displayPetName, species: petAppearance.species)) }
+            .map { AdventureMemory(day: $0, story: savedAdventureStory(on: $0)) }
     }
 
     // MARK: Bài thở

@@ -44,7 +44,29 @@ struct TesterToolsView: View {
 
 /// Các mục xem trước (hoạt ảnh từng bậc gacha, sự kiện…). Nối thêm khi các tính năng đó có màn xem trước.
 struct TesterPreviewSections: View {
+    @Environment(AppStore.self) private var store
+    @State private var scene: PreviewScene?
+    @State private var event: CozyEvent?
+    private struct PreviewScene: Identifiable {
+        let tier: ItemRarity
+        var id: String { tier.label }
+    }
     var body: some View {
-        EmptyView()
+        Section("Xem thử hoạt ảnh (không quay thưởng)") {
+            ForEach(ItemRarity.allCases, id: \.self) { tier in
+                Button(tier.label) { scene = PreviewScene(tier: tier) }
+            }
+        }
+        .sheet(item: $scene) { value in
+            GachaCutsceneView(appearance: store.petAppearance, tier: value.tier, short: false) { scene = nil }
+        }
+        Section("Lễ Việt · lịch hỗ trợ 2025–2027") {
+            ForEach(VietnameseEvents.all.filter { $0.start.year == 2026 }) { value in
+                Button(value.title) { event = value }
+            }
+        }
+        .sheet(item: $event) { value in
+            ScrollView { EventCard(event: value, preview: true).padding(Spacing.l) }.cozySheetBackground()
+        }
     }
 }

@@ -5,6 +5,7 @@ struct OnboardingView: View {
     @Environment(AppStore.self) private var store
     @Environment(UIState.self) private var ui
     @State private var step = 0
+    @State private var species: PetSpecies = .cat
     @State private var userName = ""
     @State private var petName = ProfileRecord.defaultPetName
     @State private var goals: Set<UsageGoal> = []
@@ -70,9 +71,14 @@ struct OnboardingView: View {
 
     private var namesStep: some View {
         VStack(alignment: .leading, spacing: Spacing.l) {
-            PetView(appearance: PetAppearance(hat: "hat.sprout", stage: .little), mood: .happy, name: ProfileRecord.defaultPetName)
+            PetView(appearance: PetAppearance(species: species, stage: .little), mood: .happy, name: ProfileRecord.defaultPetName)
                 .frame(width: 150, height: 150)
                 .frame(maxWidth: .infinity)
+            Picker("Bạn nhỏ đầu tiên", selection: $species) {
+                ForEach(PetSpecies.starters, id: \.self) { pet in Text(pet.name.capitalized).tag(pet) }
+            }.pickerStyle(.menu)
+            Text("Bạn sẽ đón một bạn nhỏ miễn phí. Các loài khác chờ bạn khám phá trong Bộ sưu tập.")
+                .font(Typography.caption).foregroundStyle(Palette.inkMuted)
             Text("Chào mừng tới CozyDay")
                 .font(Typography.largeTitle)
                 .foregroundStyle(Palette.ink)
@@ -144,7 +150,7 @@ struct OnboardingView: View {
                 userName: userName,
                 petName: petName,
                 goals: skipAll ? [] : Array(goals),
-                habits: chosenHabits
+                habits: chosenHabits, species: species
             )
         }
     }
