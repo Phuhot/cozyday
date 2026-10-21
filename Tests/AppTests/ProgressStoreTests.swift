@@ -318,6 +318,25 @@ extension ProgressStoreTests {
         XCTAssertEqual(restored.savedAdventureStory(on:day),story)
     }
 
+    func testPurchaseAndEquipRollbackTogether() throws {
+        let (store, container) = try makeStore()
+        try store.redeemGiftCode("t3ster")
+        try store.buy(itemID:"hat.beanie",equipAfterBuying:true)
+        let before = store.wallet
+        store.failNextSaveForTesting = true
+        XCTAssertThrowsError(try store.buy(itemID:"hat.flower",equipAfterBuying:true))
+        XCTAssertEqual(store.wallet,before)
+        XCTAssertFalse(store.realOwnedIDs.contains("hat.flower"))
+        XCTAssertEqual(store.equippedMap[.hat],"hat.beanie")
+        let (reopened, _) = try makeStore(container)
+        XCTAssertEqual(reopened.wallet,before)
+        XCTAssertFalse(reopened.realOwnedIDs.contains("hat.flower"))
+        XCTAssertEqual(reopened.equippedMap[.hat],"hat.beanie")
+        try reopened.buy(itemID:"hat.flower",equipAfterBuying:true)
+        XCTAssertEqual(reopened.equippedMap[.hat],"hat.flower")
+        XCTAssertTrue(reopened.realOwnedIDs.contains("hat.flower"))
+    }
+
     func testMeaningfulDaysRemainStableAcrossTimezoneAndBackup() throws {
         clock.now = calendar.date(from:DateComponents(year:2026,month:11,day:3,hour:1))!
         let (store, container) = try makeStore()

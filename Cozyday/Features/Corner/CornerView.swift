@@ -20,6 +20,8 @@ struct CornerView: View {
     @State private var showGacha = false
     @State private var showCare = false
     @State private var showLife = false
+    private enum CareRoute { case food, clean }
+    @State private var pendingCareRoute: CareRoute?
     @State private var foodTab: FoodSheet.Tab?
     @State private var cleaning: CleanSession?
     @State private var cuddle = CuddleProgress()
@@ -91,17 +93,18 @@ struct CornerView: View {
                               actionID: session.id, work: session.work) { id in finishCare(.clean, id: id) }
             }
             .sheet(isPresented: $showLife) { CozyLifeView() }
-            .sheet(isPresented: $showCare) {
+            .sheet(isPresented: $showCare, onDismiss: openCareRoute) {
                 NavigationStack {
                     ScrollView {
                         NeedsCard(cuddleFraction: cuddle.fraction,
-                            onFeed: { showCare = false; foodTab = .tray },
-                            onClean: { showCare = false; startCleaning() },
+                            onFeed: { pendingCareRoute = .food; showCare = false },
+                            onClean: { pendingCareRoute = .clean; showCare = false },
                             onCuddle: { finishCare(.cuddle, id: UUID()) }).padding(Spacing.l)
                         Text("Trong phòng: chạm để vuốt ve, vuốt qua lại để nựng, giữ rồi kéo để nhấc bạn nhỏ.")
                             .font(Typography.caption).padding(Spacing.l)
                     }.cozyBackground().navigationTitle("Chăm bạn nhỏ")
                         .sheetCloseToolbar { showCare = false }
+                        .overlay(alignment: .top) { ErrorOverlay() }
                 }
             }
             .sheet(isPresented: $showGacha) {
@@ -217,6 +220,16 @@ struct CornerView: View {
     }
 
     // MARK: Chăm sóc
+
+    private func openCareRoute() {
+        let route = pendingCareRoute
+        pendingCareRoute = nil
+        switch route {
+        case .food: foodTab = .tray
+        case .clean: startCleaning()
+        case nil: break
+        }
+    }
 
     private func startCleaning() {
         let level = store.wallet.level
